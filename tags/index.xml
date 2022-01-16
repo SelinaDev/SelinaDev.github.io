@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Tags on SelinaDev</title>
+    <link>https://selinadev.github.io/tags/</link>
+    <description>Recent content in Tags on SelinaDev</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sun, 16 Jan 2022 08:00:00 +0100</lastBuildDate><atom:link href="https://selinadev.github.io/tags/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>godot</title>
+      <link>https://selinadev.github.io/tags/godot/</link>
+      <pubDate>Sun, 16 Jan 2022 08:00:00 +0100</pubDate>
+      
+      <guid>https://selinadev.github.io/tags/godot/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>tutorials</title>
+      <link>https://selinadev.github.io/tags/tutorials/</link>
+      <pubDate>Sun, 16 Jan 2022 08:00:00 +0100</pubDate>
+      
+      <guid>https://selinadev.github.io/tags/tutorials/</guid>
+      <description></description>
+    </item>
+    
+  </channel>
+</rss>

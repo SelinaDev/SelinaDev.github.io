@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>SelinaDev</title>
+    <link>https://selinadev.github.io/</link>
+    <description>Recent content on SelinaDev</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sun, 16 Jan 2022 08:00:00 +0100</lastBuildDate><atom:link href="https://selinadev.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Godot Tutorial: Creating shapes in code</title>
+      <link>https://selinadev.github.io/01-crereating-procedural-shapes/</link>
+      <pubDate>Sun, 16 Jan 2022 08:00:00 +0100</pubDate>
+      
+      <guid>https://selinadev.github.io/01-crereating-procedural-shapes/</guid>
+      <description>In this tutorial I will tackle how to create procedural shapes in Godot, using GDScipt and Polygon2D nodes. I will go into a bit of detail about some other topics as well, such as tool scrips and setter functions.
+A while back, Patrick Zoch Alves (@PatrickZochAlve), a fellow gamedev, asked me to try out his then new game &amp;ldquo;Color Maze&amp;rdquo; (you can try it out for yourself on GOTM: https://gotm.io/klustergames/colormaze). I like the concept, and the overall clean design of it.</description>
+    </item>
+    
+    <item>
+      <title>About</title>
+      <link>https://selinadev.github.io/about/</link>
+      <pubDate>Sat, 15 Jan 2022 00:00:00 +0000</pubDate>
+      
+      <guid>https://selinadev.github.io/about/</guid>
+      <description>SelinaDev creates games in her free time, using the Godot game engine.
+Twitter: @SelinaDev
+Discord: https://discord.gg/KrnB6mJyMk</description>
+    </item>
+    
+  </channel>
+</rss>

@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+  <meta name="generator" content="Hugo 0.92.0" />
+  <link rel="canonical" href="https://selinadev.github.io/01-crereating-procedural-shapes/">
+
+  
+    
+    <meta name="description" content="In this tutorial I will tackle how to create procedural shapes in Godot, using GDScipt and Polygon2D nodes. I will go into a bit of detail about some other topics as well, such as tool scrips and setter functions.
+A while back, Patrick Zoch Alves (@PatrickZochAlve), a fellow gamedev, asked me to try out his then new game “Color Maze” (you can try it out for yourself on GOTM: https://gotm.io/klustergames/colormaze). I like the concept, and the overall clean design of it.">
+  
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#000000">
+  <meta name="msapplication-TileColor" content="#ffffff">
+  <meta name="theme-color" content="#ffffff">
+
+  <link rel="stylesheet" type="text/css" href="/css/paper.css">
+
+  
+  
+  <link rel="stylesheet" type="text/css" href="/css/custom.css">
+  
+  
+    
+  
+
+  
+  
+  <title>Godot Tutorial: Creating shapes in code | SelinaDev</title>
+</head>
+
+  <body>
+    <div class="container paper">
+      <nav class="border split-nav">
+  <div class="nav-brand">
+    <h3><a href="/">SelinaDev</a></h3>
+  </div>
+  <div class="collapsible">
+    <input id="collapsible1" type="checkbox" name="collapsible1">
+    <button>
+    <label for="collapsible1">
+        <div class="bar1"></div>
+        <div class="bar2"></div>
+        <div class="bar3"></div>
+      </label>
+    </button>
+    <div class="collapsible-body">
+      <ul class="inline">
+      
+        <li><a href="/">Blog</a></li>
+      
+        <li><a href="/tags/">Tags</a></li>
+      
+        <li><a href="/about/">About</a></li>
+      
+      </ul>
+    </div>
+  </div>
+</nav>
+      <main>
+        
+
+<h1 class="post-title">Godot Tutorial: Creating shapes in code</h1>
+
+
+<strong>Publish date: </strong>Jan 16, 2022
+<br>
+
+  <strong>Tags: </strong>
+  
+    <a href="/tags/godot">godot</a>
+  
+    <a href="/tags/tutorials">tutorials</a>
+  
+
+
+
+  
+
+<div class="child-borders">
+  <div class="toc border" aria-labelledby="toc-heading">
+    <h2 id="toc-heading">Table of contents</h2>
+    <ol>
+      
+        <li>
+          
+          
+          
+          
+          <a href="#what-i-am-planning">
+            What I am planning
+          </a>
+        </li>
+      
+        <li>
+          
+          
+          
+          
+          <a href="#preparing-the-scene">
+            Preparing the Scene
+          </a>
+        </li>
+      
+        <li>
+          
+          
+          
+          
+          <a href="#coding-the-shape">
+            Coding the Shape
+          </a>
+        </li>
+      
+        <li>
+          
+          
+          
+          
+          <a href="#making-it-respond-in-the-editor">
+            Making it respond in the editor
+          </a>
+        </li>
+      
+        <li>
+          
+          
+          
+          
+          <a href="#some-collision">
+            Some Collision
+          </a>
+        </li>
+      
+        <li>
+          
+          
+          
+          
+          <a href="#casting-a-shadow">
+            Casting a Shadow
+          </a>
+        </li>
+      
+        <li>
+          
+          
+          
+          
+          <a href="#adding-rotation">
+            Adding Rotation
+          </a>
+        </li>
+      
+        <li>
+          
+          
+          
+          
+          <a href="#afterword">
+            Afterword
+          </a>
+        </li>
+      
+        <li>
+          
+          
+          
+          
+          <a href="#complete-code">
+            Complete Code
+          </a>
+        </li>
+      
+    </ol>
+  </div>
+</div>
+
+
+
+<p>In this tutorial I will tackle how to create procedural shapes in Godot, using GDScipt and Polygon2D nodes. I will go into a bit of detail about some other topics as well, such as tool scrips and setter functions.</p>
+<p>A while back, Patrick Zoch Alves (<a href="https://twitter.com/PatrickZochAlve">@PatrickZochAlve</a>), a fellow gamedev, asked me to try out his then new game <em>&ldquo;Color Maze&rdquo;</em> (you can try it out for yourself on GOTM: <a href="https://gotm.io/klustergames/colormaze">https://gotm.io/klustergames/colormaze</a>). I like the concept, and the overall clean design of it. Unfortunately, however, this clean design, using geometric shapes, becomes (unintentionally) inconsistent due to pixelation.</p>
+<p>The rectangle shapes, which align with the pixel grid, are not affected, but the effect is very noticable for round shapes, especially when they are upscaled in fullscreen mode. See the images below. Especially in the first image you can see how the difference between the very clear rectangle and the pixelated ring around it creates (probably unwanted) visual contrast.</p>
+<p><img src="/images/posts/procedural_shapes/ScreenshotColorMaze1.png" alt="C-shaped ring"></p>
+<p><img src="/images/posts/procedural_shapes/ScreenshotColorMaze2.png" alt="circular target"></p>
+<p>So how could we prevent this? As always there are likely several ways to tackle this problem. My solution would be to not use pixels at all, but recreate that shape as a polygon. This has several advantages:</p>
+<ul>
+<li>The shape can be scaled freely to any resolution without risk of pixelation.</li>
+<li>When creating the shape in code, in a procedural way, we can define the shape&rsquo;s parameters as export variables (e.g. the outer and inner radius of the ring). This would allow us to easily change the shape later, or even create a whole range of variations of the same shape, right in the editor.</li>
+<li>Creating an offset shadow takes only a few lines of code, no need for any additional assets.</li>
+</ul>
+<h2 id="what-i-am-planning">What I am planning</h2>
+<p>For this tutorial I have decided to recreate the C-shaped object from the images above. To make this a functional, complete alternative to the object in <em>Color Maze</em> I will go beyond simply recreating the shape so here is an overview of the plan:</p>
+<ol>
+<li><strong>Scene Setup</strong>: First thing first, we prepare the scene in Godot.</li>
+<li><strong>Shape</strong>: The meat of this tutorial, we create the shape in code an apply it to a polygon.</li>
+<li><strong>Tool Script</strong>: To allow us to see changes to the parameters in the editor, we will implement the script as a tool script, and implement proper setter and getter functions.</li>
+<li><strong>Collision Area</strong>: In the game the player will collide with the shape, so we add a way for that to happen.</li>
+<li><strong>Shadow</strong>: You may have noticed that the shapes in the images have shadows. These are part of the sprites. This implementation is problematic, because if the shadow is to the bottom right of the object, it should stay there, even if the object moves, but if it is part of the sprite, it will kind of rotate around the object. Using a separate shadow shape will allow us to acieve this.</li>
+<li><strong>Rotation</strong>: Lastly, we will give the object rotation.</li>
+</ol>
+<h2 id="preparing-the-scene">Preparing the Scene</h2>
+<p>If you want to follow along, open a new project in Godot. No need to download any assets, as we will create everything in code.</p>
+<p>Create a new 2D Scene (with a <code>Node2D</code> as its root node), and call it &ldquo;CShape&rdquo;. We will create four child nodes for it:</p>
+<ol>
+<li>An <code>Area2D</code> node.</li>
+<li>A <code>Polygon2D</code> node we will call &ldquo;Shadow&rdquo;.</li>
+<li>Another <code>Polygon2D</code> we will call &ldquo;Shape&rdquo;. This node is bolow the &ldquo;Shadow&rdquo; node in the Scene Tree, so it will get drawn above it.</li>
+<li>A <code>Tween</code> node, which we will later use to rotate the shape.</li>
+</ol>
+<p>The <code>Area2D</code> is still missing a collision shape, so we add a <code>CollisionPolygon2D</code> as its child.
+Now that we have our scene, we will save it as <em>CShape.tscn</em>.</p>
+<p>A quick note: This scene setup might seem overly comlicated for this task. Indeed, if it was just about one shape, I might just create a script for a <code>Polygon2D</code> direcly. However, with the way the shadow needs to be attached and rotate with the shape, I found this setup the easiest to put all this together.</p>
+<h3 id="a-way-to-test-everything">A way to test everything</h3>
+<p>In order to look at our C-Shape object, we need to put it in another scene. Technically we could run it on its own, but then it will be stuck at the top left corner. It is much better to create a test scene. For this we will create another 2D Scene, and drop our <em>CShape.tscn</em> in there. Place it right in the middle of this scene. You will not see anything yet, we will get to that shortly. Save it as <em>TestScene.tscn</em>, and let us move on to the shape.</p>
+<h2 id="coding-the-shape">Coding the Shape</h2>
+<p>In our CShape scene, we will add a new script to the root node (&ldquo;CShape&rdquo;). We will use GDScript for that, and call save it as <em>CShape.gd</em>. We start out by defining a few parameters as export variables. Here is the start of our script:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd">class_name CShape
+<span style="color:#66d9ef">extends</span> <span style="color:#a6e22e">Node2D</span>
+
+<span style="color:#66d9ef">export</span> (<span style="color:#a6e22e">float</span>) <span style="color:#66d9ef">var</span> radius_inner :<span style="color:#f92672">=</span> <span style="color:#ae81ff">100.0</span>
+<span style="color:#66d9ef">export</span> (<span style="color:#a6e22e">float</span>) <span style="color:#66d9ef">var</span> radius_outer :<span style="color:#f92672">=</span> <span style="color:#ae81ff">150.0</span>
+<span style="color:#66d9ef">export</span> (<span style="color:#a6e22e">int</span>) <span style="color:#66d9ef">var</span> num_circle_segments :<span style="color:#f92672">=</span> <span style="color:#ae81ff">64</span>
+<span style="color:#66d9ef">export</span> (<span style="color:#a6e22e">float</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">360</span>) <span style="color:#66d9ef">var</span> angle_opening :<span style="color:#f92672">=</span> <span style="color:#ae81ff">45.0</span>
+<span style="color:#66d9ef">export</span> (<span style="color:#a6e22e">Color</span>) <span style="color:#66d9ef">var</span> color :<span style="color:#f92672">=</span> <span style="color:#a6e22e">Color</span><span style="color:#f92672">.</span>blue
+
+<span style="color:#66d9ef">onready</span> <span style="color:#66d9ef">var</span> shadow: <span style="color:#a6e22e">Polygon2D</span> <span style="color:#f92672">=</span> <span style="color:#f92672">$</span>Shadow
+<span style="color:#66d9ef">onready</span> <span style="color:#66d9ef">var</span> shape: <span style="color:#a6e22e">Polygon2D</span> <span style="color:#f92672">=</span> <span style="color:#f92672">$</span><span style="color:#a6e22e">Shape</span>
+<span style="color:#66d9ef">onready</span> <span style="color:#66d9ef">var</span> area: <span style="color:#a6e22e">Area2D</span> <span style="color:#f92672">=</span> <span style="color:#f92672">$</span><span style="color:#a6e22e">Area2D</span>
+<span style="color:#66d9ef">onready</span> <span style="color:#66d9ef">var</span> area_shape: <span style="color:#a6e22e">CollisionPolygon2D</span> <span style="color:#f92672">=</span> <span style="color:#f92672">$</span><span style="color:#a6e22e">Area2D</span><span style="color:#f92672">/</span><span style="color:#a6e22e">CollisionPolygon2D</span>
+<span style="color:#66d9ef">onready</span> <span style="color:#66d9ef">var</span> tween: <span style="color:#a6e22e">Tween</span> <span style="color:#f92672">=</span> <span style="color:#f92672">$</span><span style="color:#a6e22e">Tween</span>
+</code></pre></div><p>To create the shape we conceptually start with a ring, which is defined by an inner and an outer radius (<code>radius_inner</code> and <code>radius_outer</code>). We approximate the circles this ring is made up of with a regular polygon with a sufficiently large number of edges, defined by <code>num_circle_segments</code>. To create the C-shape from this ring we leave out a segment, the angular width of which is defined in degrees by <code>angle_opening</code>. Lastly, we want to set the <code>color</code> of our shape.</p>
+<p>Next in the code we define and assign a few <code>onready</code> variables, so we can easily access the child nodes later.</p>
+<p>Now for the heart of the code, the creation of the shape:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> _calculate_polygon() <span style="color:#f92672">-&gt;</span> PoolVector2Array:
+	<span style="color:#66d9ef">var</span> array :<span style="color:#f92672">=</span> []
+
+	<span style="color:#66d9ef">var</span> half_opning_rad :<span style="color:#f92672">=</span> deg2rad(angle_opening <span style="color:#f92672">/</span> <span style="color:#ae81ff">2.0</span>)
+	<span style="color:#66d9ef">var</span> angle_step_size :<span style="color:#f92672">=</span> TAU <span style="color:#f92672">/</span> num_circle_segments
+
+	array<span style="color:#f92672">.</span>append(polar2cartesian(radius_outer, half_opning_rad))
+
+	<span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> num_circle_segments:
+		<span style="color:#66d9ef">var</span> phi: <span style="color:#a6e22e">float</span> <span style="color:#f92672">=</span> i <span style="color:#f92672">*</span> angle_step_size
+		<span style="color:#66d9ef">if</span> phi <span style="color:#f92672">&lt;=</span> half_opning_rad:
+			<span style="color:#66d9ef">continue</span>
+		<span style="color:#66d9ef">if</span> phi <span style="color:#f92672">&gt;=</span> TAU <span style="color:#f92672">-</span> half_opning_rad:
+			<span style="color:#66d9ef">break</span>
+		array<span style="color:#f92672">.</span>append(polar2cartesian(radius_outer, phi))
+
+	array<span style="color:#f92672">.</span>append(polar2cartesian(radius_outer, TAU <span style="color:#f92672">-</span> half_opning_rad))
+	array<span style="color:#f92672">.</span>append(polar2cartesian(radius_inner, TAU <span style="color:#f92672">-</span> half_opning_rad))
+
+	<span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> num_circle_segments:
+		<span style="color:#66d9ef">var</span> phi: <span style="color:#a6e22e">float</span> <span style="color:#f92672">=</span> TAU <span style="color:#f92672">-</span> i <span style="color:#f92672">*</span> angle_step_size
+		<span style="color:#66d9ef">if</span> phi <span style="color:#f92672">&gt;=</span> TAU <span style="color:#f92672">-</span> half_opning_rad:
+			<span style="color:#66d9ef">continue</span>
+		<span style="color:#66d9ef">if</span> phi <span style="color:#f92672">&lt;=</span> half_opning_rad:
+			<span style="color:#66d9ef">break</span>
+		array<span style="color:#f92672">.</span>append(polar2cartesian(radius_inner, phi))
+
+	array<span style="color:#f92672">.</span>append(polar2cartesian(radius_inner, half_opning_rad))
+
+	<span style="color:#66d9ef">return</span> PoolVector2Array(array)
+</code></pre></div>
+
+
+  
+
+
+<div class="child-borders">
+  <div class="sm col border-dotted">
+    <h3 id="a-short-excourse-into-polar-coordinates">A short Excourse into Polar Coordinates</h3>
+<p>Before I explain the code, a bit of an explanation on polar coordinates. If you are familiar with this topic, then you may skip this section.</p>
+<p>There are several ways to define a point in space. One way you should be familiar with are Cartesian coordinates. In a 2D plane these are defined by an x-axis that runs through the origin, and a y-axis that runs ortogonally to it, also through the origin. Each point on the plane can be defined by two values: how many units it is in the x-direction, and how many in the y. This is what Godot uses for representing vectors and thus positions. This is perfect for vector math, and also works nicely together with pixels on a screen.</p>
+<p>However, for our application it is easier to use another coordinate representation: polar coordinates. Polar coordinates are defined by two values as well, but unlike with Carthesian coordinates where x and y work similarly, just pointing in different directions, the values of polar coordinates are substantially different from each other. One is the angle, often written as 𝜑. It defines the direction a point is in relation to the origin. The other value is the radius, often written as <em>r</em>, and it defines the distance a point is from the origin.</p>
+<p>If this concept somehow feels foreign to you, imagine it like this: when you sit in a room and think about where an object is in ralation to you, you probably won&rsquo;t think about how many steps you would have to go directly forward and how many steps to the right after that, but you likely will conceptualize the object&rsquo;s position by the direction it is (relative to your forward), and how far away it is in a straight line. There we are again, direction and distance.</p>
+<p>How does this help us with our shape. We want to define our polygon by its outline, which are parts of two circles we want to go along, then jump between at the ends. So, going along a circle in polar coordinates is just varying the angle with a constant radius. And jumping from one circle to the other inwards or outwards at the caps, that is a constant angle with varying radius. So to find the next point we only ever need to go some step alond one &ldquo;direction&rdquo;. Besides, if we ware to calculate circle coordinates in Cartesian coordinates, we basically would just use the formulas for converting between Cartesian an polar. Speaking of which, in the end Godot expects Cartesian coordinates, so do we need any complicated trigonometry? Fortunately no, as Godot has a builtin function <code>polar2cartesian()</code>, which does the work for us. Now that we know about how to use polar coordinates, let&rsquo;s look at how our function creates our shape.</p>
+<p><img src="/images/posts/procedural_shapes/coordinates.gif" alt="Polar Coordinates Visualization"></p>
+
+  </div>
+</div>
+
+<h3 id="making-a-shape-with-code">Making a shape with code</h3>
+<p>Our polygon is defined by points, so first we create an <code>array</code> variable to hold these as we create them. Next we calculate some values we will need. The angle opening we defined is the full angle and in degrees. But Godot mostly works with radians, and we want to have the shape open symmetrically around the &ldquo;start&rdquo; of the shape, so its right (i.e., how pacman opens his mouth). That&rsquo;s why we calculate <code>half_opening_rad</code> as half the <code>angle_opening</code> in radians. We also want to know how big our angle steps need to be when going around the circle. This is dependent on the number of segments we want our (full) circle to have. To get the <code>angle_step_size</code> we divide the angle of a full circle by <code>num_circle_segments</code>. A full circle has 𝜏 radians (spoken as &ldquo;tau&rdquo;, approximately 6.28319), which equals 360 degrees (or 2π).</p>
+<p>Next, we start adding points to our array. We start at the outer upper edge. After this starting point, we start going around the outer circle. We go by point indices and calculate the angle from that (I prefer this approach over just incrementing by the <code>angle_step_size</code> because it is less prone to errors resulting from accumulating floating point numbers). In this loop we first check two conditions. First, if we are before the first point, we do not insert a point and skip to the next. Second, if we are beyond where the other end should be, we also do not insert a point, and terminate the loop. In all other cases we know that we are along the outer circle and between the two ends, so we insert that point into the array. This in arguably not the optimal way to do this, and precalculating start and end indices would be slightly more performant, but I figured this would be easier to understand. (But I also wanted to mention this, so you know where you could improve on this).</p>
+<p>After we are done going around the outer circle, we need to add the end point and switch to the inner circle. Then, we just repeat this looping process along the inner circle and in the other direction. We finish off by adding the inner upper end point. Lastly, we return this array as a <code>PoolVector2Array</code>.</p>
+<h3 id="testing-the-code-so-far">Testing the code so far</h3>
+<p>By now our shape script can create its shape, but we need to tell it to actually do that for us to see something. So we add three more functions to our script:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> _ready() <span style="color:#f92672">-&gt;</span> void:
+	_update_values()
+
+
+<span style="color:#66d9ef">func</span> _update_values() <span style="color:#f92672">-&gt;</span> void:
+	_update_shape()
+	shape<span style="color:#f92672">.</span>color <span style="color:#f92672">=</span> color
+
+
+<span style="color:#66d9ef">func</span> _update_shape() <span style="color:#f92672">-&gt;</span> void:
+	<span style="color:#66d9ef">var</span> polygon :<span style="color:#f92672">=</span> _calculate_polygon()
+	shape<span style="color:#f92672">.</span>polygon <span style="color:#f92672">=</span> polygon
+</code></pre></div><p>These functions just create the shape and pass it and the color to our <em>Shape</em> node. Right now it does not make a lot of sense to split them like that, but this setup will make it easier to extend for the shadow and our in-editor updates.</p>
+<p>You can now go to the <em>TestScene</em> and run that scene. You should see something like in the following image. You can also go ahead and change the <em>CShape</em>&rsquo;s script variables in the editor. If you run the scene again, you should see these changes in the shape.</p>
+<p><img src="/images/posts/procedural_shapes/ResultScreenshot1.png" alt="First Shape Screenshot"></p>
+<h2 id="making-it-respond-in-the-editor">Making it respond in the editor</h2>
+<p>While our scene has some functionality and quite some customizability, it still is annoying to use for designing levels. Right now we would have to guess some values, then run the game to see if they fit, and if not guess some better values. We can make our life a lot easier by making our shape generation code run in the editor, and make the scene respond to changes to the values, so ve can see our shape update live in the editor.</p>
+<p>The first thing we need to do for that is to add the <code>tool</code> keyword at the start of the script, to tell Godot that this script should also be executed in the editor. We also want the scene to react to changes to our values, so we add <code>setget</code> and a setter function name after all our exported variables (at which point Godot will complain, that none of our setter functions exist, but we will take care of that in a minute). So let us change the top of our script to the following:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">tool</span>
+class_name CShape2
+<span style="color:#66d9ef">extends</span> <span style="color:#a6e22e">Node2D</span>
+
+<span style="color:#66d9ef">export</span> (<span style="color:#a6e22e">float</span>) <span style="color:#66d9ef">var</span> radius_inner :<span style="color:#f92672">=</span> <span style="color:#ae81ff">100.0</span> <span style="color:#66d9ef">setget</span> set_radius_inner
+<span style="color:#66d9ef">export</span> (<span style="color:#a6e22e">float</span>) <span style="color:#66d9ef">var</span> radius_outer :<span style="color:#f92672">=</span> <span style="color:#ae81ff">150.0</span> <span style="color:#66d9ef">setget</span> set_radius_outer
+<span style="color:#66d9ef">export</span> (<span style="color:#a6e22e">float</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">360</span>) <span style="color:#66d9ef">var</span> angle_opening :<span style="color:#f92672">=</span> <span style="color:#ae81ff">45.0</span> <span style="color:#66d9ef">setget</span> set_angle_opening
+<span style="color:#66d9ef">export</span> (<span style="color:#a6e22e">int</span>) <span style="color:#66d9ef">var</span> num_circle_segments :<span style="color:#f92672">=</span> <span style="color:#ae81ff">64</span> <span style="color:#66d9ef">setget</span> set_num_circle_segments
+<span style="color:#66d9ef">export</span> (<span style="color:#a6e22e">Color</span>) <span style="color:#66d9ef">var</span> color :<span style="color:#f92672">=</span> <span style="color:#a6e22e">Color</span><span style="color:#f92672">.</span>blue <span style="color:#66d9ef">setget</span> set_color
+</code></pre></div><p>Each of these setter functions has two jobs. The first one is to make sure the inputted values make sense (e.g., that the outer radius is bigger than the inner radius). The second one is to update the actual value. As most of these values are part of our shape generation function they mostly call <code>_update_shape()</code>. So, at the end of the script now let us add the following:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> set_radius_inner(value: <span style="color:#a6e22e">float</span>) <span style="color:#f92672">-&gt;</span> void:
+	<span style="color:#66d9ef">if</span> value <span style="color:#f92672">&gt;=</span> <span style="color:#ae81ff">0</span> <span style="color:#f92672">and</span> value <span style="color:#f92672">&lt;</span> radius_outer:
+		radius_inner <span style="color:#f92672">=</span> value
+		_update_shape()
+
+
+<span style="color:#66d9ef">func</span> set_radius_outer(value: <span style="color:#a6e22e">float</span>) <span style="color:#f92672">-&gt;</span> void:
+	<span style="color:#66d9ef">if</span> value <span style="color:#f92672">&gt;</span> radius_inner:
+		radius_outer <span style="color:#f92672">=</span> value
+		_update_shape()
+
+
+<span style="color:#66d9ef">func</span> set_angle_opening(value: <span style="color:#a6e22e">float</span>) <span style="color:#f92672">-&gt;</span> void:
+	<span style="color:#66d9ef">if</span> value <span style="color:#f92672">&gt;=</span> <span style="color:#ae81ff">0</span> <span style="color:#f92672">and</span> value <span style="color:#f92672">&lt;=</span> <span style="color:#ae81ff">360</span>:
+		angle_opening <span style="color:#f92672">=</span> value
+		_update_shape()
+
+
+<span style="color:#66d9ef">func</span> set_num_circle_segments(value: <span style="color:#a6e22e">int</span>) <span style="color:#f92672">-&gt;</span> void:
+	<span style="color:#66d9ef">if</span> value <span style="color:#f92672">&gt;=</span> <span style="color:#ae81ff">3</span>:
+		num_circle_segments <span style="color:#f92672">=</span> value
+		_update_shape()
+
+
+<span style="color:#66d9ef">func</span> set_color(value: <span style="color:#a6e22e">Color</span>) <span style="color:#f92672">-&gt;</span> void:
+			color <span style="color:#f92672">=</span> value
+			<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> is_inside_tree():
+				<span style="color:#66d9ef">return</span>
+			shape<span style="color:#f92672">.</span>color <span style="color:#f92672">=</span> color
+</code></pre></div><p>As you can see, the code is relatively straight forward. One thing you might notice is the strange conditional statement in the <code>set_color()</code> function. This has to do with the behavior of setter functions and exported variables.</p>
+
+
+
+  
+
+
+<div class="child-borders">
+  <div class="sm col border-dotted">
+    <h3 id="ready-set-export">ready, set, export*</h3>
+<p>(*just if it is not clear, this is a pun, so do not remember this as a rule of order of execution (it is basically the other way around))</p>
+<p>When a script has an exported variable we often want to access the values set by the user from the start, i.e., in the <code>_ready()</code> function. So if we set an exported variable&rsquo;s value in the editor (so whenever the editor shows the little reset icon next to the variable), then Godot wants to make sure we have this values ready as soon as the scene gets instanced, an sets these values to the ones chosen in the editor. Now, if these values have setter functions, Godot will call these for us. So far so good. A problem arises when we want to access child nodes. Because this variable setting happens before the scene gets added to the scene tree, and therefore before the child nodes even exist.
+However, this is no problem. Because if the node the script is on is not yet in the tree, we can tell the function to pause until that node, and consequently all its child nodes, are ready, and only then access those children. Usually you will find the following code segment in this case:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> is_inside_tree():
+	yield(self, <span style="color:#e6db74">&#34;ready&#34;</span>)
+</code></pre></div><p>However, in our case we update all these values manually in the <code>_ready()</code> function anyway, so we can just <code>return</code> from the function if it is called before the node has entered the tree.</p>
+
+  </div>
+</div>
+
+<p>The above problem also affects our shape generation, so we update <code>_update_shape()</code> to:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> _update_shape() <span style="color:#f92672">-&gt;</span> void:
+	<span style="color:#66d9ef">var</span> polygon :<span style="color:#f92672">=</span> _calculate_polygon()
+	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> is_inside_tree():
+		<span style="color:#66d9ef">return</span>
+	shape<span style="color:#f92672">.</span>polygon <span style="color:#f92672">=</span> polygon
+</code></pre></div><p>At this point you can save the script, and then reload our test scene (either close and reopen it, or click <em>Scene</em> &gt; <em>Reload Saved Scene</em>). You will have to do this every time you make changes to the script. Once you do you will see that the shape now reacts to changes to its script variables.</p>
+<h2 id="some-collision">Some Collision</h2>
+<p>This step is rather simple. We need to make sure that our <code>Area2D</code>&rsquo;s <code>CollisionPolygon2D</code> child has the proper shape. We can do this by adding one line to <code>_update_shape()</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> _update_shape() <span style="color:#f92672">-&gt;</span> void:
+	<span style="color:#66d9ef">var</span> polygon :<span style="color:#f92672">=</span> _calculate_polygon()
+	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> is_inside_tree():
+		<span style="color:#66d9ef">return</span>
+	shape<span style="color:#f92672">.</span>polygon <span style="color:#f92672">=</span> polygon
+	area_shape<span style="color:#f92672">.</span>polygon <span style="color:#f92672">=</span> polygon
+</code></pre></div><p>This change is hard to see, because the <code>Polygon2D</code> nodes (of exactly the same shape) are in front of the <code>Area2D</code> node, but this is intended, because we want to be able to see the shape&rsquo;s correct color. Still, once you reloaded the Test scene, you should see a thin red outline around the shape.</p>
+<h2 id="casting-a-shadow">Casting a Shadow</h2>
+<p>The shadow will have two properties, it&rsquo;s color, and how it is offset from the main shape. So we will add these to our list of export variables.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">export</span> (<span style="color:#a6e22e">Color</span>) <span style="color:#66d9ef">var</span> shadow_color :<span style="color:#f92672">=</span> <span style="color:#a6e22e">Color</span><span style="color:#f92672">.</span>black <span style="color:#66d9ef">setget</span> set_shadow_color
+<span style="color:#66d9ef">export</span> (<span style="color:#a6e22e">Vector2</span>) <span style="color:#66d9ef">var</span> shadow_offset :<span style="color:#f92672">=</span> <span style="color:#a6e22e">Vector2</span>(<span style="color:#ae81ff">5.0</span>, <span style="color:#ae81ff">5.0</span>) <span style="color:#66d9ef">setget</span> set_shadow_offset
+</code></pre></div><p>As you can see these properties also get their own setters, so let us define these:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> set_shadow_color(value: <span style="color:#a6e22e">Color</span>) <span style="color:#f92672">-&gt;</span> void:
+	shadow_color <span style="color:#f92672">=</span> value
+	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> is_inside_tree():
+		<span style="color:#66d9ef">return</span>
+	shadow<span style="color:#f92672">.</span>color <span style="color:#f92672">=</span> shadow_color
+
+
+<span style="color:#66d9ef">func</span> set_shadow_offset(value: <span style="color:#a6e22e">Vector2</span>) <span style="color:#f92672">-&gt;</span> void:
+	shadow_offset <span style="color:#f92672">=</span> value
+	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> is_inside_tree():
+		<span style="color:#66d9ef">return</span>
+	shadow<span style="color:#f92672">.</span>position <span style="color:#f92672">=</span> shadow_offset
+</code></pre></div><p>We also need to account for the shadow in our <code>_update_values()</code> and <code>_update_shape()</code> functions:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> _update_values() <span style="color:#f92672">-&gt;</span> void:
+	_update_shape()
+	shape<span style="color:#f92672">.</span>color <span style="color:#f92672">=</span> color
+	shadow<span style="color:#f92672">.</span>color <span style="color:#f92672">=</span> shadow_color
+	shadow<span style="color:#f92672">.</span>position <span style="color:#f92672">=</span> shadow_offset
+
+
+<span style="color:#66d9ef">func</span> _update_shape() <span style="color:#f92672">-&gt;</span> void:
+	<span style="color:#66d9ef">var</span> polygon :<span style="color:#f92672">=</span> _calculate_polygon()
+	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> is_inside_tree():
+		yield(self, <span style="color:#e6db74">&#34;ready&#34;</span>)
+	shape<span style="color:#f92672">.</span>polygon <span style="color:#f92672">=</span> polygon
+	shadow<span style="color:#f92672">.</span>polygon <span style="color:#f92672">=</span> polygon
+	area_shape<span style="color:#f92672">.</span>polygon <span style="color:#f92672">=</span> polygon
+</code></pre></div><p><img src="/images/posts/procedural_shapes/ResultScreenshot2.png" alt="Shape with Shadow Screenshot"></p>
+<p>And with that the shadow is added. We already had the shape, so this was an easy addition. All that is left now is to make our shape scene spin.</p>
+<h2 id="adding-rotation">Adding Rotation</h2>
+<p>As this object is intended for a kind of puzzle game I wanted to create this rotation feature with that in mind. To make the rotation as deterministic and easy to set up by the designer as possible, we add three exported variables:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">enum</span> directions {Clockwise <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>, Counterclockwise <span style="color:#f92672">=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>}
+
+<span style="color:#66d9ef">export</span> (<span style="color:#a6e22e">float</span>) <span style="color:#66d9ef">var</span> rotation_period :<span style="color:#f92672">=</span> <span style="color:#ae81ff">10.0</span>
+<span style="color:#66d9ef">export</span> (<span style="color:#a6e22e">float</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">360</span>) <span style="color:#66d9ef">var</span> starting_angle :<span style="color:#f92672">=</span> <span style="color:#ae81ff">0.0</span> <span style="color:#66d9ef">setget</span> set_starting_angle
+<span style="color:#66d9ef">export</span> (directions) <span style="color:#66d9ef">var</span> rotation_direction: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> directions<span style="color:#f92672">.</span>Clockwise
+</code></pre></div><p>The speed is controlled by the rotation period, the duration the object needs to complete one revolution, measured in seconds. To set up the puzzles without having to rotate the whole object (thereby messing up the direction of the shadow), we can set an initial angle the object will start at when the level starts. And lastly we export the direction the object should turn in. For this we also have defined an <code>enum directions</code> which stores factors we will later use to easily set the direction.</p>
+<p>We will only use the period and direction at runtime. The objects should not turn in the editor, so no setters are necessary. But the starting angle should be visible in the editor, so we define a setter for it:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> set_starting_angle(value: <span style="color:#a6e22e">float</span>) <span style="color:#f92672">-&gt;</span> void:
+	<span style="color:#66d9ef">if</span> value <span style="color:#f92672">&gt;=</span> <span style="color:#ae81ff">0</span> <span style="color:#f92672">and</span> value <span style="color:#f92672">&lt;=</span> <span style="color:#ae81ff">360</span>:
+		starting_angle <span style="color:#f92672">=</span> value
+		<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> is_inside_tree():
+			<span style="color:#66d9ef">return</span>
+		shape<span style="color:#f92672">.</span>rotation_degrees <span style="color:#f92672">=</span> starting_angle
+		shadow<span style="color:#f92672">.</span>rotation_degrees <span style="color:#f92672">=</span> starting_angle
+		area<span style="color:#f92672">.</span>rotation_degrees <span style="color:#f92672">=</span> starting_angle
+</code></pre></div><p>You notice that we set the <em>Shape</em>&rsquo;s, <em>Shadow</em>&rsquo;s, and <em>Area2D</em>&rsquo;s rotation independently. This way each will rotate around their own center, which is important for the <em>Shadow</em>, which is offset from the other shapes.</p>
+<p>As we want the rotation to be deterministic and based on the period we can utilize tweens. A <code>Tween</code> will properly interpolate between the start position and the end position. Let is define a function that handles one of these rotations:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> _start_next_rotation() <span style="color:#f92672">-&gt;</span> void:
+	<span style="color:#66d9ef">var</span> start_value :<span style="color:#f92672">=</span> deg2rad(starting_angle)
+	<span style="color:#66d9ef">var</span> end_value :<span style="color:#f92672">=</span> start_value <span style="color:#f92672">+</span> rotation_direction <span style="color:#f92672">*</span> TAU
+	tween<span style="color:#f92672">.</span>interpolate_property(shape, <span style="color:#e6db74">&#34;rotation&#34;</span>, start_value, end_value, rotation_period)
+	tween<span style="color:#f92672">.</span>interpolate_property(shadow, <span style="color:#e6db74">&#34;rotation&#34;</span>, start_value, end_value, rotation_period)
+	tween<span style="color:#f92672">.</span>interpolate_property(area, <span style="color:#e6db74">&#34;rotation&#34;</span>, start_value, end_value, rotation_period)
+	tween<span style="color:#f92672">.</span>start()
+</code></pre></div><p>This function first takes the <code>starting_angle</code> and converts it into radians. If then calculates a target value as one full rotation (i.e., one <code>TAU</code>) before or after this value (depending on the factor set by the <code>rotation_direction</code>). Then we tell the tween to interpolate this value (linearly, as is the default) between this start and and rotation for a number of seconds set by <code>rotation_period</code> on each of our relevant child nodes (<em>Shape</em>, <em>Shadow</em>, and <em>Area2D</em>). As a last instruction we start the tween.</p>
+<p>All that is left is to start this rotation once the game starts. To achieve this, we update our <code>_ready()</code> function like this:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> _ready() <span style="color:#f92672">-&gt;</span> void:
+	_update_values()
+	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> Engine<span style="color:#f92672">.</span>editor_hint:
+		tween<span style="color:#f92672">.</span>connect(<span style="color:#e6db74">&#34;tween_all_completed&#34;</span>, self, <span style="color:#e6db74">&#34;_start_next_rotation&#34;</span>)
+		_start_next_rotation()
+</code></pre></div><p>As mentioned earlier, we do not want the object to rotate in the editor, so we first check if we are in the editor. If we are sure that we are not, we connect the <em>Tween</em>&rsquo;s <code>tween_all_completed</code> signal to our <code>_start_next_rotation()</code> function. That way the completion of one rotation will trigger the start of the next. Lastly, we start the first rotation.</p>
+<p><img src="/images/posts/procedural_shapes/Rotation.gif" alt="The rotating Shape"></p>
+<h2 id="afterword">Afterword</h2>
+<p>This concludes this tutorial (which got longer than I anticipated). If you have questions, noticed an error, or just want to say hi, you can find me on Twitter <a href="https://twitter.com/SelinaDev">@SelinaDev</a>, or drop by <a href="https://discord.gg/KrnB6mJyMk">my Discord</a>.
+Also feel free to tell me if there is a topic you want me to tackle an another tutorial, I am always happy about ideas.</p>
+<h2 id="complete-code">Complete Code</h2>
+<p>For easy reference, here is the complete code.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">tool</span>
+class_name CShape
+<span style="color:#66d9ef">extends</span> <span style="color:#a6e22e">Node2D</span>
+
+<span style="color:#66d9ef">enum</span> directions {Clockwise <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>, Counterclockwise <span style="color:#f92672">=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>}
+
+<span style="color:#66d9ef">export</span> (<span style="color:#a6e22e">float</span>) <span style="color:#66d9ef">var</span> radius_inner :<span style="color:#f92672">=</span> <span style="color:#ae81ff">100.0</span> <span style="color:#66d9ef">setget</span> set_radius_inner
+<span style="color:#66d9ef">export</span> (<span style="color:#a6e22e">float</span>) <span style="color:#66d9ef">var</span> radius_outer :<span style="color:#f92672">=</span> <span style="color:#ae81ff">150.0</span> <span style="color:#66d9ef">setget</span> set_radius_outer
+<span style="color:#66d9ef">export</span> (<span style="color:#a6e22e">float</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">360</span>) <span style="color:#66d9ef">var</span> angle_opening :<span style="color:#f92672">=</span> <span style="color:#ae81ff">45.0</span> <span style="color:#66d9ef">setget</span> set_angle_opening
+<span style="color:#66d9ef">export</span> (<span style="color:#a6e22e">int</span>) <span style="color:#66d9ef">var</span> num_circle_segments :<span style="color:#f92672">=</span> <span style="color:#ae81ff">64</span> <span style="color:#66d9ef">setget</span> set_num_circle_segments
+<span style="color:#66d9ef">export</span> (<span style="color:#a6e22e">Color</span>) <span style="color:#66d9ef">var</span> color :<span style="color:#f92672">=</span> <span style="color:#a6e22e">Color</span><span style="color:#f92672">.</span>blue <span style="color:#66d9ef">setget</span> set_color
+<span style="color:#66d9ef">export</span> (<span style="color:#a6e22e">Color</span>) <span style="color:#66d9ef">var</span> shadow_color :<span style="color:#f92672">=</span> <span style="color:#a6e22e">Color</span><span style="color:#f92672">.</span>black <span style="color:#66d9ef">setget</span> set_shadow_color
+<span style="color:#66d9ef">export</span> (<span style="color:#a6e22e">Vector2</span>) <span style="color:#66d9ef">var</span> shadow_offset :<span style="color:#f92672">=</span> <span style="color:#a6e22e">Vector2</span>(<span style="color:#ae81ff">5.0</span>, <span style="color:#ae81ff">5.0</span>) <span style="color:#66d9ef">setget</span> set_shadow_offset
+<span style="color:#66d9ef">export</span> (<span style="color:#a6e22e">float</span>) <span style="color:#66d9ef">var</span> rotation_period :<span style="color:#f92672">=</span> <span style="color:#ae81ff">10.0</span>
+<span style="color:#66d9ef">export</span> (<span style="color:#a6e22e">float</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">360</span>) <span style="color:#66d9ef">var</span> starting_angle :<span style="color:#f92672">=</span> <span style="color:#ae81ff">0.0</span> <span style="color:#66d9ef">setget</span> set_starting_angle
+<span style="color:#66d9ef">export</span> (directions) <span style="color:#66d9ef">var</span> rotation_direction: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> directions<span style="color:#f92672">.</span>Clockwise
+
+<span style="color:#66d9ef">onready</span> <span style="color:#66d9ef">var</span> shadow: <span style="color:#a6e22e">Polygon2D</span> <span style="color:#f92672">=</span> <span style="color:#f92672">$</span>Shadow
+<span style="color:#66d9ef">onready</span> <span style="color:#66d9ef">var</span> shape: <span style="color:#a6e22e">Polygon2D</span> <span style="color:#f92672">=</span> <span style="color:#f92672">$</span><span style="color:#a6e22e">Shape</span>
+<span style="color:#66d9ef">onready</span> <span style="color:#66d9ef">var</span> area: <span style="color:#a6e22e">Area2D</span> <span style="color:#f92672">=</span> <span style="color:#f92672">$</span><span style="color:#a6e22e">Area2D</span>
+<span style="color:#66d9ef">onready</span> <span style="color:#66d9ef">var</span> area_shape: <span style="color:#a6e22e">CollisionPolygon2D</span> <span style="color:#f92672">=</span> <span style="color:#f92672">$</span><span style="color:#a6e22e">Area2D</span><span style="color:#f92672">/</span><span style="color:#a6e22e">CollisionPolygon2D</span>
+<span style="color:#66d9ef">onready</span> <span style="color:#66d9ef">var</span> tween: <span style="color:#a6e22e">Tween</span> <span style="color:#f92672">=</span> <span style="color:#f92672">$</span><span style="color:#a6e22e">Tween</span>
+
+
+<span style="color:#66d9ef">func</span> _ready() <span style="color:#f92672">-&gt;</span> void:
+	_update_values()
+	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> Engine<span style="color:#f92672">.</span>editor_hint:
+		tween<span style="color:#f92672">.</span>connect(<span style="color:#e6db74">&#34;tween_all_completed&#34;</span>, self, <span style="color:#e6db74">&#34;_start_next_rotation&#34;</span>)
+		_start_next_rotation()
+
+
+<span style="color:#66d9ef">func</span> _update_values() <span style="color:#f92672">-&gt;</span> void:
+	_update_shape()
+	shape<span style="color:#f92672">.</span>color <span style="color:#f92672">=</span> color
+	shadow<span style="color:#f92672">.</span>color <span style="color:#f92672">=</span> shadow_color
+	shadow<span style="color:#f92672">.</span>position <span style="color:#f92672">=</span> shadow_offset
+
+
+<span style="color:#66d9ef">func</span> _update_shape() <span style="color:#f92672">-&gt;</span> void:
+	<span style="color:#66d9ef">var</span> polygon :<span style="color:#f92672">=</span> _calculate_polygon()
+	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> is_inside_tree():
+		yield(self, <span style="color:#e6db74">&#34;ready&#34;</span>)
+	shape<span style="color:#f92672">.</span>polygon <span style="color:#f92672">=</span> polygon
+	shadow<span style="color:#f92672">.</span>polygon <span style="color:#f92672">=</span> polygon
+	area_shape<span style="color:#f92672">.</span>polygon <span style="color:#f92672">=</span> polygon
+
+
+<span style="color:#66d9ef">func</span> _calculate_polygon() <span style="color:#f92672">-&gt;</span> PoolVector2Array:
+	<span style="color:#66d9ef">var</span> array :<span style="color:#f92672">=</span> []
+
+	<span style="color:#66d9ef">var</span> half_opning_rad :<span style="color:#f92672">=</span> deg2rad(angle_opening <span style="color:#f92672">/</span> <span style="color:#ae81ff">2.0</span>)
+	<span style="color:#66d9ef">var</span> angle_step_size :<span style="color:#f92672">=</span> TAU <span style="color:#f92672">/</span> num_circle_segments
+
+	array<span style="color:#f92672">.</span>append(polar2cartesian(radius_outer, half_opning_rad))
+
+	<span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> num_circle_segments:
+		<span style="color:#66d9ef">var</span> phi: <span style="color:#a6e22e">float</span> <span style="color:#f92672">=</span> i <span style="color:#f92672">*</span> angle_step_size
+		<span style="color:#66d9ef">if</span> phi <span style="color:#f92672">&lt;=</span> half_opning_rad:
+			<span style="color:#66d9ef">continue</span>
+		<span style="color:#66d9ef">if</span> phi <span style="color:#f92672">&gt;=</span> TAU <span style="color:#f92672">-</span> half_opning_rad:
+			<span style="color:#66d9ef">break</span>
+		array<span style="color:#f92672">.</span>append(polar2cartesian(radius_outer, phi))
+
+	array<span style="color:#f92672">.</span>append(polar2cartesian(radius_outer, TAU <span style="color:#f92672">-</span> half_opning_rad))
+	array<span style="color:#f92672">.</span>append(polar2cartesian(radius_inner, TAU <span style="color:#f92672">-</span> half_opning_rad))
+
+	<span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> num_circle_segments:
+		<span style="color:#66d9ef">var</span> phi: <span style="color:#a6e22e">float</span> <span style="color:#f92672">=</span> TAU <span style="color:#f92672">-</span> i <span style="color:#f92672">*</span> angle_step_size
+		<span style="color:#66d9ef">if</span> phi <span style="color:#f92672">&gt;=</span> TAU <span style="color:#f92672">-</span> half_opning_rad:
+			<span style="color:#66d9ef">continue</span>
+		<span style="color:#66d9ef">if</span> phi <span style="color:#f92672">&lt;=</span> half_opning_rad:
+			<span style="color:#66d9ef">break</span>
+		array<span style="color:#f92672">.</span>append(polar2cartesian(radius_inner, phi))
+
+	array<span style="color:#f92672">.</span>append(polar2cartesian(radius_inner, half_opning_rad))
+
+	<span style="color:#66d9ef">return</span> PoolVector2Array(array)
+
+
+<span style="color:#66d9ef">func</span> _start_next_rotation() <span style="color:#f92672">-&gt;</span> void:
+	<span style="color:#66d9ef">var</span> start_value :<span style="color:#f92672">=</span> deg2rad(starting_angle)
+	<span style="color:#66d9ef">var</span> end_value :<span style="color:#f92672">=</span> start_value <span style="color:#f92672">+</span> rotation_direction <span style="color:#f92672">*</span> TAU
+	tween<span style="color:#f92672">.</span>interpolate_property(shape, <span style="color:#e6db74">&#34;rotation&#34;</span>, start_value, end_value, rotation_period)
+	tween<span style="color:#f92672">.</span>interpolate_property(shadow, <span style="color:#e6db74">&#34;rotation&#34;</span>, start_value, end_value, rotation_period)
+	tween<span style="color:#f92672">.</span>interpolate_property(area, <span style="color:#e6db74">&#34;rotation&#34;</span>, start_value, end_value, rotation_period)
+	tween<span style="color:#f92672">.</span>start()
+
+
+<span style="color:#66d9ef">func</span> set_radius_inner(value: <span style="color:#a6e22e">float</span>) <span style="color:#f92672">-&gt;</span> void:
+	<span style="color:#66d9ef">if</span> value <span style="color:#f92672">&gt;=</span> <span style="color:#ae81ff">0</span> <span style="color:#f92672">and</span> value <span style="color:#f92672">&lt;</span> radius_outer:
+		radius_inner <span style="color:#f92672">=</span> value
+		_update_shape()
+
+
+<span style="color:#66d9ef">func</span> set_radius_outer(value: <span style="color:#a6e22e">float</span>) <span style="color:#f92672">-&gt;</span> void:
+	<span style="color:#66d9ef">if</span> value <span style="color:#f92672">&gt;</span> radius_inner:
+		radius_outer <span style="color:#f92672">=</span> value
+		_update_shape()
+
+
+<span style="color:#66d9ef">func</span> set_angle_opening(value: <span style="color:#a6e22e">float</span>) <span style="color:#f92672">-&gt;</span> void:
+	<span style="color:#66d9ef">if</span> value <span style="color:#f92672">&gt;=</span> <span style="color:#ae81ff">0</span> <span style="color:#f92672">and</span> value <span style="color:#f92672">&lt;=</span> <span style="color:#ae81ff">360</span>:
+		angle_opening <span style="color:#f92672">=</span> value
+		_update_shape()
+
+
+<span style="color:#66d9ef">func</span> set_num_circle_segments(value: <span style="color:#a6e22e">int</span>) <span style="color:#f92672">-&gt;</span> void:
+	<span style="color:#66d9ef">if</span> value <span style="color:#f92672">&gt;=</span> <span style="color:#ae81ff">3</span>:
+		num_circle_segments <span style="color:#f92672">=</span> value
+		_update_shape()
+
+
+<span style="color:#66d9ef">func</span> set_color(value: <span style="color:#a6e22e">Color</span>) <span style="color:#f92672">-&gt;</span> void:
+	color <span style="color:#f92672">=</span> value
+	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> is_inside_tree():
+		<span style="color:#66d9ef">return</span>
+	shape<span style="color:#f92672">.</span>color <span style="color:#f92672">=</span> color
+
+
+<span style="color:#66d9ef">func</span> set_shadow_color(value: <span style="color:#a6e22e">Color</span>) <span style="color:#f92672">-&gt;</span> void:
+	shadow_color <span style="color:#f92672">=</span> value
+	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> is_inside_tree():
+		<span style="color:#66d9ef">return</span>
+	shadow<span style="color:#f92672">.</span>color <span style="color:#f92672">=</span> shadow_color
+
+
+<span style="color:#66d9ef">func</span> set_shadow_offset(value: <span style="color:#a6e22e">Vector2</span>) <span style="color:#f92672">-&gt;</span> void:
+	shadow_offset <span style="color:#f92672">=</span> value
+	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> is_inside_tree():
+		<span style="color:#66d9ef">return</span>
+	shadow<span style="color:#f92672">.</span>position <span style="color:#f92672">=</span> shadow_offset
+
+
+<span style="color:#66d9ef">func</span> set_starting_angle(value: <span style="color:#a6e22e">float</span>) <span style="color:#f92672">-&gt;</span> void:
+	<span style="color:#66d9ef">if</span> value <span style="color:#f92672">&gt;=</span> <span style="color:#ae81ff">0</span> <span style="color:#f92672">and</span> value <span style="color:#f92672">&lt;=</span> <span style="color:#ae81ff">360</span>:
+		starting_angle <span style="color:#f92672">=</span> value
+		<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> is_inside_tree():
+			<span style="color:#66d9ef">return</span>
+		shape<span style="color:#f92672">.</span>rotation_degrees <span style="color:#f92672">=</span> starting_angle
+		shadow<span style="color:#f92672">.</span>rotation_degrees <span style="color:#f92672">=</span> starting_angle
+		area<span style="color:#f92672">.</span>rotation_degrees <span style="color:#f92672">=</span> starting_angle
+</code></pre></div>
+
+
+
+      </main>
+  </div>
+  </body>
+</html>
