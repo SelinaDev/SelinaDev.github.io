@@ -10,8 +10,8 @@
 
   
     
-    <meta name="description" content="In this tutorial I will tackle how to create procedural shapes in Godot, using GDScipt and Polygon2D nodes. I will go into a bit of detail about some other topics as well, such as tool scrips and setter functions.
-A while back, Patrick Zoch Alves (@PatrickZochAlve), a fellow gamedev, asked me to try out his then new game “Color Maze” (you can try it out for yourself on GOTM: https://gotm.io/klustergames/colormaze). I like the concept, and the overall clean design of it.">
+    <meta name="description" content="In this tutorial I will tackle how to create procedural shapes in Godot, using GDScipt and Polygon2D nodes. I will go into a bit of detail about some other topics as well, such as tool scripts and setter functions.
+A while back, Patrick Zoch Alves (@PatrickZochAlve), a fellow gamedev, asked me to try out his then-new game “Color Maze” (you can try it out for yourself on GOTM: https://gotm.io/klustergames/colormaze). I like the concept, and the overall clean design of it.">
   
 
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
@@ -186,9 +186,9 @@ A while back, Patrick Zoch Alves (@PatrickZochAlve), a fellow gamedev, asked me 
 
 
 
-<p>In this tutorial I will tackle how to create procedural shapes in Godot, using GDScipt and Polygon2D nodes. I will go into a bit of detail about some other topics as well, such as tool scrips and setter functions.</p>
-<p>A while back, Patrick Zoch Alves (<a href="https://twitter.com/PatrickZochAlve">@PatrickZochAlve</a>), a fellow gamedev, asked me to try out his then new game <em>&ldquo;Color Maze&rdquo;</em> (you can try it out for yourself on GOTM: <a href="https://gotm.io/klustergames/colormaze">https://gotm.io/klustergames/colormaze</a>). I like the concept, and the overall clean design of it. Unfortunately, however, this clean design, using geometric shapes, becomes (unintentionally) inconsistent due to pixelation.</p>
-<p>The rectangle shapes, which align with the pixel grid, are not affected, but the effect is very noticable for round shapes, especially when they are upscaled in fullscreen mode. See the images below. Especially in the first image you can see how the difference between the very clear rectangle and the pixelated ring around it creates (probably unwanted) visual contrast.</p>
+<p>In this tutorial I will tackle how to create procedural shapes in Godot, using GDScipt and Polygon2D nodes. I will go into a bit of detail about some other topics as well, such as tool scripts and setter functions.</p>
+<p>A while back, Patrick Zoch Alves (<a href="https://twitter.com/PatrickZochAlve">@PatrickZochAlve</a>), a fellow gamedev, asked me to try out his then-new game <em>&ldquo;Color Maze&rdquo;</em> (you can try it out for yourself on GOTM: <a href="https://gotm.io/klustergames/colormaze">https://gotm.io/klustergames/colormaze</a>). I like the concept, and the overall clean design of it. Unfortunately, however, this clean design, using geometric shapes, becomes (unintentionally) inconsistent due to pixelation.</p>
+<p>The rectangle shapes, which align with the pixel grid, are not affected, but the effect is very noticeable for round shapes, especially when they are upscaled in fullscreen mode. See the images below. Especially in the first image you can see how the difference between the very clear rectangle and the pixelated ring around it creates (probably unwanted) visual contrast.</p>
 <p><img src="/images/posts/procedural_shapes/ScreenshotColorMaze1.png" alt="C-shaped ring"></p>
 <p><img src="/images/posts/procedural_shapes/ScreenshotColorMaze2.png" alt="circular target"></p>
 <p>So how could we prevent this? As always there are likely several ways to tackle this problem. My solution would be to not use pixels at all, but recreate that shape as a polygon. This has several advantages:</p>
