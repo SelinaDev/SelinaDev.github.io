@@ -6,7 +6,17 @@
     <description>Recent content on SelinaDev</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 16 Jan 2022 08:00:00 +0100</lastBuildDate><atom:link href="https://selinadev.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sat, 19 Feb 2022 14:55:00 +0100</lastBuildDate><atom:link href="https://selinadev.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Godot Tutorial: Scene Transitions</title>
+      <link>https://selinadev.github.io/02-scene-transitions/</link>
+      <pubDate>Sat, 19 Feb 2022 14:55:00 +0100</pubDate>
+      
+      <guid>https://selinadev.github.io/02-scene-transitions/</guid>
+      <description>In this tutorial I will tackle scene transitions in three steps of complexity. The first will be a simple fade to black. The second will use a wipe to black based on a shader, and the third and final one will be a wipe from one scene directly to the other.
+Dummy Assets To make this visually somewhat appealing I will be using the following two photographs by Peter Janzen for this tutorial.</description>
+    </item>
+    
     <item>
       <title>Godot Tutorial: Creating shapes in code</title>
       <link>https://selinadev.github.io/01-crereating-procedural-shapes/</link>
