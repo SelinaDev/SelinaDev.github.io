@@ -2,19 +2,31 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
+    <loc>https://selinadev.github.io/tags/devblog/</loc>
+    <lastmod>2023-05-16T17:00:00+01:00</lastmod>
+  </url><url>
+    <loc>https://selinadev.github.io/tags/dungeon-crawler/</loc>
+    <lastmod>2023-05-16T17:00:00+01:00</lastmod>
+  </url><url>
+    <loc>https://selinadev.github.io/04-dungeon-crawler-01/</loc>
+    <lastmod>2023-05-16T17:00:00+01:00</lastmod>
+  </url><url>
+    <loc>https://selinadev.github.io/tags/godot4/</loc>
+    <lastmod>2023-05-16T17:00:00+01:00</lastmod>
+  </url><url>
+    <loc>https://selinadev.github.io/post/</loc>
+    <lastmod>2023-05-16T17:00:00+01:00</lastmod>
+  </url><url>
+    <loc>https://selinadev.github.io/</loc>
+    <lastmod>2023-05-16T17:00:00+01:00</lastmod>
+  </url><url>
+    <loc>https://selinadev.github.io/tags/</loc>
+    <lastmod>2023-05-16T17:00:00+01:00</lastmod>
+  </url><url>
     <loc>https://selinadev.github.io/03-dropdown-menu/</loc>
     <lastmod>2023-04-25T14:55:00+01:00</lastmod>
   </url><url>
     <loc>https://selinadev.github.io/tags/godot3/</loc>
-    <lastmod>2023-04-25T14:55:00+01:00</lastmod>
-  </url><url>
-    <loc>https://selinadev.github.io/post/</loc>
-    <lastmod>2023-04-25T14:55:00+01:00</lastmod>
-  </url><url>
-    <loc>https://selinadev.github.io/</loc>
-    <lastmod>2023-04-25T14:55:00+01:00</lastmod>
-  </url><url>
-    <loc>https://selinadev.github.io/tags/</loc>
     <lastmod>2023-04-25T14:55:00+01:00</lastmod>
   </url><url>
     <loc>https://selinadev.github.io/tags/tutorials/</loc>
