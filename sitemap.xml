@@ -2,6 +2,27 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
+    <loc>https://selinadev.github.io/tags/godot4/</loc>
+    <lastmod>2023-07-04T08:00:00+01:00</lastmod>
+  </url><url>
+    <loc>https://selinadev.github.io/post/</loc>
+    <lastmod>2023-07-04T08:00:00+01:00</lastmod>
+  </url><url>
+    <loc>https://selinadev.github.io/tags/roguelike/</loc>
+    <lastmod>2023-07-04T08:00:00+01:00</lastmod>
+  </url><url>
+    <loc>https://selinadev.github.io/</loc>
+    <lastmod>2023-07-04T08:00:00+01:00</lastmod>
+  </url><url>
+    <loc>https://selinadev.github.io/tags/</loc>
+    <lastmod>2023-07-04T08:00:00+01:00</lastmod>
+  </url><url>
+    <loc>https://selinadev.github.io/tags/tutorial/</loc>
+    <lastmod>2023-07-04T08:00:00+01:00</lastmod>
+  </url><url>
+    <loc>https://selinadev.github.io/05-rogueliketutorial-01/</loc>
+    <lastmod>2023-07-04T08:00:00+01:00</lastmod>
+  </url><url>
     <loc>https://selinadev.github.io/tags/devblog/</loc>
     <lastmod>2023-05-16T17:00:00+01:00</lastmod>
   </url><url>
@@ -9,18 +30,6 @@
     <lastmod>2023-05-16T17:00:00+01:00</lastmod>
   </url><url>
     <loc>https://selinadev.github.io/04-dungeon-crawler-01/</loc>
-    <lastmod>2023-05-16T17:00:00+01:00</lastmod>
-  </url><url>
-    <loc>https://selinadev.github.io/tags/godot4/</loc>
-    <lastmod>2023-05-16T17:00:00+01:00</lastmod>
-  </url><url>
-    <loc>https://selinadev.github.io/post/</loc>
-    <lastmod>2023-05-16T17:00:00+01:00</lastmod>
-  </url><url>
-    <loc>https://selinadev.github.io/</loc>
-    <lastmod>2023-05-16T17:00:00+01:00</lastmod>
-  </url><url>
-    <loc>https://selinadev.github.io/tags/</loc>
     <lastmod>2023-05-16T17:00:00+01:00</lastmod>
   </url><url>
     <loc>https://selinadev.github.io/03-dropdown-menu/</loc>
@@ -40,11 +49,5 @@
   </url><url>
     <loc>https://selinadev.github.io/about/</loc>
     <lastmod>2022-01-15T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://selinadev.github.io/tags/roguelike/</loc>
-  </url><url>
-    <loc>https://selinadev.github.io/tags/tutorial/</loc>
-  </url><url>
-    <loc>https://selinadev.github.io/05-rogueliketutorial-01/</loc>
   </url>
 </urlset>

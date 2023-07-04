@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>roguelike on SelinaDev</title>
+    <link>https://selinadev.github.io/tags/roguelike/</link>
+    <description>Recent content in roguelike on SelinaDev</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Tue, 04 Jul 2023 08:00:00 +0100</lastBuildDate><atom:link href="https://selinadev.github.io/tags/roguelike/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Yet Another Roguelike Tutorial, Parts 0 and 1</title>
+      <link>https://selinadev.github.io/05-rogueliketutorial-01/</link>
+      <pubDate>Tue, 04 Jul 2023 08:00:00 +0100</pubDate>
+      
+      <guid>https://selinadev.github.io/05-rogueliketutorial-01/</guid>
+      <description>Here i&amp;rsquo;ll start an attempt for something I&amp;rsquo;ve wanted to do for a long time. I&amp;rsquo;ve been interested in traditional roguelikes for a while now. Given that I&amp;rsquo;m also interested in game development, it should not come as a surprise that I have looked into how to make a roguelike as well. There is a very nice and reasonably comprehensive tutorial online, that exists in multiple versions. One of the more well known versions has to be the one at Roguelike Tutorials.</description>
+    </item>
+    
+  </channel>
+</rss>
