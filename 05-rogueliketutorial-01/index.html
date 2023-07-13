@@ -95,7 +95,7 @@
 <h1 id="part-0-setting-up">Part 0: Setting Up</h1>
 <p>Based on: <a href="http://rogueliketutorials.com/tutorials/tcod/v2/part-0/">http://rogueliketutorials.com/tutorials/tcod/v2/part-0/</a></p>
 <p>There&rsquo;s not a lot going on in this tutorial, even less than in the original one, so I&rsquo;ll integrate it into one. I am using Godot 4.0.3, but at the time of this writing Godot 4.1 is just around the corner. Either should be fine for following this. I will write all of this tutorial in GDScript.</p>
-<p>I am using Kenney&rsquo;s <em>1-Bit Pack</em> for this, which is by far my favorite pack, as for it&rsquo;s versatility and flexibility. You can find it here: <a href="https://kenney.nl/assets/1-bit-pack">https://kenney.nl/assets/1-bit-pack</a>. But you can also download all project stages from my Github repository to this tutorial, and that pack is included in the folder for part 0 (<a href="https://github.com/SelinaDev/Godot-Roguelike-Tutorial)">https://github.com/SelinaDev/Godot-Roguelike-Tutorial)</a>.</p>
+<p>I am using Kenney&rsquo;s <em>1-Bit Pack</em> for this, which is by far my favorite pack, as for it&rsquo;s versatility and flexibility. You can find it here: <a href="https://kenney.nl/assets/1-bit-pack">https://kenney.nl/assets/1-bit-pack</a>. But you can also download all project stages from my Github repository to this tutorial, and that pack is included in the folder for part 0 ( <a href="https://github.com/SelinaDev/Godot-Roguelike-Tutorial">https://github.com/SelinaDev/Godot-Roguelike-Tutorial</a> ).</p>
 <p>For reference, all I&rsquo;m using from the pack is the file <em>monochrome_packed.png</em>, and I&rsquo;ve put it in the directory <em>res://assets/images/kenney_1-bit-pack/</em>. I will probably also need a font, once we get to printing text, but that will follow at a later date. For now, that is all the setup we need.</p>
 <p>Before I move on to the actual start of the tutorial I want to mention that while I&rsquo;m trying to follow the sprit and topics of the tutorial I&rsquo;m basing this on, there will be some bigger differences. Where necessary I will deviate from the original to make this tutorial more compatible with how Godot works. I hope I can get a good compromise.</p>
 <hr>
@@ -128,7 +128,7 @@
 
 </code></pre></div><p>We give it a <code>class_name</code> so we can easily call it from our code. We define 16x16 as a constant tile size, as that&rsquo;s the size of the individual icons in the asset pack. If you decide to follow this tutorial with a different set of icons that have a different scale, then this constant is all you should have to change to make that work.</p>
 <p>Next we have two static functions. Static means we can call these functions directly on the class, without the need to instance it. It will just be a publicly accessible function in our code. These functions take in either a position in the world or on the grid and convert it to the other one by either multiplying with or dividing by the tile size. That&rsquo;s it, but we will use these a lot further down the line.</p>
-<p>After dealing with the grid we will start with the foundation for a very interesting design pattern, the command pattern (read more at <a href="https://gameprogrammingpatterns.com/command.html)">https://gameprogrammingpatterns.com/command.html)</a>. Here I will use the term &ldquo;action&rdquo;, as that&rsquo;s what it&rsquo;s called in the original tutorial. So, create a new script under <em>res://src/Entities/Actors/Actions/action.gd</em>. For now all we need is the following:</p>
+<p>After dealing with the grid we will start with the foundation for a very interesting design pattern, the command pattern (read more at <a href="https://gameprogrammingpatterns.com/command.html">https://gameprogrammingpatterns.com/command.html</a> ). Here I will use the term &ldquo;action&rdquo;, as that&rsquo;s what it&rsquo;s called in the original tutorial. So, create a new script under <em>res://src/Entities/Actors/Actions/action.gd</em>. For now all we need is the following:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd">class_name Action
 <span style="color:#66d9ef">extends</span> RefCounted
 </code></pre></div><p>Create a script called <em>escape_action.gd</em> in the same folder, with the following content:</p>
@@ -208,6 +208,7 @@
   
   </div>
 </div>
+<p>You can find part 2 here: <a href="https://selinadev.github.io/06-rogueliketutorial-02/">https://selinadev.github.io/06-rogueliketutorial-02/</a></p>
 
 
 

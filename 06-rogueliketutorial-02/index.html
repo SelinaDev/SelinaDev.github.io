@@ -10,7 +10,7 @@
 
   
     
-    <meta name="description" content="Part 2: Generic Entity and the Map Continuing from the last tutorial (https://selinadev.github.io/05-rogueliketutorial-01/), we will now move to creating a more generic entity, and then start on the structure of our map.
+    <meta name="description" content="Part 2: Generic Entity and the Map Continuing from the last tutorial ( https://selinadev.github.io/05-rogueliketutorial-01/ ), we will now move to creating a more generic entity, and then start on the structure of our map.
 So let’s start with creating out entity class. I want to point out that my approach differs a bit from the original tutorial. In that tutorial all properties of an entity are set in its constructor. A later part eventually uses a factory pattern to create a few prototype entities in code and then spawn copies of them.">
   
 
@@ -90,7 +90,7 @@ So let’s start with creating out entity class. I want to point out that my app
 
 
 <h1 id="part-2-generic-entity-and-the-map">Part 2: Generic Entity and the Map</h1>
-<p>Continuing from the last tutorial (<a href="https://selinadev.github.io/05-rogueliketutorial-01/)">https://selinadev.github.io/05-rogueliketutorial-01/)</a>, we will now move to creating a more generic entity, and then start on the structure of our map.</p>
+<p>Continuing from the last tutorial ( <a href="https://selinadev.github.io/05-rogueliketutorial-01/">https://selinadev.github.io/05-rogueliketutorial-01/</a> ), we will now move to creating a more generic entity, and then start on the structure of our map.</p>
 <p>So let&rsquo;s start with creating out entity class. I want to point out that my approach differs a bit from the original tutorial. In that tutorial all properties of an entity are set in its constructor. A later part eventually uses a factory pattern to create a few prototype entities in code and then spawn copies of them. However, if we have a range of properties that we want to slot into entities the common approach in Godot is to use resources. So what we&rsquo;ll do is we&rsquo;ll create an <code>EntityDefinition</code> resource and set all the properties there. We only have the player to define at the moment, so right now this might feel like unnecessary extra work, but the payoff should become apparent in Part 5. For now, let&rsquo;s create a new script under <em>res://src/Entities/entity_definition.gd</em>. It will have the following contents:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd">class_name EntityDefinition
 <span style="color:#66d9ef">extends</span> <span style="color:#a6e22e">Resource</span>
