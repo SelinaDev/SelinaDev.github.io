@@ -6,7 +6,16 @@
     <description>Recent content on SelinaDev</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Tue, 11 Jul 2023 08:00:00 +0100</lastBuildDate><atom:link href="https://selinadev.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Thu, 13 Jul 2023 08:00:00 +0100</lastBuildDate><atom:link href="https://selinadev.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Yet Another Roguelike Tutorial, Part 3</title>
+      <link>https://selinadev.github.io/07-rogueliketutorial-03/</link>
+      <pubDate>Thu, 13 Jul 2023 08:00:00 +0100</pubDate>
+      
+      <guid>https://selinadev.github.io/07-rogueliketutorial-03/</guid>
+      <description>Part 3: Generating a Dungeon This is the next part to https://selinadev.github.io/06-rogueliketutorial-02/. In this part we will handle dungeon generation. We will write a procedural dungeon generator that will give us a new dungeon each time. The algorithm we will use is relatively simple, we will place rooms in a way that they don&amp;rsquo;t overlap, then connect each room to the previous with an L-shaped tunnel. We can think about it like starting with solid stone and carving these structures out of it.</description>
+    </item>
+    
     <item>
       <title>Yet Another Roguelike Tutorial, Part 2</title>
       <link>https://selinadev.github.io/06-rogueliketutorial-02/</link>
