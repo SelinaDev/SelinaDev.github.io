@@ -176,7 +176,7 @@
     _carve_room(dungeon, room_1)
     _carve_room(dungeon, room_2)
 
-	_tunnel_between(room_1<span style="color:#f92672">.</span>get_center(), room_2<span style="color:#f92672">.</span>get_center())
+	_tunnel_between(dungeon, room_1<span style="color:#f92672">.</span>get_center(), room_2<span style="color:#f92672">.</span>get_center())
 
     <span style="color:#66d9ef">return</span> dungeon
 </code></pre></div><p>We now create a tunnel from the center of one room to the center of the other room. This won&rsquo;t affect the tiles that are already carved out as part of the rooms in any way, but between that you&rsquo;ll see a little stretch of tunnel between the rooms if you run the project now.</p>
@@ -263,7 +263,7 @@ rooms<span style="color:#f92672">.</span>append(new_room)
 	map<span style="color:#f92672">.</span>generate(player)
 </code></pre></div><p>You&rsquo;ll notice we now got rid of our dummy npc. Now as first step we create the player, and simply place it at the coordinate origin. Then we add it to the <strong>Entities</strong> node, and then pass it to <code>map.generate()</code>. Now everything is taken care of. You can now run the project and should see a bunch of rooms connected by corridors.</p>
 <p>We now did everything the original tutorial did for this part. However, when playing you probably can go outside the game window. The python tutorial creates the window at a specific size, and fits the map to perfectly fit that window. We could do something similar. However, I feel it&rsquo;s easier to just have a camera to follow the player. That&rsquo;s slightly challenging when you handle all the rendering yourself, but in Godot it&rsquo;s trivial, as we just need to attach a <code>Camera2D</code> node to our player.</p>
-<p>In order to be able to set the camera&rsquo;s properties in the editor we will make a nen <code>Camera2D</code> node as a child of <strong>Game</strong>. The only option we will edit for now is <em>Zoom</em>, which we will set to (2, 2). That will double the size of all our assets, and we can see a bit better what&rsquo;s going on. Now, to attach it to the player we once again modify the <code>_ready()</code> function in <em>game.gd</em>:</p>
+<p>In order to be able to set the camera&rsquo;s properties in the editor we will make a new <code>Camera2D</code> node as a child of <strong>Game</strong>. The only option we will edit for now is <em>Zoom</em>, which we will set to (2, 2). That will double the size of all our assets, and we can see a bit better what&rsquo;s going on. Now, to attach it to the player we once again modify the <code>_ready()</code> function in <em>game.gd</em>:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> _ready() <span style="color:#f92672">-&gt;</span> void:
 	player <span style="color:#f92672">=</span> Entity<span style="color:#f92672">.</span>new(Vector2i<span style="color:#f92672">.</span>ZERO, player_definition)
 	<span style="color:#66d9ef">var</span> camera: <span style="color:#a6e22e">Camera2D</span> <span style="color:#f92672">=</span> <span style="color:#f92672">$</span><span style="color:#a6e22e">Camera2D</span>
