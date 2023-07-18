@@ -6,7 +6,27 @@
     <description>Recent content in Posts on SelinaDev</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Thu, 13 Jul 2023 08:00:00 +0100</lastBuildDate><atom:link href="https://selinadev.github.io/post/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Tue, 18 Jul 2023 06:00:00 +0100</lastBuildDate><atom:link href="https://selinadev.github.io/post/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Yet Another Roguelike Tutorial, Part 4</title>
+      <link>https://selinadev.github.io/08-rogueliketutorial-04/</link>
+      <pubDate>Tue, 18 Jul 2023 06:00:00 +0100</pubDate>
+      
+      <guid>https://selinadev.github.io/08-rogueliketutorial-04/</guid>
+      <description>Part 4: Field of View Welcome back to the roguelike tutorial series. This tutorial will continue from where the last one left off. You can find the previous tutorial here: https://selinadev.github.io/07-rogueliketutorial-03/
+Last time we created a dungeon to explore, but we also noticed that it&amp;rsquo;s not that exciting to explore if you know where all the rooms are from the beginning (also those rooms are empty, but we&amp;rsquo;ll handle that next time, one thing at a time).</description>
+    </item>
+    
+    <item>
+      <title>Yet Another Roguelike Tutorial, Part 5</title>
+      <link>https://selinadev.github.io/09-rogueliketutorial-05/</link>
+      <pubDate>Tue, 18 Jul 2023 06:00:00 +0100</pubDate>
+      
+      <guid>https://selinadev.github.io/09-rogueliketutorial-05/</guid>
+      <description>Part 5: Placing Enemies and Kicking Them (harmlessly) Welcome back to the roguelike tutorial series. This tutorial will continue from where the last one left off. You can find the previous tutorial here: https://selinadev.github.io/08-rogueliketutorial-04/
+In this tutorial we will start spawning more entities. But first, we need a way to keep track of them. We already had an Entities node as child of Game. However, if you think about it, entities will be located within the game world, i.</description>
+    </item>
+    
     <item>
       <title>Yet Another Roguelike Tutorial, Part 3</title>
       <link>https://selinadev.github.io/07-rogueliketutorial-03/</link>
