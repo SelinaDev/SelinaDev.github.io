@@ -6,7 +6,17 @@
     <description>Recent content in godot4 on SelinaDev</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Tue, 18 Jul 2023 06:00:00 +0100</lastBuildDate><atom:link href="https://selinadev.github.io/tags/godot4/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 28 Jul 2023 18:00:00 +0100</lastBuildDate><atom:link href="https://selinadev.github.io/tags/godot4/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Yet Another Roguelike Tutorial, Part 6</title>
+      <link>https://selinadev.github.io/10-rogueliketutorial-06/</link>
+      <pubDate>Fri, 28 Jul 2023 18:00:00 +0100</pubDate>
+      
+      <guid>https://selinadev.github.io/10-rogueliketutorial-06/</guid>
+      <description>Part 6: Doing (and taking) some damage Welcome back to the roguelike tutorial series. This tutorial will continue from where the last one left off. You can find the previous tutorial here: https://selinadev.github.io/09-rogueliketutorial-05/
+Refactoring At this point the original tutorial refactors some code, and we will do so as well. Some things will turn out cleaner this way (and I will have to keep less differences in mind when converting the code).</description>
+    </item>
+    
     <item>
       <title>Yet Another Roguelike Tutorial, Part 4</title>
       <link>https://selinadev.github.io/08-rogueliketutorial-04/</link>
