@@ -6,7 +6,17 @@
     <description>Recent content in Posts on SelinaDev</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Fri, 28 Jul 2023 18:00:00 +0100</lastBuildDate><atom:link href="https://selinadev.github.io/post/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 31 Jul 2023 19:00:00 +0100</lastBuildDate><atom:link href="https://selinadev.github.io/post/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Yet Another Roguelike Tutorial, Part 7</title>
+      <link>https://selinadev.github.io/11-rogueliketutorial-07/</link>
+      <pubDate>Mon, 31 Jul 2023 19:00:00 +0100</pubDate>
+      
+      <guid>https://selinadev.github.io/11-rogueliketutorial-07/</guid>
+      <description>Part 7: Creating the Interface Welcome back to the roguelike tutorial series. This tutorial will continue from where the last one left off. You can find the previous tutorial here: https://selinadev.github.io/10-rogueliketutorial-06/
+A note beforehand: I noticed that in the current version the parser won&amp;rsquo;t properly reparse the project, or at least some changes are not registered from other scripts. Sometimes throughout writing this code that has caused issues for me, when something would report an error, or a new option was not shown in an exported variable.</description>
+    </item>
+    
     <item>
       <title>Yet Another Roguelike Tutorial, Part 6</title>
       <link>https://selinadev.github.io/10-rogueliketutorial-06/</link>
