@@ -6,7 +6,17 @@
     <description>Recent content in Posts on SelinaDev</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Mon, 31 Jul 2023 19:00:00 +0100</lastBuildDate><atom:link href="https://selinadev.github.io/post/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Thu, 10 Aug 2023 16:00:00 +0100</lastBuildDate><atom:link href="https://selinadev.github.io/post/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Yet Another Roguelike Tutorial, Part 8</title>
+      <link>https://selinadev.github.io/12-rogueliketutorial-08/</link>
+      <pubDate>Thu, 10 Aug 2023 16:00:00 +0100</pubDate>
+      
+      <guid>https://selinadev.github.io/12-rogueliketutorial-08/</guid>
+      <description>Part 8: Items and Inventory Welcome back to the roguelike tutorial series. This tutorial will continue from where the last one left off. You can find the previous tutorial here: https://selinadev.github.io/11-rogueliketutorial-07/
+This part will tackle items, as well as inventory. As you might expect this will involve some (basic) inventory UI. As such we will get a lot of use out of Godot&amp;rsquo;s UI system. We will depart from the way the original python tutorial does things, as we did in the last part, and I will show you some more Godot tricks you may or may not be familiar with.</description>
+    </item>
+    
     <item>
       <title>Yet Another Roguelike Tutorial, Part 7</title>
       <link>https://selinadev.github.io/11-rogueliketutorial-07/</link>
