@@ -54,7 +54,7 @@ Last time we created a dungeon to explore, but we also noticed that it&amp;rsquo
       
       <guid>https://selinadev.github.io/09-rogueliketutorial-05/</guid>
       <description>Part 5: Placing Enemies and Kicking Them (harmlessly) Welcome back to the roguelike tutorial series. This tutorial will continue from where the last one left off. You can find the previous tutorial here: https://selinadev.github.io/08-rogueliketutorial-04/
-In this tutorial we will start spawning more entities. But first, we need a way to keep track of them. We already had an Entities node as child of Game. However, if you think about it, entities will be located within the game world, i.</description>
+In this tutorial we will start spawning more entities. But first, we need a way to keep track of them, and coordinate all this with the tiles, that are also in the map. We already had an Entities node as child of Game.</description>
     </item>
     
     <item>
