@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
-  <meta name="generator" content="Hugo 0.92.2" />
+  <meta name="generator" content="Hugo 0.118.2">
   <link rel="canonical" href="https://selinadev.github.io/09-rogueliketutorial-05/">
 
   
@@ -92,237 +92,237 @@ In this tutorial we will start spawning more entities. But first, we need a way 
 <h1 id="part-5-placing-enemies-and-kicking-them-harmlessly">Part 5: Placing Enemies and Kicking Them (harmlessly)</h1>
 <p>Welcome back to the roguelike tutorial series. This tutorial will continue from where the last one left off. You can find the previous tutorial here: <a href="https://selinadev.github.io/08-rogueliketutorial-04/">https://selinadev.github.io/08-rogueliketutorial-04/</a></p>
 <p>In this tutorial we will start spawning more entities. But first, we need a way to keep track of them, and coordinate all this with the tiles, that are also in the map. We already had an <strong>Entities</strong> node as child of <strong>Game</strong>. However, if you think about it, entities will be located within the game world, i.e., on the map. They will relate to the map in other ways. For example, pathfinding will happen on the map, but will include information about the entities that exist there. Therefore we will have the map handle entities, and keep track of them. That way <code>MapData</code> should hold all the information we need to access for movement, fighting, etc. So, let&rsquo;s move the <strong>Entities</strong> node into the <strong>Map</strong> node. Create another <code>Node2D</code> as child of <strong>Map</strong>, and name it <strong>Tiles</strong>. Make sure the <strong>Tiles</strong> node appears <em>above</em> the <strong>Entities</strong> node in the scene tree, otherwise tiles would be drawn above entities. <strong>Game</strong> no longer has an <strong>Entities</strong> child, so remove <code>@onready ver entities: Node2D = $Entities</code> from <em>game.gd</em>. This and some other things will go into <em>map.gd</em>, so let&rsquo;s modify that:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#960050;background-color:#1e0010">@</span><span style="color:#66d9ef">onready</span> <span style="color:#66d9ef">var</span> tiles: <span style="color:#a6e22e">Node2D</span> <span style="color:#f92672">=</span> <span style="color:#f92672">$</span>Tiles
-<span style="color:#960050;background-color:#1e0010">@</span><span style="color:#66d9ef">onready</span> <span style="color:#66d9ef">var</span> entities: <span style="color:#a6e22e">Node2D</span> <span style="color:#f92672">=</span> <span style="color:#f92672">$</span>Entities
-<span style="color:#960050;background-color:#1e0010">@</span><span style="color:#66d9ef">onready</span> <span style="color:#66d9ef">var</span> dungeon_generator: DungeonGenerator <span style="color:#f92672">=</span> <span style="color:#f92672">$</span>DungeonGenerator
-<span style="color:#960050;background-color:#1e0010">@</span><span style="color:#66d9ef">onready</span> <span style="color:#66d9ef">var</span> field_of_view: FieldOfView <span style="color:#f92672">=</span> <span style="color:#f92672">$</span>FieldOfView
-
-
-<span style="color:#66d9ef">func</span> generate(player: Entity) <span style="color:#f92672">-&gt;</span> void:
-	map_data <span style="color:#f92672">=</span> dungeon_generator<span style="color:#f92672">.</span>generate_dungeon(player)
-	_place_tiles()
-	_place_entities()
-</code></pre></div><p>The variable section now includes the reference to the <strong>Tiles</strong> and <strong>Entities</strong> nodes, and we call a new function called <code>_place_entities()</code> in <code>generate</code>. This function looks as follows:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> _place_entities() <span style="color:#f92672">-&gt;</span> void:
-	<span style="color:#66d9ef">for</span> entity <span style="color:#f92672">in</span> map_data<span style="color:#f92672">.</span>entities:
-		entities<span style="color:#f92672">.</span>add_child(entity)
-</code></pre></div><p>With tiles now in their own node, we also need to modifiy <code>_place_entities()</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> _place_tiles() <span style="color:#f92672">-&gt;</span> void:
-	<span style="color:#66d9ef">for</span> tile <span style="color:#f92672">in</span> map_data<span style="color:#f92672">.</span>tiles:
-		tiles<span style="color:#f92672">.</span>add_child(tile)
-</code></pre></div><p>The dungeon generation algorithm will populate an array of entities in <code>map_data</code> for us. To actually place the entities we simply go through that array and add every member to the <strong>Entities</strong> node. The player will be part of that array, and thus will be added to the entities array in this function. That means we need to modify <em>game.gd</em> to no longer do that:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> _ready() <span style="color:#f92672">-&gt;</span> void:
-	player <span style="color:#f92672">=</span> Entity<span style="color:#f92672">.</span>new(Vector2i<span style="color:#f92672">.</span>ZERO, player_definition)
-	remove_child(camera)
-	player<span style="color:#f92672">.</span>add_child(camera)
-	map<span style="color:#f92672">.</span>generate(player)
-	map<span style="color:#f92672">.</span>update_fov(player<span style="color:#f92672">.</span>grid_position)
-</code></pre></div><p>You see we no longer add the player to the <strong>Entities</strong> node. We need to modify one more place before moving to the dungeon generation. Modify <em>map_data.gd</em> as follows:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">var</span> width: <span style="color:#a6e22e">int</span>
-<span style="color:#66d9ef">var</span> height: <span style="color:#a6e22e">int</span>
-<span style="color:#66d9ef">var</span> tiles: <span style="color:#a6e22e">Array</span>[Tile]
-<span style="color:#66d9ef">var</span> entities: <span style="color:#a6e22e">Array</span>[Entity]
-
-
-<span style="color:#66d9ef">func</span> _init(map_width: <span style="color:#a6e22e">int</span>, map_height: <span style="color:#a6e22e">int</span>) <span style="color:#f92672">-&gt;</span> void:
-	width <span style="color:#f92672">=</span> map_width
-	height <span style="color:#f92672">=</span> map_height
-	entities <span style="color:#f92672">=</span> []
-	_setup_tiles()
-</code></pre></div><p>Here we added an array for <code>entities</code> and in the <code>_init()</code> function initialized that to an empty array. With that out of the way, let&rsquo;s now move to the dungeon generation. First thing to do is have the dungeon generator handle adding the player to the map data. So in <em>dungeon_generator.gd</em> add a line for that at the top of <code>generate_dungeon()</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> generate_dungeon(player:Entity) <span style="color:#f92672">-&gt;</span> MapData:
-	<span style="color:#66d9ef">var</span> dungeon :<span style="color:#f92672">=</span> MapData<span style="color:#f92672">.</span>new(map_width, map_height)
-	dungeon<span style="color:#f92672">.</span>entities<span style="color:#f92672">.</span>append(player)
-</code></pre></div><p>Now we can extend extend the dungeon generation with some enemies. Add the following near the top of the script, next to our existing exported variables:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#960050;background-color:#1e0010">@</span>export_category(<span style="color:#e6db74">&#34;Monsters RNG&#34;</span>)
-<span style="color:#960050;background-color:#1e0010">@</span><span style="color:#66d9ef">export</span> <span style="color:#66d9ef">var</span> max_monsters_per_room <span style="color:#f92672">=</span> <span style="color:#ae81ff">2</span>
-</code></pre></div><p>We now have another configuration variable, which is the maximum amount of monsters the generator may place in each room. Inside <code>generate_dungeon()</code> add the following:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd">        <span style="color:#66d9ef">if</span> rooms<span style="color:#f92672">.</span>is_empty():
-			player<span style="color:#f92672">.</span>grid_position <span style="color:#f92672">=</span> new_room<span style="color:#f92672">.</span>get_center()
-		<span style="color:#66d9ef">else</span>:
-			_tunnel_between(dungeon, rooms<span style="color:#f92672">.</span>back()<span style="color:#f92672">.</span>get_center(), new_room<span style="color:#f92672">.</span>get_center())
-		
-		_place_entities(dungeon, new_room)
-		
-		rooms<span style="color:#f92672">.</span>append(new_room)
-</code></pre></div><p>This is the section near the end of the loop, and we added a call to <code>_place_entities()</code>. Let&rsquo;s now write that function:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> _place_entities(dungeon: MapData, room: Rect2i) <span style="color:#f92672">-&gt;</span> void:
-	<span style="color:#66d9ef">var</span> number_of_monsters: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> _rng<span style="color:#f92672">.</span>randi_range(<span style="color:#ae81ff">0</span>, max_monsters_per_room)
-	
-	<span style="color:#66d9ef">for</span> _i <span style="color:#f92672">in</span> number_of_monsters:
-		<span style="color:#66d9ef">var</span> x: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> _rng<span style="color:#f92672">.</span>randi_range(room<span style="color:#f92672">.</span>position<span style="color:#f92672">.</span>x <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>, room<span style="color:#f92672">.</span>end<span style="color:#f92672">.</span>x <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>)
-		<span style="color:#66d9ef">var</span> y: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> _rng<span style="color:#f92672">.</span>randi_range(room<span style="color:#f92672">.</span>position<span style="color:#f92672">.</span>y <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>, room<span style="color:#f92672">.</span>end<span style="color:#f92672">.</span>y <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>)
-		<span style="color:#66d9ef">var</span> new_entity_position :<span style="color:#f92672">=</span> Vector2i(x, y)
-		
-		<span style="color:#66d9ef">var</span> can_place <span style="color:#f92672">=</span> true
-		<span style="color:#66d9ef">for</span> entity <span style="color:#f92672">in</span> dungeon<span style="color:#f92672">.</span>entities:
-			<span style="color:#66d9ef">if</span> entity<span style="color:#f92672">.</span>grid_position <span style="color:#f92672">==</span> new_entity_position:
-				can_place <span style="color:#f92672">=</span> false
-				<span style="color:#66d9ef">break</span>
-		
-		<span style="color:#66d9ef">if</span> can_place:
-		    <span style="color:#66d9ef">var</span> new_entity: Entity
-			<span style="color:#66d9ef">if</span> _rng<span style="color:#f92672">.</span>randf() <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">0.8</span>:
-				new_entity <span style="color:#f92672">=</span> Entity<span style="color:#f92672">.</span>new(new_entity_position, entity_types<span style="color:#f92672">.</span>orc)
-			<span style="color:#66d9ef">else</span>:
-				new_entity <span style="color:#f92672">=</span> Entity<span style="color:#f92672">.</span>new(new_entity_position, entity_types<span style="color:#f92672">.</span>troll)
-			dungeon<span style="color:#f92672">.</span>entities<span style="color:#f92672">.</span>append(new_entity)
-</code></pre></div><p>It&rsquo;s a bit much, so let&rsquo;s look at the parts. First, as with the other functions in the dungeon generator we take in <code>dungeon</code> as an argument. We also get the <code>room</code> in which we will spawn the monsters. Then, as the first thing we decide how many monsters we actually want to (try to) place in this room, by taking a random number between 0 and the maximum we set earlier. Then we loop that many times through the code placing monsters.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">var</span> x: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> _rng<span style="color:#f92672">.</span>randi_range(room<span style="color:#f92672">.</span>position<span style="color:#f92672">.</span>x <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>, room<span style="color:#f92672">.</span>end<span style="color:#f92672">.</span>x <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>)
-<span style="color:#66d9ef">var</span> y: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> _rng<span style="color:#f92672">.</span>randi_range(room<span style="color:#f92672">.</span>position<span style="color:#f92672">.</span>y <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>, room<span style="color:#f92672">.</span>end<span style="color:#f92672">.</span>y <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>)
-<span style="color:#66d9ef">var</span> new_entity_position :<span style="color:#f92672">=</span> Vector2i(x, y)
-</code></pre></div><p>Each loop starts with a section that determines a random position in the room. We take random coordinates between the bounds of the room. Remember how we used <code>Rect2i.grow(-1)</code> to get the inner part of the room when carving our the room. To account for that we now have to add 1 to the start and subtract 1 from the end of the room, so we don&rsquo;t accidentally place an entity in the wall. We then create a vector representation of those random coordinates which we call <code>new_entity_position</code>.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">var</span> can_place <span style="color:#f92672">=</span> true
-<span style="color:#66d9ef">for</span> entity <span style="color:#f92672">in</span> dungeon<span style="color:#f92672">.</span>entities:
-    <span style="color:#66d9ef">if</span> entity<span style="color:#f92672">.</span>grid_position <span style="color:#f92672">==</span> new_entity_position:
-        can_place <span style="color:#f92672">=</span> false
-        <span style="color:#66d9ef">break</span>
-</code></pre></div><p>Next we need to check if we can place an entity at that position. We already made sure that we don&rsquo;t place it in a wall, but what if there&rsquo;s already another entity at that position. To do that we use the same procedure we used in the previous part to check if rooms are intersecting. We first set the boolean <code>can_place</code> to the desired outcome, then loop over all the potential obstacles and if we find one, i.e. if one of the existing entities already occupies that space, we invert that variable and break the loop.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">if</span> can_place:
-    <span style="color:#66d9ef">var</span> new_entity: Entity
-    <span style="color:#66d9ef">if</span> _rng<span style="color:#f92672">.</span>randf() <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">0.8</span>:
-        <span style="color:#75715e"># TODO: place an orc</span>
-    <span style="color:#66d9ef">else</span>:
-        <span style="color:#75715e"># TODO: place a troll</span>
-    dungeon<span style="color:#f92672">.</span>entities<span style="color:#f92672">.</span>append(new_entity)
-</code></pre></div><p>If a this point in the code <code>can_place</code> is <code>true</code> we know we made it through all existing entities without encountering one that&rsquo;s already at that spot, and we know we indeed can place the entity. So we create a variable <code>new_entity</code> to store our new entity. We then generate a random number between 0 and 1 and check if it&rsquo;s below 0.8. If so (i.e., in 80% of cases) we will later fill <code>new_entity</code> with an orc, otherwise (i.e., the remaining 20%) we fill it with a troll. Lastly, we add it to the entity array of our dungeon.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">@</span><span style="color:#66d9ef">onready</span> <span style="color:#66d9ef">var</span> tiles: <span style="color:#a6e22e">Node2D</span> <span style="color:#f92672">=</span> <span style="color:#f92672">$</span>Tiles
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">@</span><span style="color:#66d9ef">onready</span> <span style="color:#66d9ef">var</span> entities: <span style="color:#a6e22e">Node2D</span> <span style="color:#f92672">=</span> <span style="color:#f92672">$</span>Entities
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">@</span><span style="color:#66d9ef">onready</span> <span style="color:#66d9ef">var</span> dungeon_generator: DungeonGenerator <span style="color:#f92672">=</span> <span style="color:#f92672">$</span>DungeonGenerator
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">@</span><span style="color:#66d9ef">onready</span> <span style="color:#66d9ef">var</span> field_of_view: FieldOfView <span style="color:#f92672">=</span> <span style="color:#f92672">$</span>FieldOfView
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> generate(player: Entity) <span style="color:#f92672">-&gt;</span> void:
+</span></span><span style="display:flex;"><span>	map_data <span style="color:#f92672">=</span> dungeon_generator<span style="color:#f92672">.</span>generate_dungeon(player)
+</span></span><span style="display:flex;"><span>	_place_tiles()
+</span></span><span style="display:flex;"><span>	_place_entities()
+</span></span></code></pre></div><p>The variable section now includes the reference to the <strong>Tiles</strong> and <strong>Entities</strong> nodes, and we call a new function called <code>_place_entities()</code> in <code>generate</code>. This function looks as follows:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> _place_entities() <span style="color:#f92672">-&gt;</span> void:
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">for</span> entity <span style="color:#f92672">in</span> map_data<span style="color:#f92672">.</span>entities:
+</span></span><span style="display:flex;"><span>		entities<span style="color:#f92672">.</span>add_child(entity)
+</span></span></code></pre></div><p>With tiles now in their own node, we also need to modifiy <code>_place_entities()</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> _place_tiles() <span style="color:#f92672">-&gt;</span> void:
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">for</span> tile <span style="color:#f92672">in</span> map_data<span style="color:#f92672">.</span>tiles:
+</span></span><span style="display:flex;"><span>		tiles<span style="color:#f92672">.</span>add_child(tile)
+</span></span></code></pre></div><p>The dungeon generation algorithm will populate an array of entities in <code>map_data</code> for us. To actually place the entities we simply go through that array and add every member to the <strong>Entities</strong> node. The player will be part of that array, and thus will be added to the entities array in this function. That means we need to modify <em>game.gd</em> to no longer do that:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> _ready() <span style="color:#f92672">-&gt;</span> void:
+</span></span><span style="display:flex;"><span>	player <span style="color:#f92672">=</span> Entity<span style="color:#f92672">.</span>new(Vector2i<span style="color:#f92672">.</span>ZERO, player_definition)
+</span></span><span style="display:flex;"><span>	remove_child(camera)
+</span></span><span style="display:flex;"><span>	player<span style="color:#f92672">.</span>add_child(camera)
+</span></span><span style="display:flex;"><span>	map<span style="color:#f92672">.</span>generate(player)
+</span></span><span style="display:flex;"><span>	map<span style="color:#f92672">.</span>update_fov(player<span style="color:#f92672">.</span>grid_position)
+</span></span></code></pre></div><p>You see we no longer add the player to the <strong>Entities</strong> node. We need to modify one more place before moving to the dungeon generation. Modify <em>map_data.gd</em> as follows:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">var</span> width: <span style="color:#a6e22e">int</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> height: <span style="color:#a6e22e">int</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> tiles: <span style="color:#a6e22e">Array</span>[Tile]
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> entities: <span style="color:#a6e22e">Array</span>[Entity]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> _init(map_width: <span style="color:#a6e22e">int</span>, map_height: <span style="color:#a6e22e">int</span>) <span style="color:#f92672">-&gt;</span> void:
+</span></span><span style="display:flex;"><span>	width <span style="color:#f92672">=</span> map_width
+</span></span><span style="display:flex;"><span>	height <span style="color:#f92672">=</span> map_height
+</span></span><span style="display:flex;"><span>	entities <span style="color:#f92672">=</span> []
+</span></span><span style="display:flex;"><span>	_setup_tiles()
+</span></span></code></pre></div><p>Here we added an array for <code>entities</code> and in the <code>_init()</code> function initialized that to an empty array. With that out of the way, let&rsquo;s now move to the dungeon generation. First thing to do is have the dungeon generator handle adding the player to the map data. So in <em>dungeon_generator.gd</em> add a line for that at the top of <code>generate_dungeon()</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> generate_dungeon(player:Entity) <span style="color:#f92672">-&gt;</span> MapData:
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> dungeon :<span style="color:#f92672">=</span> MapData<span style="color:#f92672">.</span>new(map_width, map_height)
+</span></span><span style="display:flex;"><span>	dungeon<span style="color:#f92672">.</span>entities<span style="color:#f92672">.</span>append(player)
+</span></span></code></pre></div><p>Now we can extend extend the dungeon generation with some enemies. Add the following near the top of the script, next to our existing exported variables:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">@</span>export_category(<span style="color:#e6db74">&#34;Monsters RNG&#34;</span>)
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">@</span><span style="color:#66d9ef">export</span> <span style="color:#66d9ef">var</span> max_monsters_per_room <span style="color:#f92672">=</span> <span style="color:#ae81ff">2</span>
+</span></span></code></pre></div><p>We now have another configuration variable, which is the maximum amount of monsters the generator may place in each room. Inside <code>generate_dungeon()</code> add the following:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> rooms<span style="color:#f92672">.</span>is_empty():
+</span></span><span style="display:flex;"><span>			player<span style="color:#f92672">.</span>grid_position <span style="color:#f92672">=</span> new_room<span style="color:#f92672">.</span>get_center()
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">else</span>:
+</span></span><span style="display:flex;"><span>			_tunnel_between(dungeon, rooms<span style="color:#f92672">.</span>back()<span style="color:#f92672">.</span>get_center(), new_room<span style="color:#f92672">.</span>get_center())
+</span></span><span style="display:flex;"><span>		
+</span></span><span style="display:flex;"><span>		_place_entities(dungeon, new_room)
+</span></span><span style="display:flex;"><span>		
+</span></span><span style="display:flex;"><span>		rooms<span style="color:#f92672">.</span>append(new_room)
+</span></span></code></pre></div><p>This is the section near the end of the loop, and we added a call to <code>_place_entities()</code>. Let&rsquo;s now write that function:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> _place_entities(dungeon: MapData, room: Rect2i) <span style="color:#f92672">-&gt;</span> void:
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> number_of_monsters: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> _rng<span style="color:#f92672">.</span>randi_range(<span style="color:#ae81ff">0</span>, max_monsters_per_room)
+</span></span><span style="display:flex;"><span>	
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">for</span> _i <span style="color:#f92672">in</span> number_of_monsters:
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">var</span> x: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> _rng<span style="color:#f92672">.</span>randi_range(room<span style="color:#f92672">.</span>position<span style="color:#f92672">.</span>x <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>, room<span style="color:#f92672">.</span>end<span style="color:#f92672">.</span>x <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">var</span> y: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> _rng<span style="color:#f92672">.</span>randi_range(room<span style="color:#f92672">.</span>position<span style="color:#f92672">.</span>y <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>, room<span style="color:#f92672">.</span>end<span style="color:#f92672">.</span>y <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">var</span> new_entity_position :<span style="color:#f92672">=</span> Vector2i(x, y)
+</span></span><span style="display:flex;"><span>		
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">var</span> can_place <span style="color:#f92672">=</span> true
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">for</span> entity <span style="color:#f92672">in</span> dungeon<span style="color:#f92672">.</span>entities:
+</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">if</span> entity<span style="color:#f92672">.</span>grid_position <span style="color:#f92672">==</span> new_entity_position:
+</span></span><span style="display:flex;"><span>				can_place <span style="color:#f92672">=</span> false
+</span></span><span style="display:flex;"><span>				<span style="color:#66d9ef">break</span>
+</span></span><span style="display:flex;"><span>		
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> can_place:
+</span></span><span style="display:flex;"><span>		    <span style="color:#66d9ef">var</span> new_entity: Entity
+</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">if</span> _rng<span style="color:#f92672">.</span>randf() <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">0.8</span>:
+</span></span><span style="display:flex;"><span>				new_entity <span style="color:#f92672">=</span> Entity<span style="color:#f92672">.</span>new(new_entity_position, entity_types<span style="color:#f92672">.</span>orc)
+</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">else</span>:
+</span></span><span style="display:flex;"><span>				new_entity <span style="color:#f92672">=</span> Entity<span style="color:#f92672">.</span>new(new_entity_position, entity_types<span style="color:#f92672">.</span>troll)
+</span></span><span style="display:flex;"><span>			dungeon<span style="color:#f92672">.</span>entities<span style="color:#f92672">.</span>append(new_entity)
+</span></span></code></pre></div><p>It&rsquo;s a bit much, so let&rsquo;s look at the parts. First, as with the other functions in the dungeon generator we take in <code>dungeon</code> as an argument. We also get the <code>room</code> in which we will spawn the monsters. Then, as the first thing we decide how many monsters we actually want to (try to) place in this room, by taking a random number between 0 and the maximum we set earlier. Then we loop that many times through the code placing monsters.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">var</span> x: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> _rng<span style="color:#f92672">.</span>randi_range(room<span style="color:#f92672">.</span>position<span style="color:#f92672">.</span>x <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>, room<span style="color:#f92672">.</span>end<span style="color:#f92672">.</span>x <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> y: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> _rng<span style="color:#f92672">.</span>randi_range(room<span style="color:#f92672">.</span>position<span style="color:#f92672">.</span>y <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>, room<span style="color:#f92672">.</span>end<span style="color:#f92672">.</span>y <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> new_entity_position :<span style="color:#f92672">=</span> Vector2i(x, y)
+</span></span></code></pre></div><p>Each loop starts with a section that determines a random position in the room. We take random coordinates between the bounds of the room. Remember how we used <code>Rect2i.grow(-1)</code> to get the inner part of the room when carving our the room. To account for that we now have to add 1 to the start and subtract 1 from the end of the room, so we don&rsquo;t accidentally place an entity in the wall. We then create a vector representation of those random coordinates which we call <code>new_entity_position</code>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">var</span> can_place <span style="color:#f92672">=</span> true
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> entity <span style="color:#f92672">in</span> dungeon<span style="color:#f92672">.</span>entities:
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> entity<span style="color:#f92672">.</span>grid_position <span style="color:#f92672">==</span> new_entity_position:
+</span></span><span style="display:flex;"><span>        can_place <span style="color:#f92672">=</span> false
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">break</span>
+</span></span></code></pre></div><p>Next we need to check if we can place an entity at that position. We already made sure that we don&rsquo;t place it in a wall, but what if there&rsquo;s already another entity at that position. To do that we use the same procedure we used in the previous part to check if rooms are intersecting. We first set the boolean <code>can_place</code> to the desired outcome, then loop over all the potential obstacles and if we find one, i.e. if one of the existing entities already occupies that space, we invert that variable and break the loop.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">if</span> can_place:
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> new_entity: Entity
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> _rng<span style="color:#f92672">.</span>randf() <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">0.8</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># TODO: place an orc</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">else</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># TODO: place a troll</span>
+</span></span><span style="display:flex;"><span>    dungeon<span style="color:#f92672">.</span>entities<span style="color:#f92672">.</span>append(new_entity)
+</span></span></code></pre></div><p>If a this point in the code <code>can_place</code> is <code>true</code> we know we made it through all existing entities without encountering one that&rsquo;s already at that spot, and we know we indeed can place the entity. So we create a variable <code>new_entity</code> to store our new entity. We then generate a random number between 0 and 1 and check if it&rsquo;s below 0.8. If so (i.e., in 80% of cases) we will later fill <code>new_entity</code> with an orc, otherwise (i.e., the remaining 20%) we fill it with a troll. Lastly, we add it to the entity array of our dungeon.</p>
 <p>Now we need to take care of our entities. We already have a nice system in place with the <code>EntityDefinition</code> we created a few parts back. Let&rsquo;s expand upon that. Open <em>entity_definition.gd</em> and update it as follows:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd">class_name EntityDefinition
-<span style="color:#66d9ef">extends</span> <span style="color:#a6e22e">Resource</span>
-
-<span style="color:#960050;background-color:#1e0010">@</span>export_category(<span style="color:#e6db74">&#34;Visuals&#34;</span>)
-<span style="color:#960050;background-color:#1e0010">@</span><span style="color:#66d9ef">export</span> <span style="color:#66d9ef">var</span> name: <span style="color:#a6e22e">String</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Unnamed Entity&#34;</span>
-<span style="color:#960050;background-color:#1e0010">@</span><span style="color:#66d9ef">export</span> <span style="color:#66d9ef">var</span> texture: <span style="color:#a6e22e">AtlasTexture</span>
-<span style="color:#960050;background-color:#1e0010">@</span>export_color_no_alpha <span style="color:#66d9ef">var</span> color: <span style="color:#a6e22e">Color</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">Color</span><span style="color:#f92672">.</span>WHITE
-
-<span style="color:#960050;background-color:#1e0010">@</span>export_category(<span style="color:#e6db74">&#34;Mechanics&#34;</span>)
-<span style="color:#960050;background-color:#1e0010">@</span><span style="color:#66d9ef">export</span> <span style="color:#66d9ef">var</span> is_blocking_movement: <span style="color:#a6e22e">bool</span> <span style="color:#f92672">=</span> true
-</code></pre></div><p>What we added here is the name, which was previously empty, and the <em>Mechanics</em> category including an <code>is_blocking_movement</code> variable. The player as well as all the monsters will block movement, but we will later have items that can occupy the same space as another entity. We need a way to access these properties, so we need to modify <em>entity.gd</em> a bit. First, add a new variable near the top:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">var</span> _definition: EntityDefinition
-</code></pre></div><p>As we did with the <code>Tile</code> we store the entity definition, so we can access properties shared by entities of the same type via this variable. We need to also set this variable when we set the entity type:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> set_entity_type(entity_definition: EntityDefinition) <span style="color:#f92672">-&gt;</span> void:
-	_definition <span style="color:#f92672">=</span> entity_definition
-	texture <span style="color:#f92672">=</span> entity_definition<span style="color:#f92672">.</span>texture
-	modulate <span style="color:#f92672">=</span> entity_definition<span style="color:#f92672">.</span>color
-</code></pre></div><p>Lastly, we need functions to access the properties in <code>_definition</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> is_blocking_movement() <span style="color:#f92672">-&gt;</span> <span style="color:#a6e22e">bool</span>:
-	<span style="color:#66d9ef">return</span> _definition<span style="color:#f92672">.</span>is_blocking_movment
-
-
-<span style="color:#66d9ef">func</span> get_entity_name() <span style="color:#f92672">-&gt;</span> <span style="color:#a6e22e">String</span>:
-	<span style="color:#66d9ef">return</span> _definition<span style="color:#f92672">.</span>name
-</code></pre></div><p>The entity now can properly store and give us access to these new properties. Now let&rsquo;s reopen <em>res://assets/definitions/entities/actors/entity_definition_player.tres</em> and fill the <em>name</em> field with <em>&ldquo;Player&rdquo;</em>. The <em>is_blocking</em> is already checked per default.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span>class_name EntityDefinition
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">extends</span> <span style="color:#a6e22e">Resource</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">@</span>export_category(<span style="color:#e6db74">&#34;Visuals&#34;</span>)
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">@</span><span style="color:#66d9ef">export</span> <span style="color:#66d9ef">var</span> name: <span style="color:#a6e22e">String</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Unnamed Entity&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">@</span><span style="color:#66d9ef">export</span> <span style="color:#66d9ef">var</span> texture: <span style="color:#a6e22e">AtlasTexture</span>
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">@</span>export_color_no_alpha <span style="color:#66d9ef">var</span> color: <span style="color:#a6e22e">Color</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">Color</span><span style="color:#f92672">.</span>WHITE
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">@</span>export_category(<span style="color:#e6db74">&#34;Mechanics&#34;</span>)
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">@</span><span style="color:#66d9ef">export</span> <span style="color:#66d9ef">var</span> is_blocking_movement: <span style="color:#a6e22e">bool</span> <span style="color:#f92672">=</span> true
+</span></span></code></pre></div><p>What we added here is the name, which was previously empty, and the <em>Mechanics</em> category including an <code>is_blocking_movement</code> variable. The player as well as all the monsters will block movement, but we will later have items that can occupy the same space as another entity. We need a way to access these properties, so we need to modify <em>entity.gd</em> a bit. First, add a new variable near the top:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">var</span> _definition: EntityDefinition
+</span></span></code></pre></div><p>As we did with the <code>Tile</code> we store the entity definition, so we can access properties shared by entities of the same type via this variable. We need to also set this variable when we set the entity type:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> set_entity_type(entity_definition: EntityDefinition) <span style="color:#f92672">-&gt;</span> void:
+</span></span><span style="display:flex;"><span>	_definition <span style="color:#f92672">=</span> entity_definition
+</span></span><span style="display:flex;"><span>	texture <span style="color:#f92672">=</span> entity_definition<span style="color:#f92672">.</span>texture
+</span></span><span style="display:flex;"><span>	modulate <span style="color:#f92672">=</span> entity_definition<span style="color:#f92672">.</span>color
+</span></span></code></pre></div><p>Lastly, we need functions to access the properties in <code>_definition</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> is_blocking_movement() <span style="color:#f92672">-&gt;</span> <span style="color:#a6e22e">bool</span>:
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> _definition<span style="color:#f92672">.</span>is_blocking_movment
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> get_entity_name() <span style="color:#f92672">-&gt;</span> <span style="color:#a6e22e">String</span>:
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> _definition<span style="color:#f92672">.</span>name
+</span></span></code></pre></div><p>The entity now can properly store and give us access to these new properties. Now let&rsquo;s reopen <em>res://assets/definitions/entities/actors/entity_definition_player.tres</em> and fill the <em>name</em> field with <em>&ldquo;Player&rdquo;</em>. The <em>is_blocking</em> is already checked per default.</p>
 <p>Now that the player is up to date let&rsquo;s create the orc and the troll. Create a new <code>EntityDefinition</code> resource at <em>res://assets/definitions/entities/actors/entity_definition_orc.tres</em>. Set the name to <em>&ldquo;Orc&rdquo;</em> and choose a fitting texture for it, as we have done previously with the player and the tiles. I chose a darker green (#3f7f3f) as color for it. Then create another <code>EntityDefinition</code> at <em>res://assets/definitions/entities/actors/entity_definition_troll.tres</em>. Call it <em>&ldquo;Troll&rdquo;</em>, choose a fitting sprite and give it a nice green but ideally slightly different color than the orc (I chose 007f00).</p>
 <p>Now back to <em>dungeon_generator.gd</em>. Near the top we add the following constant:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">const</span> entity_types <span style="color:#f92672">=</span> {
-	<span style="color:#e6db74">&#34;orc&#34;</span>: preload(<span style="color:#e6db74">&#34;res://assets/definitions/entities/actors/entity_definition_orc.tres&#34;</span>),
-	<span style="color:#e6db74">&#34;troll&#34;</span>: preload(<span style="color:#e6db74">&#34;res://assets/definitions/entities/actors/entity_definition_troll.tres&#34;</span>),
-}
-</code></pre></div><p>This gives us access to the entity definitions we just defined. Then go back to where we left the &ldquo;todo&rdquo; comments, at the end of <code>_place_entities()</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">if</span> can_place:
-    <span style="color:#66d9ef">var</span> new_entity: Entity
-    <span style="color:#66d9ef">if</span> _rng<span style="color:#f92672">.</span>randf() <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">0.8</span>:
-        new_entity <span style="color:#f92672">=</span> Entity<span style="color:#f92672">.</span>new(new_entity_position, entity_types<span style="color:#f92672">.</span>orc)
-    <span style="color:#66d9ef">else</span>:
-        new_entity <span style="color:#f92672">=</span> Entity<span style="color:#f92672">.</span>new(new_entity_position, entity_types<span style="color:#f92672">.</span>troll)
-    dungeon<span style="color:#f92672">.</span>entities<span style="color:#f92672">.</span>append(new_entity)
-</code></pre></div><p>We now create new entities, at the positions we randomly picked, and with either the orc definition or the troll definition. They should now be placed properly, and you should be able to run the project at this point. You should also be able to run <em>through</em> any enemy you find on the map. Speaking of finding them on the map, we also need to make sure enemies are only visible when they are inside the field of view. Let&rsquo;s start with that last one. Go to <em>map.gd</em> and edit <code>update_fov()</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> update_fov(player_position: Vector2i) <span style="color:#f92672">-&gt;</span> void:
-	field_of_view<span style="color:#f92672">.</span>update_fov(map_data, player_position, <span style="color:#ae81ff">8</span>)
-	
-	<span style="color:#66d9ef">for</span> entity <span style="color:#f92672">in</span> map_data<span style="color:#f92672">.</span>entities:
-		entity<span style="color:#f92672">.</span>visible <span style="color:#f92672">=</span> map_data<span style="color:#f92672">.</span>get_tile(entity<span style="color:#f92672">.</span>grid_position)<span style="color:#f92672">.</span>is_in_view
-</code></pre></div><p>Now, every time we update the field of view we then go through all the entities and update their visibility according to whether the tile they are on is in view or not. That takes care of that problem. Next let&rsquo;s make them solid. To do that we need a convenient way to find out if a tile contains an entity that blocks movement. This is the responsibility of the <code>MapData</code>, so add the following function to <em>map_data.gd</em>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> get_blocking_entity_at_location(grid_position: Vector2i) <span style="color:#f92672">-&gt;</span> Entity:
-	<span style="color:#66d9ef">for</span> entity <span style="color:#f92672">in</span> entities:
-		<span style="color:#66d9ef">if</span> entity<span style="color:#f92672">.</span>is_blocking_movement() <span style="color:#f92672">and</span> entity<span style="color:#f92672">.</span>grid_position <span style="color:#f92672">==</span> grid_position:
-			<span style="color:#66d9ef">return</span> entity
-	<span style="color:#66d9ef">return</span> null
-</code></pre></div><p>We receive a position on the grid and then go through all the entities. If an entity blocks movement and is at the given position, we return that entity. Otherwise, if we don&rsquo;t find a matching entity, we return <code>null</code>. We could now just add a check into our movement system to prevent movement into a movement-blocking entity. However, we will do what most roguelikes do and differentiate depending on whether we navigate onto a free space or into a blocking entity. So if the player presses <em>left</em> and there&rsquo;s an empty space, they will move there. If they press <em>left</em> and an enemy is left of them, they will attack that enemy. Both of these actions have directionality, so let&rsquo;s make a new super-type of action. Create a new script at <em>res://src/Entities/Actors/Actions/action_with_direction.gd</em>, extending <code>Action</code>. Fill it with the following code:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd">class_name ActionWithDirection
-<span style="color:#66d9ef">extends</span> Action
-
-<span style="color:#66d9ef">var</span> offset: Vector2i
-
-
-<span style="color:#66d9ef">func</span> _init(dx: <span style="color:#a6e22e">int</span>, dy: <span style="color:#a6e22e">int</span>) <span style="color:#f92672">-&gt;</span> void:
-	offset <span style="color:#f92672">=</span> Vector2i(dx, dy)
-
-
-<span style="color:#66d9ef">func</span> perform(game: Game, entity: Entity) <span style="color:#f92672">-&gt;</span> void:
-	<span style="color:#66d9ef">pass</span>
-</code></pre></div><p>As you can see this looks pretty similar to how the <code>MovementAction</code> looked initially, as it has an <code>offset</code> property that defines the direction of the action. As this already has an <code>offset</code> now, we will modify <em>movement_action.gd</em> to extend that script:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd">class_name MovementAction
-<span style="color:#66d9ef">extends</span> ActionWithDirection
-
-
-<span style="color:#66d9ef">func</span> perform(game: Game, entity: Entity) <span style="color:#f92672">-&gt;</span> void:
-	<span style="color:#66d9ef">var</span> destination: Vector2i <span style="color:#f92672">=</span> entity<span style="color:#f92672">.</span>grid_position <span style="color:#f92672">+</span> offset
-	
-	<span style="color:#66d9ef">var</span> map_data: MapData <span style="color:#f92672">=</span> game<span style="color:#f92672">.</span>get_map_data()
-	<span style="color:#66d9ef">var</span> destination_tile: Tile <span style="color:#f92672">=</span> map_data<span style="color:#f92672">.</span>get_tile(destination)
-	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> destination_tile <span style="color:#f92672">or</span> <span style="color:#f92672">not</span> destination_tile<span style="color:#f92672">.</span>is_walkable():
-		<span style="color:#66d9ef">return</span>
-	<span style="color:#66d9ef">if</span> game<span style="color:#f92672">.</span>get_map_data()<span style="color:#f92672">.</span>get_blocking_entity_at_location(destination):
-		<span style="color:#66d9ef">return</span>
-	entity<span style="color:#f92672">.</span>move(offset)
-</code></pre></div><p>It now extends <code>ActionWithDirection</code>, and hence we removed all the code relating to handling the <code>offset</code>, i.e., the <code>offset</code> variable and the <code>_init()</code> function. We get those for free from the superclass an can just use the offset in the <code>perform()</code> function as we did before. Still, we add one additional check in there. If there is a blocking entity at our destination, we won&rsquo;t move. However, it usually shouldn&rsquo;t come to that, as we will soon implement a system that fires another action in such cases. To put this check here is not a bad idea though, as in the future we might want to extend the game by entities that we don&rsquo;t want to auto-attack. Speaking of attacking, let&rsquo;s create an action to do so. Create a new script at <em>res://src/Entities/Actors/Actions/melee_action.gd</em> and have it extend <code>ActionWithDirection</code>. Fill it with the following code:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd">class_name MeleeAction
-<span style="color:#66d9ef">extends</span> ActionWithDirection
-
-
-<span style="color:#66d9ef">func</span> perform(game: Game, entity: Entity) <span style="color:#f92672">-&gt;</span> void:
-	<span style="color:#66d9ef">var</span> destination :<span style="color:#f92672">=</span> Vector2i(entity<span style="color:#f92672">.</span>grid_position <span style="color:#f92672">+</span> offset)
-	<span style="color:#66d9ef">var</span> target: Entity <span style="color:#f92672">=</span> game<span style="color:#f92672">.</span>get_map_data()<span style="color:#f92672">.</span>get_blocking_entity_at_location(destination)
-	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> target:
-		<span style="color:#66d9ef">return</span>
-	print(<span style="color:#e6db74">&#34;You kick the </span><span style="color:#e6db74">%s</span><span style="color:#e6db74">, much to it&#39;s annoyance!&#34;</span> <span style="color:#f92672">%</span> target<span style="color:#f92672">.</span>get_entity_name())
-</code></pre></div><p>Similar to the <code>MovementAction</code> we first determine the destination. Then we lookup the entity at that place. If everything went right with the other code we&rsquo;ll still have to write then we should find one there, but just in case we don&rsquo;t for some reason we simply return without doing anything. Then, as we lack a health and damage system, as well as an on-screen event log, we log this attack to the Godot console.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">const</span> entity_types <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;orc&#34;</span>: preload(<span style="color:#e6db74">&#34;res://assets/definitions/entities/actors/entity_definition_orc.tres&#34;</span>),
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;troll&#34;</span>: preload(<span style="color:#e6db74">&#34;res://assets/definitions/entities/actors/entity_definition_troll.tres&#34;</span>),
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>This gives us access to the entity definitions we just defined. Then go back to where we left the &ldquo;todo&rdquo; comments, at the end of <code>_place_entities()</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">if</span> can_place:
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> new_entity: Entity
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> _rng<span style="color:#f92672">.</span>randf() <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">0.8</span>:
+</span></span><span style="display:flex;"><span>        new_entity <span style="color:#f92672">=</span> Entity<span style="color:#f92672">.</span>new(new_entity_position, entity_types<span style="color:#f92672">.</span>orc)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">else</span>:
+</span></span><span style="display:flex;"><span>        new_entity <span style="color:#f92672">=</span> Entity<span style="color:#f92672">.</span>new(new_entity_position, entity_types<span style="color:#f92672">.</span>troll)
+</span></span><span style="display:flex;"><span>    dungeon<span style="color:#f92672">.</span>entities<span style="color:#f92672">.</span>append(new_entity)
+</span></span></code></pre></div><p>We now create new entities, at the positions we randomly picked, and with either the orc definition or the troll definition. They should now be placed properly, and you should be able to run the project at this point. You should also be able to run <em>through</em> any enemy you find on the map. Speaking of finding them on the map, we also need to make sure enemies are only visible when they are inside the field of view. Let&rsquo;s start with that last one. Go to <em>map.gd</em> and edit <code>update_fov()</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> update_fov(player_position: Vector2i) <span style="color:#f92672">-&gt;</span> void:
+</span></span><span style="display:flex;"><span>	field_of_view<span style="color:#f92672">.</span>update_fov(map_data, player_position, <span style="color:#ae81ff">8</span>)
+</span></span><span style="display:flex;"><span>	
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">for</span> entity <span style="color:#f92672">in</span> map_data<span style="color:#f92672">.</span>entities:
+</span></span><span style="display:flex;"><span>		entity<span style="color:#f92672">.</span>visible <span style="color:#f92672">=</span> map_data<span style="color:#f92672">.</span>get_tile(entity<span style="color:#f92672">.</span>grid_position)<span style="color:#f92672">.</span>is_in_view
+</span></span></code></pre></div><p>Now, every time we update the field of view we then go through all the entities and update their visibility according to whether the tile they are on is in view or not. That takes care of that problem. Next let&rsquo;s make them solid. To do that we need a convenient way to find out if a tile contains an entity that blocks movement. This is the responsibility of the <code>MapData</code>, so add the following function to <em>map_data.gd</em>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> get_blocking_entity_at_location(grid_position: Vector2i) <span style="color:#f92672">-&gt;</span> Entity:
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">for</span> entity <span style="color:#f92672">in</span> entities:
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> entity<span style="color:#f92672">.</span>is_blocking_movement() <span style="color:#f92672">and</span> entity<span style="color:#f92672">.</span>grid_position <span style="color:#f92672">==</span> grid_position:
+</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">return</span> entity
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> null
+</span></span></code></pre></div><p>We receive a position on the grid and then go through all the entities. If an entity blocks movement and is at the given position, we return that entity. Otherwise, if we don&rsquo;t find a matching entity, we return <code>null</code>. We could now just add a check into our movement system to prevent movement into a movement-blocking entity. However, we will do what most roguelikes do and differentiate depending on whether we navigate onto a free space or into a blocking entity. So if the player presses <em>left</em> and there&rsquo;s an empty space, they will move there. If they press <em>left</em> and an enemy is left of them, they will attack that enemy. Both of these actions have directionality, so let&rsquo;s make a new super-type of action. Create a new script at <em>res://src/Entities/Actors/Actions/action_with_direction.gd</em>, extending <code>Action</code>. Fill it with the following code:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span>class_name ActionWithDirection
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">extends</span> Action
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> offset: Vector2i
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> _init(dx: <span style="color:#a6e22e">int</span>, dy: <span style="color:#a6e22e">int</span>) <span style="color:#f92672">-&gt;</span> void:
+</span></span><span style="display:flex;"><span>	offset <span style="color:#f92672">=</span> Vector2i(dx, dy)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> perform(game: Game, entity: Entity) <span style="color:#f92672">-&gt;</span> void:
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">pass</span>
+</span></span></code></pre></div><p>As you can see this looks pretty similar to how the <code>MovementAction</code> looked initially, as it has an <code>offset</code> property that defines the direction of the action. As this already has an <code>offset</code> now, we will modify <em>movement_action.gd</em> to extend that script:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span>class_name MovementAction
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">extends</span> ActionWithDirection
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> perform(game: Game, entity: Entity) <span style="color:#f92672">-&gt;</span> void:
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> destination: Vector2i <span style="color:#f92672">=</span> entity<span style="color:#f92672">.</span>grid_position <span style="color:#f92672">+</span> offset
+</span></span><span style="display:flex;"><span>	
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> map_data: MapData <span style="color:#f92672">=</span> game<span style="color:#f92672">.</span>get_map_data()
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> destination_tile: Tile <span style="color:#f92672">=</span> map_data<span style="color:#f92672">.</span>get_tile(destination)
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> destination_tile <span style="color:#f92672">or</span> <span style="color:#f92672">not</span> destination_tile<span style="color:#f92672">.</span>is_walkable():
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> game<span style="color:#f92672">.</span>get_map_data()<span style="color:#f92672">.</span>get_blocking_entity_at_location(destination):
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span>
+</span></span><span style="display:flex;"><span>	entity<span style="color:#f92672">.</span>move(offset)
+</span></span></code></pre></div><p>It now extends <code>ActionWithDirection</code>, and hence we removed all the code relating to handling the <code>offset</code>, i.e., the <code>offset</code> variable and the <code>_init()</code> function. We get those for free from the superclass an can just use the offset in the <code>perform()</code> function as we did before. Still, we add one additional check in there. If there is a blocking entity at our destination, we won&rsquo;t move. However, it usually shouldn&rsquo;t come to that, as we will soon implement a system that fires another action in such cases. To put this check here is not a bad idea though, as in the future we might want to extend the game by entities that we don&rsquo;t want to auto-attack. Speaking of attacking, let&rsquo;s create an action to do so. Create a new script at <em>res://src/Entities/Actors/Actions/melee_action.gd</em> and have it extend <code>ActionWithDirection</code>. Fill it with the following code:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span>class_name MeleeAction
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">extends</span> ActionWithDirection
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> perform(game: Game, entity: Entity) <span style="color:#f92672">-&gt;</span> void:
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> destination :<span style="color:#f92672">=</span> Vector2i(entity<span style="color:#f92672">.</span>grid_position <span style="color:#f92672">+</span> offset)
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> target: Entity <span style="color:#f92672">=</span> game<span style="color:#f92672">.</span>get_map_data()<span style="color:#f92672">.</span>get_blocking_entity_at_location(destination)
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> target:
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span>
+</span></span><span style="display:flex;"><span>	print(<span style="color:#e6db74">&#34;You kick the </span><span style="color:#e6db74">%s</span><span style="color:#e6db74">, much to it&#39;s annoyance!&#34;</span> <span style="color:#f92672">%</span> target<span style="color:#f92672">.</span>get_entity_name())
+</span></span></code></pre></div><p>Similar to the <code>MovementAction</code> we first determine the destination. Then we lookup the entity at that place. If everything went right with the other code we&rsquo;ll still have to write then we should find one there, but just in case we don&rsquo;t for some reason we simply return without doing anything. Then, as we lack a health and damage system, as well as an on-screen event log, we log this attack to the Godot console.</p>
 <p>I mentioned that we will put a system into place that decides what will be the appropriate action. Let&rsquo;s create this <em>bump action</em> now. Create another script at <em>res://src/Entities/Actors/Actions/bump_action.gd</em>. Fill it with the following code:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd">class_name BumpAction
-<span style="color:#66d9ef">extends</span> ActionWithDirection
-
-
-<span style="color:#66d9ef">func</span> perform(game: Game, entity: Entity) <span style="color:#f92672">-&gt;</span> void:
-	<span style="color:#66d9ef">var</span> destination :<span style="color:#f92672">=</span> Vector2i(entity<span style="color:#f92672">.</span>grid_position <span style="color:#f92672">+</span> offset)
-	
-	<span style="color:#66d9ef">if</span> game<span style="color:#f92672">.</span>get_map_data()<span style="color:#f92672">.</span>get_blocking_entity_at_location(destination):
-		MeleeAction<span style="color:#f92672">.</span>new(offset<span style="color:#f92672">.</span>x, offset<span style="color:#f92672">.</span>y)<span style="color:#f92672">.</span>perform(game, entity)
-	<span style="color:#66d9ef">else</span>:
-		MovementAction<span style="color:#f92672">.</span>new(offset<span style="color:#f92672">.</span>x, offset<span style="color:#f92672">.</span>y)<span style="color:#f92672">.</span>perform(game, entity)
-</code></pre></div><p>As the other directional actions did it determines a destination. Then it checks if there&rsquo;s a blocking entity. If so, it creates a new <code>MeleeAction</code> with the same offset as itself, and immediately performs it. Otherwise it similarly creates a <code>MovementAction</code> with the same offset and performs that. So the bump action should take care of all that for us, and we can use it rather similarly to how we use the movement action. So let&rsquo;s go into the <em>EventHandler.gd</em> and replace <code>MovementAction</code> with <code>BumpAction</code>.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> get_action() <span style="color:#f92672">-&gt;</span> Action:
-	<span style="color:#66d9ef">var</span> action: Action <span style="color:#f92672">=</span> null
-	
-	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">Input</span><span style="color:#f92672">.</span>is_action_just_pressed(<span style="color:#e6db74">&#34;ui_up&#34;</span>):
-		action <span style="color:#f92672">=</span> BumpAction<span style="color:#f92672">.</span>new(<span style="color:#ae81ff">0</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>)
-	<span style="color:#66d9ef">elif</span> <span style="color:#a6e22e">Input</span><span style="color:#f92672">.</span>is_action_just_pressed(<span style="color:#e6db74">&#34;ui_down&#34;</span>):
-		action <span style="color:#f92672">=</span> BumpAction<span style="color:#f92672">.</span>new(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>)
-	<span style="color:#66d9ef">elif</span> <span style="color:#a6e22e">Input</span><span style="color:#f92672">.</span>is_action_just_pressed(<span style="color:#e6db74">&#34;ui_left&#34;</span>):
-		action <span style="color:#f92672">=</span> BumpAction<span style="color:#f92672">.</span>new(<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">0</span>)
-	<span style="color:#66d9ef">elif</span> <span style="color:#a6e22e">Input</span><span style="color:#f92672">.</span>is_action_just_pressed(<span style="color:#e6db74">&#34;ui_right&#34;</span>):
-		action <span style="color:#f92672">=</span> BumpAction<span style="color:#f92672">.</span>new(<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">0</span>)
-	
-	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">Input</span><span style="color:#f92672">.</span>is_action_just_pressed(<span style="color:#e6db74">&#34;ui_cancel&#34;</span>):
-		action <span style="color:#f92672">=</span> EscapeAction<span style="color:#f92672">.</span>new()
-	
-	<span style="color:#66d9ef">return</span> action
-</code></pre></div><p>This should already allow us to run around and kick all the enemies. But in later parts we will also give the enemies a turn, so let&rsquo;s set that up now. In <em>game.gd</em> modify <code>_physics_process()</code> as follows:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> _physics_process(_delta: <span style="color:#a6e22e">float</span>) <span style="color:#f92672">-&gt;</span> void:
-	<span style="color:#66d9ef">var</span> action: Action <span style="color:#f92672">=</span> event_handler<span style="color:#f92672">.</span>get_action()
-	<span style="color:#66d9ef">if</span> action:
-		<span style="color:#66d9ef">var</span> previous_player_position: Vector2i <span style="color:#f92672">=</span> player<span style="color:#f92672">.</span>grid_position
-		action<span style="color:#f92672">.</span>perform(self, player)
-		<span style="color:#66d9ef">if</span> player<span style="color:#f92672">.</span>grid_position <span style="color:#f92672">!=</span> previous_player_position:
-			map<span style="color:#f92672">.</span>update_fov(player<span style="color:#f92672">.</span>grid_position)
-		_handle_enemy_turns()
-</code></pre></div><p>Here we added a call to a new function called <code>_handle_enemy_turns()</code> at the end. It is always executed immediately after the player actually takes an action. So let&rsquo;s code that function now:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> _handle_enemy_turns() <span style="color:#f92672">-&gt;</span> void:
-	<span style="color:#66d9ef">for</span> entity <span style="color:#f92672">in</span> get_map_data()<span style="color:#f92672">.</span>entities:
-		<span style="color:#66d9ef">if</span> entity <span style="color:#f92672">==</span> player:
-			<span style="color:#66d9ef">continue</span>
-		print(<span style="color:#e6db74">&#34;The </span><span style="color:#e6db74">%s</span><span style="color:#e6db74"> wonders when it will get to take a real turn.&#34;</span> <span style="color:#f92672">%</span> entity<span style="color:#f92672">.</span>get_entity_name())
-</code></pre></div><p>Here we go through all the entities in the map. We check if it&rsquo;s the player, and if so, we skip it. The player already got a turn, so they don&rsquo;t get another. Then we print to the console again, to verity that that entity is indeed taking a turn, as we haven&rsquo;t coded an AI yet that could take an actual turn for the entity. And that&rsquo;s it. Run the project and keep a look at the console in the editor. After each step you should see a bunch of lines indicating the enemy turns.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span>class_name BumpAction
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">extends</span> ActionWithDirection
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> perform(game: Game, entity: Entity) <span style="color:#f92672">-&gt;</span> void:
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> destination :<span style="color:#f92672">=</span> Vector2i(entity<span style="color:#f92672">.</span>grid_position <span style="color:#f92672">+</span> offset)
+</span></span><span style="display:flex;"><span>	
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> game<span style="color:#f92672">.</span>get_map_data()<span style="color:#f92672">.</span>get_blocking_entity_at_location(destination):
+</span></span><span style="display:flex;"><span>		MeleeAction<span style="color:#f92672">.</span>new(offset<span style="color:#f92672">.</span>x, offset<span style="color:#f92672">.</span>y)<span style="color:#f92672">.</span>perform(game, entity)
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">else</span>:
+</span></span><span style="display:flex;"><span>		MovementAction<span style="color:#f92672">.</span>new(offset<span style="color:#f92672">.</span>x, offset<span style="color:#f92672">.</span>y)<span style="color:#f92672">.</span>perform(game, entity)
+</span></span></code></pre></div><p>As the other directional actions did it determines a destination. Then it checks if there&rsquo;s a blocking entity. If so, it creates a new <code>MeleeAction</code> with the same offset as itself, and immediately performs it. Otherwise it similarly creates a <code>MovementAction</code> with the same offset and performs that. So the bump action should take care of all that for us, and we can use it rather similarly to how we use the movement action. So let&rsquo;s go into the <em>EventHandler.gd</em> and replace <code>MovementAction</code> with <code>BumpAction</code>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> get_action() <span style="color:#f92672">-&gt;</span> Action:
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> action: Action <span style="color:#f92672">=</span> null
+</span></span><span style="display:flex;"><span>	
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">Input</span><span style="color:#f92672">.</span>is_action_just_pressed(<span style="color:#e6db74">&#34;ui_up&#34;</span>):
+</span></span><span style="display:flex;"><span>		action <span style="color:#f92672">=</span> BumpAction<span style="color:#f92672">.</span>new(<span style="color:#ae81ff">0</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">elif</span> <span style="color:#a6e22e">Input</span><span style="color:#f92672">.</span>is_action_just_pressed(<span style="color:#e6db74">&#34;ui_down&#34;</span>):
+</span></span><span style="display:flex;"><span>		action <span style="color:#f92672">=</span> BumpAction<span style="color:#f92672">.</span>new(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">elif</span> <span style="color:#a6e22e">Input</span><span style="color:#f92672">.</span>is_action_just_pressed(<span style="color:#e6db74">&#34;ui_left&#34;</span>):
+</span></span><span style="display:flex;"><span>		action <span style="color:#f92672">=</span> BumpAction<span style="color:#f92672">.</span>new(<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">elif</span> <span style="color:#a6e22e">Input</span><span style="color:#f92672">.</span>is_action_just_pressed(<span style="color:#e6db74">&#34;ui_right&#34;</span>):
+</span></span><span style="display:flex;"><span>		action <span style="color:#f92672">=</span> BumpAction<span style="color:#f92672">.</span>new(<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span>	
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">Input</span><span style="color:#f92672">.</span>is_action_just_pressed(<span style="color:#e6db74">&#34;ui_cancel&#34;</span>):
+</span></span><span style="display:flex;"><span>		action <span style="color:#f92672">=</span> EscapeAction<span style="color:#f92672">.</span>new()
+</span></span><span style="display:flex;"><span>	
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> action
+</span></span></code></pre></div><p>This should already allow us to run around and kick all the enemies. But in later parts we will also give the enemies a turn, so let&rsquo;s set that up now. In <em>game.gd</em> modify <code>_physics_process()</code> as follows:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> _physics_process(_delta: <span style="color:#a6e22e">float</span>) <span style="color:#f92672">-&gt;</span> void:
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> action: Action <span style="color:#f92672">=</span> event_handler<span style="color:#f92672">.</span>get_action()
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> action:
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">var</span> previous_player_position: Vector2i <span style="color:#f92672">=</span> player<span style="color:#f92672">.</span>grid_position
+</span></span><span style="display:flex;"><span>		action<span style="color:#f92672">.</span>perform(self, player)
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> player<span style="color:#f92672">.</span>grid_position <span style="color:#f92672">!=</span> previous_player_position:
+</span></span><span style="display:flex;"><span>			map<span style="color:#f92672">.</span>update_fov(player<span style="color:#f92672">.</span>grid_position)
+</span></span><span style="display:flex;"><span>		_handle_enemy_turns()
+</span></span></code></pre></div><p>Here we added a call to a new function called <code>_handle_enemy_turns()</code> at the end. It is always executed immediately after the player actually takes an action. So let&rsquo;s code that function now:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> _handle_enemy_turns() <span style="color:#f92672">-&gt;</span> void:
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">for</span> entity <span style="color:#f92672">in</span> get_map_data()<span style="color:#f92672">.</span>entities:
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> entity <span style="color:#f92672">==</span> player:
+</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">continue</span>
+</span></span><span style="display:flex;"><span>		print(<span style="color:#e6db74">&#34;The </span><span style="color:#e6db74">%s</span><span style="color:#e6db74"> wonders when it will get to take a real turn.&#34;</span> <span style="color:#f92672">%</span> entity<span style="color:#f92672">.</span>get_entity_name())
+</span></span></code></pre></div><p>Here we go through all the entities in the map. We check if it&rsquo;s the player, and if so, we skip it. The player already got a turn, so they don&rsquo;t get another. Then we print to the console again, to verity that that entity is indeed taking a turn, as we haven&rsquo;t coded an AI yet that could take an actual turn for the entity. And that&rsquo;s it. Run the project and keep a look at the console in the editor. After each step you should see a bunch of lines indicating the enemy turns.</p>
 <p>Now that we have placed enemies, can detect them and then act accordingly, we have everything in place to start on a combat system in the next part, which you can find here: <a href="https://selinadev.github.io/10-rogueliketutorial-06/">https://selinadev.github.io/10-rogueliketutorial-06/</a></p>
 
 
