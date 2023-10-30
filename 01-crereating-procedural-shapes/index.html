@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
-  <meta name="generator" content="Hugo 0.118.2">
+  <meta name="generator" content="Hugo 0.119.0">
   <link rel="canonical" href="https://selinadev.github.io/01-crereating-procedural-shapes/">
 
   
@@ -223,53 +223,53 @@ Now that we have our scene, we will save it as <em>CShape.tscn</em>.</p>
 <p>In order to look at our C-Shape object, we need to put it in another scene. Technically we could run it on its own, but then it will be stuck at the top left corner. It is much better to create a test scene. For this we will create another 2D Scene, and drop our <em>CShape.tscn</em> in there. Place it right in the middle of this scene. You will not see anything yet, we will get to that shortly. Save it as <em>TestScene.tscn</em>, and let us move on to the shape.</p>
 <h2 id="coding-the-shape">Coding the Shape</h2>
 <p>In our CShape scene, we will add a new script to the root node (&ldquo;CShape&rdquo;). We will use GDScript for that, and call save it as <em>CShape.gd</em>. We start out by defining a few parameters as export variables. Here is the start of our script:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span>class_name CShape
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">class_name</span> <span style="color:#a6e22e">CShape</span>
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">extends</span> <span style="color:#a6e22e">Node2D</span>
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">export</span> (<span style="color:#a6e22e">float</span>) <span style="color:#66d9ef">var</span> radius_inner :<span style="color:#f92672">=</span> <span style="color:#ae81ff">100.0</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">export</span> (<span style="color:#a6e22e">float</span>) <span style="color:#66d9ef">var</span> radius_outer :<span style="color:#f92672">=</span> <span style="color:#ae81ff">150.0</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">export</span> (<span style="color:#a6e22e">int</span>) <span style="color:#66d9ef">var</span> num_circle_segments :<span style="color:#f92672">=</span> <span style="color:#ae81ff">64</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">export</span> (<span style="color:#a6e22e">float</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">360</span>) <span style="color:#66d9ef">var</span> angle_opening :<span style="color:#f92672">=</span> <span style="color:#ae81ff">45.0</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">export</span> (<span style="color:#a6e22e">Color</span>) <span style="color:#66d9ef">var</span> color :<span style="color:#f92672">=</span> <span style="color:#a6e22e">Color</span><span style="color:#f92672">.</span>blue
+</span></span><span style="display:flex;"><span>export (<span style="color:#66d9ef">float</span>) <span style="color:#66d9ef">var</span> radius_inner <span style="color:#f92672">:=</span> <span style="color:#ae81ff">100.0</span>
+</span></span><span style="display:flex;"><span>export (<span style="color:#66d9ef">float</span>) <span style="color:#66d9ef">var</span> radius_outer <span style="color:#f92672">:=</span> <span style="color:#ae81ff">150.0</span>
+</span></span><span style="display:flex;"><span>export (<span style="color:#66d9ef">int</span>) <span style="color:#66d9ef">var</span> num_circle_segments <span style="color:#f92672">:=</span> <span style="color:#ae81ff">64</span>
+</span></span><span style="display:flex;"><span>export (<span style="color:#66d9ef">float</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">360</span>) <span style="color:#66d9ef">var</span> angle_opening <span style="color:#f92672">:=</span> <span style="color:#ae81ff">45.0</span>
+</span></span><span style="display:flex;"><span>export (<span style="color:#a6e22e">Color</span>) <span style="color:#66d9ef">var</span> color <span style="color:#f92672">:=</span> <span style="color:#a6e22e">Color</span><span style="color:#f92672">.</span>blue
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">onready</span> <span style="color:#66d9ef">var</span> shadow: <span style="color:#a6e22e">Polygon2D</span> <span style="color:#f92672">=</span> <span style="color:#f92672">$</span>Shadow
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">onready</span> <span style="color:#66d9ef">var</span> shape: <span style="color:#a6e22e">Polygon2D</span> <span style="color:#f92672">=</span> <span style="color:#f92672">$</span><span style="color:#a6e22e">Shape</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">onready</span> <span style="color:#66d9ef">var</span> area: <span style="color:#a6e22e">Area2D</span> <span style="color:#f92672">=</span> <span style="color:#f92672">$</span><span style="color:#a6e22e">Area2D</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">onready</span> <span style="color:#66d9ef">var</span> area_shape: <span style="color:#a6e22e">CollisionPolygon2D</span> <span style="color:#f92672">=</span> <span style="color:#f92672">$</span><span style="color:#a6e22e">Area2D</span><span style="color:#f92672">/</span><span style="color:#a6e22e">CollisionPolygon2D</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">onready</span> <span style="color:#66d9ef">var</span> tween: <span style="color:#a6e22e">Tween</span> <span style="color:#f92672">=</span> <span style="color:#f92672">$</span><span style="color:#a6e22e">Tween</span>
+</span></span><span style="display:flex;"><span>onready <span style="color:#66d9ef">var</span> shadow: <span style="color:#a6e22e">Polygon2D</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">$Shadow</span>
+</span></span><span style="display:flex;"><span>onready <span style="color:#66d9ef">var</span> shape: <span style="color:#a6e22e">Polygon2D</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">$Shape</span>
+</span></span><span style="display:flex;"><span>onready <span style="color:#66d9ef">var</span> area: <span style="color:#a6e22e">Area2D</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">$Area2D</span>
+</span></span><span style="display:flex;"><span>onready <span style="color:#66d9ef">var</span> area_shape: <span style="color:#a6e22e">CollisionPolygon2D</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">$Area2D/CollisionPolygon2D</span>
+</span></span><span style="display:flex;"><span>onready <span style="color:#66d9ef">var</span> tween: <span style="color:#a6e22e">Tween</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">$Tween</span>
 </span></span></code></pre></div><p>To create the shape we conceptually start with a ring, which is defined by an inner and an outer radius (<code>radius_inner</code> and <code>radius_outer</code>). We approximate the circles this ring is made up of with a regular polygon with a sufficiently large number of edges, defined by <code>num_circle_segments</code>. To create the C-shape from this ring we leave out a segment, the angular width of which is defined in degrees by <code>angle_opening</code>. Lastly, we want to set the <code>color</code> of our shape.</p>
 <p>Next in the code we define and assign a few <code>onready</code> variables, so we can easily access the child nodes later.</p>
 <p>Now for the heart of the code, the creation of the shape:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> _calculate_polygon() <span style="color:#f92672">-&gt;</span> PoolVector2Array:
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> array :<span style="color:#f92672">=</span> []
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">_calculate_polygon</span>() <span style="color:#f92672">-&gt;</span> PoolVector2Array:
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> array <span style="color:#f92672">:=</span> []
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> half_opning_rad :<span style="color:#f92672">=</span> deg2rad(angle_opening <span style="color:#f92672">/</span> <span style="color:#ae81ff">2.0</span>)
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> angle_step_size :<span style="color:#f92672">=</span> TAU <span style="color:#f92672">/</span> num_circle_segments
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> half_opning_rad <span style="color:#f92672">:=</span> <span style="color:#a6e22e">deg2rad</span>(angle_opening <span style="color:#f92672">/</span> <span style="color:#ae81ff">2.0</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> angle_step_size <span style="color:#f92672">:=</span> <span style="color:#66d9ef">TAU</span> <span style="color:#f92672">/</span> num_circle_segments
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>	array<span style="color:#f92672">.</span>append(polar2cartesian(radius_outer, half_opning_rad))
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> num_circle_segments:
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">var</span> phi: <span style="color:#a6e22e">float</span> <span style="color:#f92672">=</span> i <span style="color:#f92672">*</span> angle_step_size
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> phi <span style="color:#f92672">&lt;=</span> half_opning_rad:
-</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">continue</span>
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> phi <span style="color:#f92672">&gt;=</span> TAU <span style="color:#f92672">-</span> half_opning_rad:
-</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">break</span>
-</span></span><span style="display:flex;"><span>		array<span style="color:#f92672">.</span>append(polar2cartesian(radius_outer, phi))
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>	array<span style="color:#f92672">.</span>append(polar2cartesian(radius_outer, TAU <span style="color:#f92672">-</span> half_opning_rad))
-</span></span><span style="display:flex;"><span>	array<span style="color:#f92672">.</span>append(polar2cartesian(radius_inner, TAU <span style="color:#f92672">-</span> half_opning_rad))
+</span></span><span style="display:flex;"><span>	array<span style="color:#f92672">.</span><span style="color:#a6e22e">append</span>(<span style="color:#a6e22e">polar2cartesian</span>(radius_outer, half_opning_rad))
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> num_circle_segments:
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">var</span> phi: <span style="color:#a6e22e">float</span> <span style="color:#f92672">=</span> TAU <span style="color:#f92672">-</span> i <span style="color:#f92672">*</span> angle_step_size
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> phi <span style="color:#f92672">&gt;=</span> TAU <span style="color:#f92672">-</span> half_opning_rad:
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">var</span> phi: <span style="color:#66d9ef">float</span> <span style="color:#f92672">=</span> i <span style="color:#f92672">*</span> angle_step_size
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> phi <span style="color:#f92672">&lt;=</span> half_opning_rad:
+</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">continue</span>
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> phi <span style="color:#f92672">&gt;=</span> <span style="color:#66d9ef">TAU</span> <span style="color:#f92672">-</span> half_opning_rad:
+</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">break</span>
+</span></span><span style="display:flex;"><span>		array<span style="color:#f92672">.</span><span style="color:#a6e22e">append</span>(<span style="color:#a6e22e">polar2cartesian</span>(radius_outer, phi))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	array<span style="color:#f92672">.</span><span style="color:#a6e22e">append</span>(<span style="color:#a6e22e">polar2cartesian</span>(radius_outer, <span style="color:#66d9ef">TAU</span> <span style="color:#f92672">-</span> half_opning_rad))
+</span></span><span style="display:flex;"><span>	array<span style="color:#f92672">.</span><span style="color:#a6e22e">append</span>(<span style="color:#a6e22e">polar2cartesian</span>(radius_inner, <span style="color:#66d9ef">TAU</span> <span style="color:#f92672">-</span> half_opning_rad))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> num_circle_segments:
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">var</span> phi: <span style="color:#66d9ef">float</span> <span style="color:#f92672">=</span> <span style="color:#66d9ef">TAU</span> <span style="color:#f92672">-</span> i <span style="color:#f92672">*</span> angle_step_size
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> phi <span style="color:#f92672">&gt;=</span> <span style="color:#66d9ef">TAU</span> <span style="color:#f92672">-</span> half_opning_rad:
 </span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">continue</span>
 </span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> phi <span style="color:#f92672">&lt;=</span> half_opning_rad:
 </span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">break</span>
-</span></span><span style="display:flex;"><span>		array<span style="color:#f92672">.</span>append(polar2cartesian(radius_inner, phi))
+</span></span><span style="display:flex;"><span>		array<span style="color:#f92672">.</span><span style="color:#a6e22e">append</span>(<span style="color:#a6e22e">polar2cartesian</span>(radius_inner, phi))
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>	array<span style="color:#f92672">.</span>append(polar2cartesian(radius_inner, half_opning_rad))
+</span></span><span style="display:flex;"><span>	array<span style="color:#f92672">.</span><span style="color:#a6e22e">append</span>(<span style="color:#a6e22e">polar2cartesian</span>(radius_inner, half_opning_rad))
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> PoolVector2Array(array)
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">PoolVector2Array</span>(array)
 </span></span></code></pre></div>
 
 
@@ -295,17 +295,17 @@ Now that we have our scene, we will save it as <em>CShape.tscn</em>.</p>
 <p>After we are done going around the outer circle, we need to add the end point and switch to the inner circle. Then, we just repeat this looping process along the inner circle and in the other direction. We finish off by adding the inner upper end point. Lastly, we return this array as a <code>PoolVector2Array</code>.</p>
 <h3 id="testing-the-code-so-far">Testing the code so far</h3>
 <p>By now our shape script can create its shape, but we need to tell it to actually do that for us to see something. So we add three more functions to our script:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> _ready() <span style="color:#f92672">-&gt;</span> void:
-</span></span><span style="display:flex;"><span>	_update_values()
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">_ready</span>() <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">_update_values</span>()
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> _update_values() <span style="color:#f92672">-&gt;</span> void:
-</span></span><span style="display:flex;"><span>	_update_shape()
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">_update_values</span>() <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">_update_shape</span>()
 </span></span><span style="display:flex;"><span>	shape<span style="color:#f92672">.</span>color <span style="color:#f92672">=</span> color
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> _update_shape() <span style="color:#f92672">-&gt;</span> void:
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> polygon :<span style="color:#f92672">=</span> _calculate_polygon()
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">_update_shape</span>() <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> polygon <span style="color:#f92672">:=</span> <span style="color:#a6e22e">_calculate_polygon</span>()
 </span></span><span style="display:flex;"><span>	shape<span style="color:#f92672">.</span>polygon <span style="color:#f92672">=</span> polygon
 </span></span></code></pre></div><p>These functions just create the shape and pass it and the color to our <em>Shape</em> node. Right now it does not make a lot of sense to split them like that, but this setup will make it easier to extend for the shadow and our in-editor updates.</p>
 <p>You can now go to the <em>TestScene</em> and run that scene. You should see something like in the following image. You can also go ahead and change the <em>CShape</em>&rsquo;s script variables in the editor. If you run the scene again, you should see these changes in the shape.</p>
@@ -313,43 +313,43 @@ Now that we have our scene, we will save it as <em>CShape.tscn</em>.</p>
 <h2 id="making-it-respond-in-the-editor">Making it respond in the editor</h2>
 <p>While our scene has some functionality and quite some customizability, it still is annoying to use for designing levels. Right now we would have to guess some values, then run the game to see if they fit, and if not guess some better values. We can make our life a lot easier by making our shape generation code run in the editor, and make the scene respond to changes to the values, so ve can see our shape update live in the editor.</p>
 <p>The first thing we need to do for that is to add the <code>tool</code> keyword at the start of the script, to tell Godot that this script should also be executed in the editor. We also want the scene to react to changes to our values, so we add <code>setget</code> and a setter function name after all our exported variables (at which point Godot will complain, that none of our setter functions exist, but we will take care of that in a minute). So let us change the top of our script to the following:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">tool</span>
-</span></span><span style="display:flex;"><span>class_name CShape2
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span>tool
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">class_name</span> <span style="color:#a6e22e">CShape2</span>
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">extends</span> <span style="color:#a6e22e">Node2D</span>
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">export</span> (<span style="color:#a6e22e">float</span>) <span style="color:#66d9ef">var</span> radius_inner :<span style="color:#f92672">=</span> <span style="color:#ae81ff">100.0</span> <span style="color:#66d9ef">setget</span> set_radius_inner
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">export</span> (<span style="color:#a6e22e">float</span>) <span style="color:#66d9ef">var</span> radius_outer :<span style="color:#f92672">=</span> <span style="color:#ae81ff">150.0</span> <span style="color:#66d9ef">setget</span> set_radius_outer
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">export</span> (<span style="color:#a6e22e">float</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">360</span>) <span style="color:#66d9ef">var</span> angle_opening :<span style="color:#f92672">=</span> <span style="color:#ae81ff">45.0</span> <span style="color:#66d9ef">setget</span> set_angle_opening
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">export</span> (<span style="color:#a6e22e">int</span>) <span style="color:#66d9ef">var</span> num_circle_segments :<span style="color:#f92672">=</span> <span style="color:#ae81ff">64</span> <span style="color:#66d9ef">setget</span> set_num_circle_segments
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">export</span> (<span style="color:#a6e22e">Color</span>) <span style="color:#66d9ef">var</span> color :<span style="color:#f92672">=</span> <span style="color:#a6e22e">Color</span><span style="color:#f92672">.</span>blue <span style="color:#66d9ef">setget</span> set_color
+</span></span><span style="display:flex;"><span>export (<span style="color:#66d9ef">float</span>) <span style="color:#66d9ef">var</span> radius_inner <span style="color:#f92672">:=</span> <span style="color:#ae81ff">100.0</span> setget set_radius_inner
+</span></span><span style="display:flex;"><span>export (<span style="color:#66d9ef">float</span>) <span style="color:#66d9ef">var</span> radius_outer <span style="color:#f92672">:=</span> <span style="color:#ae81ff">150.0</span> setget set_radius_outer
+</span></span><span style="display:flex;"><span>export (<span style="color:#66d9ef">float</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">360</span>) <span style="color:#66d9ef">var</span> angle_opening <span style="color:#f92672">:=</span> <span style="color:#ae81ff">45.0</span> setget set_angle_opening
+</span></span><span style="display:flex;"><span>export (<span style="color:#66d9ef">int</span>) <span style="color:#66d9ef">var</span> num_circle_segments <span style="color:#f92672">:=</span> <span style="color:#ae81ff">64</span> setget set_num_circle_segments
+</span></span><span style="display:flex;"><span>export (<span style="color:#a6e22e">Color</span>) <span style="color:#66d9ef">var</span> color <span style="color:#f92672">:=</span> <span style="color:#a6e22e">Color</span><span style="color:#f92672">.</span>blue setget set_color
 </span></span></code></pre></div><p>Each of these setter functions has two jobs. The first one is to make sure the inputted values make sense (e.g., that the outer radius is bigger than the inner radius). The second one is to update the actual value. As most of these values are part of our shape generation function they mostly call <code>_update_shape()</code>. So, at the end of the script now let us add the following:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> set_radius_inner(value: <span style="color:#a6e22e">float</span>) <span style="color:#f92672">-&gt;</span> void:
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">set_radius_inner</span>(value: <span style="color:#66d9ef">float</span>) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
 </span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> value <span style="color:#f92672">&gt;=</span> <span style="color:#ae81ff">0</span> <span style="color:#f92672">and</span> value <span style="color:#f92672">&lt;</span> radius_outer:
 </span></span><span style="display:flex;"><span>		radius_inner <span style="color:#f92672">=</span> value
-</span></span><span style="display:flex;"><span>		_update_shape()
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">_update_shape</span>()
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> set_radius_outer(value: <span style="color:#a6e22e">float</span>) <span style="color:#f92672">-&gt;</span> void:
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">set_radius_outer</span>(value: <span style="color:#66d9ef">float</span>) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
 </span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> value <span style="color:#f92672">&gt;</span> radius_inner:
 </span></span><span style="display:flex;"><span>		radius_outer <span style="color:#f92672">=</span> value
-</span></span><span style="display:flex;"><span>		_update_shape()
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">_update_shape</span>()
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> set_angle_opening(value: <span style="color:#a6e22e">float</span>) <span style="color:#f92672">-&gt;</span> void:
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">set_angle_opening</span>(value: <span style="color:#66d9ef">float</span>) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
 </span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> value <span style="color:#f92672">&gt;=</span> <span style="color:#ae81ff">0</span> <span style="color:#f92672">and</span> value <span style="color:#f92672">&lt;=</span> <span style="color:#ae81ff">360</span>:
 </span></span><span style="display:flex;"><span>		angle_opening <span style="color:#f92672">=</span> value
-</span></span><span style="display:flex;"><span>		_update_shape()
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">_update_shape</span>()
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> set_num_circle_segments(value: <span style="color:#a6e22e">int</span>) <span style="color:#f92672">-&gt;</span> void:
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">set_num_circle_segments</span>(value: <span style="color:#66d9ef">int</span>) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
 </span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> value <span style="color:#f92672">&gt;=</span> <span style="color:#ae81ff">3</span>:
 </span></span><span style="display:flex;"><span>		num_circle_segments <span style="color:#f92672">=</span> value
-</span></span><span style="display:flex;"><span>		_update_shape()
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">_update_shape</span>()
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> set_color(value: <span style="color:#a6e22e">Color</span>) <span style="color:#f92672">-&gt;</span> void:
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">set_color</span>(value: <span style="color:#a6e22e">Color</span>) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
 </span></span><span style="display:flex;"><span>			color <span style="color:#f92672">=</span> value
-</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> is_inside_tree():
+</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> <span style="color:#a6e22e">is_inside_tree</span>():
 </span></span><span style="display:flex;"><span>				<span style="color:#66d9ef">return</span>
 </span></span><span style="display:flex;"><span>			shape<span style="color:#f92672">.</span>color <span style="color:#f92672">=</span> color
 </span></span></code></pre></div><p>As you can see, the code is relatively straight forward. One thing you might notice is the strange conditional statement in the <code>set_color()</code> function. This has to do with the behavior of setter functions and exported variables.</p>
@@ -365,58 +365,58 @@ Now that we have our scene, we will save it as <em>CShape.tscn</em>.</p>
 <p>(*just if it is not clear, this is a pun, so do not remember this as a rule of order of execution (it is basically the other way around))</p>
 <p>When a script has an exported variable we often want to access the values set by the user from the start, i.e., in the <code>_ready()</code> function. So if we set an exported variable&rsquo;s value in the editor (so whenever the editor shows the little reset icon next to the variable), then Godot wants to make sure we have this values ready as soon as the scene gets instanced, an sets these values to the ones chosen in the editor. Now, if these values have setter functions, Godot will call these for us. So far so good. A problem arises when we want to access child nodes. Because this variable setting happens before the scene gets added to the scene tree, and therefore before the child nodes even exist.
 However, this is no problem. Because if the node the script is on is not yet in the tree, we can tell the function to pause until that node, and consequently all its child nodes, are ready, and only then access those children. Usually you will find the following code segment in this case:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> is_inside_tree():
-</span></span><span style="display:flex;"><span>	yield(self, <span style="color:#e6db74">&#34;ready&#34;</span>)
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> <span style="color:#a6e22e">is_inside_tree</span>():
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">yield</span>(self, <span style="color:#e6db74">&#34;ready&#34;</span>)
 </span></span></code></pre></div><p>However, in our case we update all these values manually in the <code>_ready()</code> function anyway, so we can just <code>return</code> from the function if it is called before the node has entered the tree.</p>
 
   </div>
 </div>
 
 <p>The above problem also affects our shape generation, so we update <code>_update_shape()</code> to:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> _update_shape() <span style="color:#f92672">-&gt;</span> void:
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> polygon :<span style="color:#f92672">=</span> _calculate_polygon()
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> is_inside_tree():
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">_update_shape</span>() <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> polygon <span style="color:#f92672">:=</span> <span style="color:#a6e22e">_calculate_polygon</span>()
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> <span style="color:#a6e22e">is_inside_tree</span>():
 </span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span>
 </span></span><span style="display:flex;"><span>	shape<span style="color:#f92672">.</span>polygon <span style="color:#f92672">=</span> polygon
 </span></span></code></pre></div><p>At this point you can save the script, and then reload our test scene (either close and reopen it, or click <em>Scene</em> &gt; <em>Reload Saved Scene</em>). You will have to do this every time you make changes to the script. Once you do you will see that the shape now reacts to changes to its script variables.</p>
 <h2 id="some-collision">Some Collision</h2>
 <p>This step is rather simple. We need to make sure that our <code>Area2D</code>&rsquo;s <code>CollisionPolygon2D</code> child has the proper shape. We can do this by adding one line to <code>_update_shape()</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> _update_shape() <span style="color:#f92672">-&gt;</span> void:
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> polygon :<span style="color:#f92672">=</span> _calculate_polygon()
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> is_inside_tree():
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">_update_shape</span>() <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> polygon <span style="color:#f92672">:=</span> <span style="color:#a6e22e">_calculate_polygon</span>()
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> <span style="color:#a6e22e">is_inside_tree</span>():
 </span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span>
 </span></span><span style="display:flex;"><span>	shape<span style="color:#f92672">.</span>polygon <span style="color:#f92672">=</span> polygon
 </span></span><span style="display:flex;"><span>	area_shape<span style="color:#f92672">.</span>polygon <span style="color:#f92672">=</span> polygon
 </span></span></code></pre></div><p>This change is hard to see, because the <code>Polygon2D</code> nodes (of exactly the same shape) are in front of the <code>Area2D</code> node, but this is intended, because we want to be able to see the shape&rsquo;s correct color. Still, once you reloaded the Test scene, you should see a thin red outline around the shape.</p>
 <h2 id="casting-a-shadow">Casting a Shadow</h2>
 <p>The shadow will have two properties, it&rsquo;s color, and how it is offset from the main shape. So we will add these to our list of export variables.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">export</span> (<span style="color:#a6e22e">Color</span>) <span style="color:#66d9ef">var</span> shadow_color :<span style="color:#f92672">=</span> <span style="color:#a6e22e">Color</span><span style="color:#f92672">.</span>black <span style="color:#66d9ef">setget</span> set_shadow_color
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">export</span> (<span style="color:#a6e22e">Vector2</span>) <span style="color:#66d9ef">var</span> shadow_offset :<span style="color:#f92672">=</span> <span style="color:#a6e22e">Vector2</span>(<span style="color:#ae81ff">5.0</span>, <span style="color:#ae81ff">5.0</span>) <span style="color:#66d9ef">setget</span> set_shadow_offset
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span>export (<span style="color:#a6e22e">Color</span>) <span style="color:#66d9ef">var</span> shadow_color <span style="color:#f92672">:=</span> <span style="color:#a6e22e">Color</span><span style="color:#f92672">.</span>black setget set_shadow_color
+</span></span><span style="display:flex;"><span>export (<span style="color:#a6e22e">Vector2</span>) <span style="color:#66d9ef">var</span> shadow_offset <span style="color:#f92672">:=</span> <span style="color:#a6e22e">Vector2</span>(<span style="color:#ae81ff">5.0</span>, <span style="color:#ae81ff">5.0</span>) setget set_shadow_offset
 </span></span></code></pre></div><p>As you can see these properties also get their own setters, so let us define these:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> set_shadow_color(value: <span style="color:#a6e22e">Color</span>) <span style="color:#f92672">-&gt;</span> void:
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">set_shadow_color</span>(value: <span style="color:#a6e22e">Color</span>) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
 </span></span><span style="display:flex;"><span>	shadow_color <span style="color:#f92672">=</span> value
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> is_inside_tree():
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> <span style="color:#a6e22e">is_inside_tree</span>():
 </span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span>
 </span></span><span style="display:flex;"><span>	shadow<span style="color:#f92672">.</span>color <span style="color:#f92672">=</span> shadow_color
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> set_shadow_offset(value: <span style="color:#a6e22e">Vector2</span>) <span style="color:#f92672">-&gt;</span> void:
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">set_shadow_offset</span>(value: <span style="color:#a6e22e">Vector2</span>) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
 </span></span><span style="display:flex;"><span>	shadow_offset <span style="color:#f92672">=</span> value
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> is_inside_tree():
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> <span style="color:#a6e22e">is_inside_tree</span>():
 </span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span>
 </span></span><span style="display:flex;"><span>	shadow<span style="color:#f92672">.</span>position <span style="color:#f92672">=</span> shadow_offset
 </span></span></code></pre></div><p>We also need to account for the shadow in our <code>_update_values()</code> and <code>_update_shape()</code> functions:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> _update_values() <span style="color:#f92672">-&gt;</span> void:
-</span></span><span style="display:flex;"><span>	_update_shape()
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">_update_values</span>() <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">_update_shape</span>()
 </span></span><span style="display:flex;"><span>	shape<span style="color:#f92672">.</span>color <span style="color:#f92672">=</span> color
 </span></span><span style="display:flex;"><span>	shadow<span style="color:#f92672">.</span>color <span style="color:#f92672">=</span> shadow_color
 </span></span><span style="display:flex;"><span>	shadow<span style="color:#f92672">.</span>position <span style="color:#f92672">=</span> shadow_offset
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> _update_shape() <span style="color:#f92672">-&gt;</span> void:
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> polygon :<span style="color:#f92672">=</span> _calculate_polygon()
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> is_inside_tree():
-</span></span><span style="display:flex;"><span>		yield(self, <span style="color:#e6db74">&#34;ready&#34;</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">_update_shape</span>() <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> polygon <span style="color:#f92672">:=</span> <span style="color:#a6e22e">_calculate_polygon</span>()
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> <span style="color:#a6e22e">is_inside_tree</span>():
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">yield</span>(self, <span style="color:#e6db74">&#34;ready&#34;</span>)
 </span></span><span style="display:flex;"><span>	shape<span style="color:#f92672">.</span>polygon <span style="color:#f92672">=</span> polygon
 </span></span><span style="display:flex;"><span>	shadow<span style="color:#f92672">.</span>polygon <span style="color:#f92672">=</span> polygon
 </span></span><span style="display:flex;"><span>	area_shape<span style="color:#f92672">.</span>polygon <span style="color:#f92672">=</span> polygon
@@ -426,35 +426,35 @@ However, this is no problem. Because if the node the script is on is not yet in 
 <p>As this object is intended for a kind of puzzle game I wanted to create this rotation feature with that in mind. To make the rotation as deterministic and easy to set up by the designer as possible, we add three exported variables:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">enum</span> directions {Clockwise <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>, Counterclockwise <span style="color:#f92672">=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>}
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">export</span> (<span style="color:#a6e22e">float</span>) <span style="color:#66d9ef">var</span> rotation_period :<span style="color:#f92672">=</span> <span style="color:#ae81ff">10.0</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">export</span> (<span style="color:#a6e22e">float</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">360</span>) <span style="color:#66d9ef">var</span> starting_angle :<span style="color:#f92672">=</span> <span style="color:#ae81ff">0.0</span> <span style="color:#66d9ef">setget</span> set_starting_angle
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">export</span> (directions) <span style="color:#66d9ef">var</span> rotation_direction: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> directions<span style="color:#f92672">.</span>Clockwise
+</span></span><span style="display:flex;"><span>export (<span style="color:#66d9ef">float</span>) <span style="color:#66d9ef">var</span> rotation_period <span style="color:#f92672">:=</span> <span style="color:#ae81ff">10.0</span>
+</span></span><span style="display:flex;"><span>export (<span style="color:#66d9ef">float</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">360</span>) <span style="color:#66d9ef">var</span> starting_angle <span style="color:#f92672">:=</span> <span style="color:#ae81ff">0.0</span> setget set_starting_angle
+</span></span><span style="display:flex;"><span>export (directions) <span style="color:#66d9ef">var</span> rotation_direction: <span style="color:#66d9ef">int</span> <span style="color:#f92672">=</span> directions<span style="color:#f92672">.</span>Clockwise
 </span></span></code></pre></div><p>The speed is controlled by the rotation period, the duration the object needs to complete one revolution, measured in seconds. To set up the puzzles without having to rotate the whole object (thereby messing up the direction of the shadow), we can set an initial angle the object will start at when the level starts. And lastly we export the direction the object should turn in. For this we also have defined an <code>enum directions</code> which stores factors we will later use to easily set the direction.</p>
 <p>We will only use the period and direction at runtime. The objects should not turn in the editor, so no setters are necessary. But the starting angle should be visible in the editor, so we define a setter for it:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> set_starting_angle(value: <span style="color:#a6e22e">float</span>) <span style="color:#f92672">-&gt;</span> void:
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">set_starting_angle</span>(value: <span style="color:#66d9ef">float</span>) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
 </span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> value <span style="color:#f92672">&gt;=</span> <span style="color:#ae81ff">0</span> <span style="color:#f92672">and</span> value <span style="color:#f92672">&lt;=</span> <span style="color:#ae81ff">360</span>:
 </span></span><span style="display:flex;"><span>		starting_angle <span style="color:#f92672">=</span> value
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> is_inside_tree():
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> <span style="color:#a6e22e">is_inside_tree</span>():
 </span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">return</span>
 </span></span><span style="display:flex;"><span>		shape<span style="color:#f92672">.</span>rotation_degrees <span style="color:#f92672">=</span> starting_angle
 </span></span><span style="display:flex;"><span>		shadow<span style="color:#f92672">.</span>rotation_degrees <span style="color:#f92672">=</span> starting_angle
 </span></span><span style="display:flex;"><span>		area<span style="color:#f92672">.</span>rotation_degrees <span style="color:#f92672">=</span> starting_angle
 </span></span></code></pre></div><p>You notice that we set the <em>Shape</em>&rsquo;s, <em>Shadow</em>&rsquo;s, and <em>Area2D</em>&rsquo;s rotation independently. This way each will rotate around their own center, which is important for the <em>Shadow</em>, which is offset from the other shapes.</p>
 <p>As we want the rotation to be deterministic and based on the period we can utilize tweens. A <code>Tween</code> will properly interpolate between the start position and the end position. Let is define a function that handles one of these rotations:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> _start_next_rotation() <span style="color:#f92672">-&gt;</span> void:
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> start_value :<span style="color:#f92672">=</span> deg2rad(starting_angle)
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> end_value :<span style="color:#f92672">=</span> start_value <span style="color:#f92672">+</span> rotation_direction <span style="color:#f92672">*</span> TAU
-</span></span><span style="display:flex;"><span>	tween<span style="color:#f92672">.</span>interpolate_property(shape, <span style="color:#e6db74">&#34;rotation&#34;</span>, start_value, end_value, rotation_period)
-</span></span><span style="display:flex;"><span>	tween<span style="color:#f92672">.</span>interpolate_property(shadow, <span style="color:#e6db74">&#34;rotation&#34;</span>, start_value, end_value, rotation_period)
-</span></span><span style="display:flex;"><span>	tween<span style="color:#f92672">.</span>interpolate_property(area, <span style="color:#e6db74">&#34;rotation&#34;</span>, start_value, end_value, rotation_period)
-</span></span><span style="display:flex;"><span>	tween<span style="color:#f92672">.</span>start()
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">_start_next_rotation</span>() <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> start_value <span style="color:#f92672">:=</span> <span style="color:#a6e22e">deg2rad</span>(starting_angle)
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> end_value <span style="color:#f92672">:=</span> start_value <span style="color:#f92672">+</span> rotation_direction <span style="color:#f92672">*</span> <span style="color:#66d9ef">TAU</span>
+</span></span><span style="display:flex;"><span>	tween<span style="color:#f92672">.</span><span style="color:#a6e22e">interpolate_property</span>(shape, <span style="color:#e6db74">&#34;rotation&#34;</span>, start_value, end_value, rotation_period)
+</span></span><span style="display:flex;"><span>	tween<span style="color:#f92672">.</span><span style="color:#a6e22e">interpolate_property</span>(shadow, <span style="color:#e6db74">&#34;rotation&#34;</span>, start_value, end_value, rotation_period)
+</span></span><span style="display:flex;"><span>	tween<span style="color:#f92672">.</span><span style="color:#a6e22e">interpolate_property</span>(area, <span style="color:#e6db74">&#34;rotation&#34;</span>, start_value, end_value, rotation_period)
+</span></span><span style="display:flex;"><span>	tween<span style="color:#f92672">.</span><span style="color:#a6e22e">start</span>()
 </span></span></code></pre></div><p>This function first takes the <code>starting_angle</code> and converts it into radians. If then calculates a target value as one full rotation (i.e., one <code>TAU</code>) before or after this value (depending on the factor set by the <code>rotation_direction</code>). Then we tell the tween to interpolate this value (linearly, as is the default) between this start and and rotation for a number of seconds set by <code>rotation_period</code> on each of our relevant child nodes (<em>Shape</em>, <em>Shadow</em>, and <em>Area2D</em>). As a last instruction we start the tween.</p>
 <p>All that is left is to start this rotation once the game starts. To achieve this, we update our <code>_ready()</code> function like this:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> _ready() <span style="color:#f92672">-&gt;</span> void:
-</span></span><span style="display:flex;"><span>	_update_values()
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> Engine<span style="color:#f92672">.</span>editor_hint:
-</span></span><span style="display:flex;"><span>		tween<span style="color:#f92672">.</span>connect(<span style="color:#e6db74">&#34;tween_all_completed&#34;</span>, self, <span style="color:#e6db74">&#34;_start_next_rotation&#34;</span>)
-</span></span><span style="display:flex;"><span>		_start_next_rotation()
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">_ready</span>() <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">_update_values</span>()
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> <span style="color:#a6e22e">Engine</span><span style="color:#f92672">.</span>editor_hint:
+</span></span><span style="display:flex;"><span>		tween<span style="color:#f92672">.</span><span style="color:#a6e22e">connect</span>(<span style="color:#e6db74">&#34;tween_all_completed&#34;</span>, self, <span style="color:#e6db74">&#34;_start_next_rotation&#34;</span>)
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">_start_next_rotation</span>()
 </span></span></code></pre></div><p>As mentioned earlier, we do not want the object to rotate in the editor, so we first check if we are in the editor. If we are sure that we are not, we connect the <em>Tween</em>&rsquo;s <code>tween_all_completed</code> signal to our <code>_start_next_rotation()</code> function. That way the completion of one rotation will trigger the start of the next. Lastly, we start the first rotation.</p>
 <p><img src="/images/posts/procedural_shapes/Rotation.gif" alt="The rotating Shape"></p>
 <h2 id="afterword">Afterword</h2>
@@ -462,143 +462,143 @@ However, this is no problem. Because if the node the script is on is not yet in 
 Also feel free to tell me if there is a topic you want me to tackle an another tutorial, I am always happy about ideas.</p>
 <h2 id="complete-code">Complete Code</h2>
 <p>For easy reference, here is the complete code.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">tool</span>
-</span></span><span style="display:flex;"><span>class_name CShape
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span>tool
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">class_name</span> <span style="color:#a6e22e">CShape</span>
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">extends</span> <span style="color:#a6e22e">Node2D</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">enum</span> directions {Clockwise <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>, Counterclockwise <span style="color:#f92672">=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>}
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">export</span> (<span style="color:#a6e22e">float</span>) <span style="color:#66d9ef">var</span> radius_inner :<span style="color:#f92672">=</span> <span style="color:#ae81ff">100.0</span> <span style="color:#66d9ef">setget</span> set_radius_inner
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">export</span> (<span style="color:#a6e22e">float</span>) <span style="color:#66d9ef">var</span> radius_outer :<span style="color:#f92672">=</span> <span style="color:#ae81ff">150.0</span> <span style="color:#66d9ef">setget</span> set_radius_outer
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">export</span> (<span style="color:#a6e22e">float</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">360</span>) <span style="color:#66d9ef">var</span> angle_opening :<span style="color:#f92672">=</span> <span style="color:#ae81ff">45.0</span> <span style="color:#66d9ef">setget</span> set_angle_opening
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">export</span> (<span style="color:#a6e22e">int</span>) <span style="color:#66d9ef">var</span> num_circle_segments :<span style="color:#f92672">=</span> <span style="color:#ae81ff">64</span> <span style="color:#66d9ef">setget</span> set_num_circle_segments
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">export</span> (<span style="color:#a6e22e">Color</span>) <span style="color:#66d9ef">var</span> color :<span style="color:#f92672">=</span> <span style="color:#a6e22e">Color</span><span style="color:#f92672">.</span>blue <span style="color:#66d9ef">setget</span> set_color
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">export</span> (<span style="color:#a6e22e">Color</span>) <span style="color:#66d9ef">var</span> shadow_color :<span style="color:#f92672">=</span> <span style="color:#a6e22e">Color</span><span style="color:#f92672">.</span>black <span style="color:#66d9ef">setget</span> set_shadow_color
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">export</span> (<span style="color:#a6e22e">Vector2</span>) <span style="color:#66d9ef">var</span> shadow_offset :<span style="color:#f92672">=</span> <span style="color:#a6e22e">Vector2</span>(<span style="color:#ae81ff">5.0</span>, <span style="color:#ae81ff">5.0</span>) <span style="color:#66d9ef">setget</span> set_shadow_offset
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">export</span> (<span style="color:#a6e22e">float</span>) <span style="color:#66d9ef">var</span> rotation_period :<span style="color:#f92672">=</span> <span style="color:#ae81ff">10.0</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">export</span> (<span style="color:#a6e22e">float</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">360</span>) <span style="color:#66d9ef">var</span> starting_angle :<span style="color:#f92672">=</span> <span style="color:#ae81ff">0.0</span> <span style="color:#66d9ef">setget</span> set_starting_angle
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">export</span> (directions) <span style="color:#66d9ef">var</span> rotation_direction: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> directions<span style="color:#f92672">.</span>Clockwise
+</span></span><span style="display:flex;"><span>export (<span style="color:#66d9ef">float</span>) <span style="color:#66d9ef">var</span> radius_inner <span style="color:#f92672">:=</span> <span style="color:#ae81ff">100.0</span> setget set_radius_inner
+</span></span><span style="display:flex;"><span>export (<span style="color:#66d9ef">float</span>) <span style="color:#66d9ef">var</span> radius_outer <span style="color:#f92672">:=</span> <span style="color:#ae81ff">150.0</span> setget set_radius_outer
+</span></span><span style="display:flex;"><span>export (<span style="color:#66d9ef">float</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">360</span>) <span style="color:#66d9ef">var</span> angle_opening <span style="color:#f92672">:=</span> <span style="color:#ae81ff">45.0</span> setget set_angle_opening
+</span></span><span style="display:flex;"><span>export (<span style="color:#66d9ef">int</span>) <span style="color:#66d9ef">var</span> num_circle_segments <span style="color:#f92672">:=</span> <span style="color:#ae81ff">64</span> setget set_num_circle_segments
+</span></span><span style="display:flex;"><span>export (<span style="color:#a6e22e">Color</span>) <span style="color:#66d9ef">var</span> color <span style="color:#f92672">:=</span> <span style="color:#a6e22e">Color</span><span style="color:#f92672">.</span>blue setget set_color
+</span></span><span style="display:flex;"><span>export (<span style="color:#a6e22e">Color</span>) <span style="color:#66d9ef">var</span> shadow_color <span style="color:#f92672">:=</span> <span style="color:#a6e22e">Color</span><span style="color:#f92672">.</span>black setget set_shadow_color
+</span></span><span style="display:flex;"><span>export (<span style="color:#a6e22e">Vector2</span>) <span style="color:#66d9ef">var</span> shadow_offset <span style="color:#f92672">:=</span> <span style="color:#a6e22e">Vector2</span>(<span style="color:#ae81ff">5.0</span>, <span style="color:#ae81ff">5.0</span>) setget set_shadow_offset
+</span></span><span style="display:flex;"><span>export (<span style="color:#66d9ef">float</span>) <span style="color:#66d9ef">var</span> rotation_period <span style="color:#f92672">:=</span> <span style="color:#ae81ff">10.0</span>
+</span></span><span style="display:flex;"><span>export (<span style="color:#66d9ef">float</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">360</span>) <span style="color:#66d9ef">var</span> starting_angle <span style="color:#f92672">:=</span> <span style="color:#ae81ff">0.0</span> setget set_starting_angle
+</span></span><span style="display:flex;"><span>export (directions) <span style="color:#66d9ef">var</span> rotation_direction: <span style="color:#66d9ef">int</span> <span style="color:#f92672">=</span> directions<span style="color:#f92672">.</span>Clockwise
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">onready</span> <span style="color:#66d9ef">var</span> shadow: <span style="color:#a6e22e">Polygon2D</span> <span style="color:#f92672">=</span> <span style="color:#f92672">$</span>Shadow
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">onready</span> <span style="color:#66d9ef">var</span> shape: <span style="color:#a6e22e">Polygon2D</span> <span style="color:#f92672">=</span> <span style="color:#f92672">$</span><span style="color:#a6e22e">Shape</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">onready</span> <span style="color:#66d9ef">var</span> area: <span style="color:#a6e22e">Area2D</span> <span style="color:#f92672">=</span> <span style="color:#f92672">$</span><span style="color:#a6e22e">Area2D</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">onready</span> <span style="color:#66d9ef">var</span> area_shape: <span style="color:#a6e22e">CollisionPolygon2D</span> <span style="color:#f92672">=</span> <span style="color:#f92672">$</span><span style="color:#a6e22e">Area2D</span><span style="color:#f92672">/</span><span style="color:#a6e22e">CollisionPolygon2D</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">onready</span> <span style="color:#66d9ef">var</span> tween: <span style="color:#a6e22e">Tween</span> <span style="color:#f92672">=</span> <span style="color:#f92672">$</span><span style="color:#a6e22e">Tween</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> _ready() <span style="color:#f92672">-&gt;</span> void:
-</span></span><span style="display:flex;"><span>	_update_values()
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> Engine<span style="color:#f92672">.</span>editor_hint:
-</span></span><span style="display:flex;"><span>		tween<span style="color:#f92672">.</span>connect(<span style="color:#e6db74">&#34;tween_all_completed&#34;</span>, self, <span style="color:#e6db74">&#34;_start_next_rotation&#34;</span>)
-</span></span><span style="display:flex;"><span>		_start_next_rotation()
+</span></span><span style="display:flex;"><span>onready <span style="color:#66d9ef">var</span> shadow: <span style="color:#a6e22e">Polygon2D</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">$Shadow</span>
+</span></span><span style="display:flex;"><span>onready <span style="color:#66d9ef">var</span> shape: <span style="color:#a6e22e">Polygon2D</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">$Shape</span>
+</span></span><span style="display:flex;"><span>onready <span style="color:#66d9ef">var</span> area: <span style="color:#a6e22e">Area2D</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">$Area2D</span>
+</span></span><span style="display:flex;"><span>onready <span style="color:#66d9ef">var</span> area_shape: <span style="color:#a6e22e">CollisionPolygon2D</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">$Area2D/CollisionPolygon2D</span>
+</span></span><span style="display:flex;"><span>onready <span style="color:#66d9ef">var</span> tween: <span style="color:#a6e22e">Tween</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">$Tween</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> _update_values() <span style="color:#f92672">-&gt;</span> void:
-</span></span><span style="display:flex;"><span>	_update_shape()
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">_ready</span>() <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">_update_values</span>()
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> <span style="color:#a6e22e">Engine</span><span style="color:#f92672">.</span>editor_hint:
+</span></span><span style="display:flex;"><span>		tween<span style="color:#f92672">.</span><span style="color:#a6e22e">connect</span>(<span style="color:#e6db74">&#34;tween_all_completed&#34;</span>, self, <span style="color:#e6db74">&#34;_start_next_rotation&#34;</span>)
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">_start_next_rotation</span>()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">_update_values</span>() <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">_update_shape</span>()
 </span></span><span style="display:flex;"><span>	shape<span style="color:#f92672">.</span>color <span style="color:#f92672">=</span> color
 </span></span><span style="display:flex;"><span>	shadow<span style="color:#f92672">.</span>color <span style="color:#f92672">=</span> shadow_color
 </span></span><span style="display:flex;"><span>	shadow<span style="color:#f92672">.</span>position <span style="color:#f92672">=</span> shadow_offset
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> _update_shape() <span style="color:#f92672">-&gt;</span> void:
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> polygon :<span style="color:#f92672">=</span> _calculate_polygon()
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> is_inside_tree():
-</span></span><span style="display:flex;"><span>		yield(self, <span style="color:#e6db74">&#34;ready&#34;</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">_update_shape</span>() <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> polygon <span style="color:#f92672">:=</span> <span style="color:#a6e22e">_calculate_polygon</span>()
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> <span style="color:#a6e22e">is_inside_tree</span>():
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">yield</span>(self, <span style="color:#e6db74">&#34;ready&#34;</span>)
 </span></span><span style="display:flex;"><span>	shape<span style="color:#f92672">.</span>polygon <span style="color:#f92672">=</span> polygon
 </span></span><span style="display:flex;"><span>	shadow<span style="color:#f92672">.</span>polygon <span style="color:#f92672">=</span> polygon
 </span></span><span style="display:flex;"><span>	area_shape<span style="color:#f92672">.</span>polygon <span style="color:#f92672">=</span> polygon
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> _calculate_polygon() <span style="color:#f92672">-&gt;</span> PoolVector2Array:
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> array :<span style="color:#f92672">=</span> []
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">_calculate_polygon</span>() <span style="color:#f92672">-&gt;</span> PoolVector2Array:
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> array <span style="color:#f92672">:=</span> []
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> half_opning_rad :<span style="color:#f92672">=</span> deg2rad(angle_opening <span style="color:#f92672">/</span> <span style="color:#ae81ff">2.0</span>)
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> angle_step_size :<span style="color:#f92672">=</span> TAU <span style="color:#f92672">/</span> num_circle_segments
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> half_opning_rad <span style="color:#f92672">:=</span> <span style="color:#a6e22e">deg2rad</span>(angle_opening <span style="color:#f92672">/</span> <span style="color:#ae81ff">2.0</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> angle_step_size <span style="color:#f92672">:=</span> <span style="color:#66d9ef">TAU</span> <span style="color:#f92672">/</span> num_circle_segments
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>	array<span style="color:#f92672">.</span>append(polar2cartesian(radius_outer, half_opning_rad))
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> num_circle_segments:
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">var</span> phi: <span style="color:#a6e22e">float</span> <span style="color:#f92672">=</span> i <span style="color:#f92672">*</span> angle_step_size
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> phi <span style="color:#f92672">&lt;=</span> half_opning_rad:
-</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">continue</span>
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> phi <span style="color:#f92672">&gt;=</span> TAU <span style="color:#f92672">-</span> half_opning_rad:
-</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">break</span>
-</span></span><span style="display:flex;"><span>		array<span style="color:#f92672">.</span>append(polar2cartesian(radius_outer, phi))
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>	array<span style="color:#f92672">.</span>append(polar2cartesian(radius_outer, TAU <span style="color:#f92672">-</span> half_opning_rad))
-</span></span><span style="display:flex;"><span>	array<span style="color:#f92672">.</span>append(polar2cartesian(radius_inner, TAU <span style="color:#f92672">-</span> half_opning_rad))
+</span></span><span style="display:flex;"><span>	array<span style="color:#f92672">.</span><span style="color:#a6e22e">append</span>(<span style="color:#a6e22e">polar2cartesian</span>(radius_outer, half_opning_rad))
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> num_circle_segments:
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">var</span> phi: <span style="color:#a6e22e">float</span> <span style="color:#f92672">=</span> TAU <span style="color:#f92672">-</span> i <span style="color:#f92672">*</span> angle_step_size
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> phi <span style="color:#f92672">&gt;=</span> TAU <span style="color:#f92672">-</span> half_opning_rad:
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">var</span> phi: <span style="color:#66d9ef">float</span> <span style="color:#f92672">=</span> i <span style="color:#f92672">*</span> angle_step_size
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> phi <span style="color:#f92672">&lt;=</span> half_opning_rad:
+</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">continue</span>
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> phi <span style="color:#f92672">&gt;=</span> <span style="color:#66d9ef">TAU</span> <span style="color:#f92672">-</span> half_opning_rad:
+</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">break</span>
+</span></span><span style="display:flex;"><span>		array<span style="color:#f92672">.</span><span style="color:#a6e22e">append</span>(<span style="color:#a6e22e">polar2cartesian</span>(radius_outer, phi))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	array<span style="color:#f92672">.</span><span style="color:#a6e22e">append</span>(<span style="color:#a6e22e">polar2cartesian</span>(radius_outer, <span style="color:#66d9ef">TAU</span> <span style="color:#f92672">-</span> half_opning_rad))
+</span></span><span style="display:flex;"><span>	array<span style="color:#f92672">.</span><span style="color:#a6e22e">append</span>(<span style="color:#a6e22e">polar2cartesian</span>(radius_inner, <span style="color:#66d9ef">TAU</span> <span style="color:#f92672">-</span> half_opning_rad))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> num_circle_segments:
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">var</span> phi: <span style="color:#66d9ef">float</span> <span style="color:#f92672">=</span> <span style="color:#66d9ef">TAU</span> <span style="color:#f92672">-</span> i <span style="color:#f92672">*</span> angle_step_size
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> phi <span style="color:#f92672">&gt;=</span> <span style="color:#66d9ef">TAU</span> <span style="color:#f92672">-</span> half_opning_rad:
 </span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">continue</span>
 </span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> phi <span style="color:#f92672">&lt;=</span> half_opning_rad:
 </span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">break</span>
-</span></span><span style="display:flex;"><span>		array<span style="color:#f92672">.</span>append(polar2cartesian(radius_inner, phi))
+</span></span><span style="display:flex;"><span>		array<span style="color:#f92672">.</span><span style="color:#a6e22e">append</span>(<span style="color:#a6e22e">polar2cartesian</span>(radius_inner, phi))
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>	array<span style="color:#f92672">.</span>append(polar2cartesian(radius_inner, half_opning_rad))
+</span></span><span style="display:flex;"><span>	array<span style="color:#f92672">.</span><span style="color:#a6e22e">append</span>(<span style="color:#a6e22e">polar2cartesian</span>(radius_inner, half_opning_rad))
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> PoolVector2Array(array)
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> _start_next_rotation() <span style="color:#f92672">-&gt;</span> void:
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> start_value :<span style="color:#f92672">=</span> deg2rad(starting_angle)
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> end_value :<span style="color:#f92672">=</span> start_value <span style="color:#f92672">+</span> rotation_direction <span style="color:#f92672">*</span> TAU
-</span></span><span style="display:flex;"><span>	tween<span style="color:#f92672">.</span>interpolate_property(shape, <span style="color:#e6db74">&#34;rotation&#34;</span>, start_value, end_value, rotation_period)
-</span></span><span style="display:flex;"><span>	tween<span style="color:#f92672">.</span>interpolate_property(shadow, <span style="color:#e6db74">&#34;rotation&#34;</span>, start_value, end_value, rotation_period)
-</span></span><span style="display:flex;"><span>	tween<span style="color:#f92672">.</span>interpolate_property(area, <span style="color:#e6db74">&#34;rotation&#34;</span>, start_value, end_value, rotation_period)
-</span></span><span style="display:flex;"><span>	tween<span style="color:#f92672">.</span>start()
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">PoolVector2Array</span>(array)
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> set_radius_inner(value: <span style="color:#a6e22e">float</span>) <span style="color:#f92672">-&gt;</span> void:
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">_start_next_rotation</span>() <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> start_value <span style="color:#f92672">:=</span> <span style="color:#a6e22e">deg2rad</span>(starting_angle)
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> end_value <span style="color:#f92672">:=</span> start_value <span style="color:#f92672">+</span> rotation_direction <span style="color:#f92672">*</span> <span style="color:#66d9ef">TAU</span>
+</span></span><span style="display:flex;"><span>	tween<span style="color:#f92672">.</span><span style="color:#a6e22e">interpolate_property</span>(shape, <span style="color:#e6db74">&#34;rotation&#34;</span>, start_value, end_value, rotation_period)
+</span></span><span style="display:flex;"><span>	tween<span style="color:#f92672">.</span><span style="color:#a6e22e">interpolate_property</span>(shadow, <span style="color:#e6db74">&#34;rotation&#34;</span>, start_value, end_value, rotation_period)
+</span></span><span style="display:flex;"><span>	tween<span style="color:#f92672">.</span><span style="color:#a6e22e">interpolate_property</span>(area, <span style="color:#e6db74">&#34;rotation&#34;</span>, start_value, end_value, rotation_period)
+</span></span><span style="display:flex;"><span>	tween<span style="color:#f92672">.</span><span style="color:#a6e22e">start</span>()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">set_radius_inner</span>(value: <span style="color:#66d9ef">float</span>) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
 </span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> value <span style="color:#f92672">&gt;=</span> <span style="color:#ae81ff">0</span> <span style="color:#f92672">and</span> value <span style="color:#f92672">&lt;</span> radius_outer:
 </span></span><span style="display:flex;"><span>		radius_inner <span style="color:#f92672">=</span> value
-</span></span><span style="display:flex;"><span>		_update_shape()
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">_update_shape</span>()
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> set_radius_outer(value: <span style="color:#a6e22e">float</span>) <span style="color:#f92672">-&gt;</span> void:
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">set_radius_outer</span>(value: <span style="color:#66d9ef">float</span>) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
 </span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> value <span style="color:#f92672">&gt;</span> radius_inner:
 </span></span><span style="display:flex;"><span>		radius_outer <span style="color:#f92672">=</span> value
-</span></span><span style="display:flex;"><span>		_update_shape()
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">_update_shape</span>()
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> set_angle_opening(value: <span style="color:#a6e22e">float</span>) <span style="color:#f92672">-&gt;</span> void:
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">set_angle_opening</span>(value: <span style="color:#66d9ef">float</span>) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
 </span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> value <span style="color:#f92672">&gt;=</span> <span style="color:#ae81ff">0</span> <span style="color:#f92672">and</span> value <span style="color:#f92672">&lt;=</span> <span style="color:#ae81ff">360</span>:
 </span></span><span style="display:flex;"><span>		angle_opening <span style="color:#f92672">=</span> value
-</span></span><span style="display:flex;"><span>		_update_shape()
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">_update_shape</span>()
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> set_num_circle_segments(value: <span style="color:#a6e22e">int</span>) <span style="color:#f92672">-&gt;</span> void:
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">set_num_circle_segments</span>(value: <span style="color:#66d9ef">int</span>) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
 </span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> value <span style="color:#f92672">&gt;=</span> <span style="color:#ae81ff">3</span>:
 </span></span><span style="display:flex;"><span>		num_circle_segments <span style="color:#f92672">=</span> value
-</span></span><span style="display:flex;"><span>		_update_shape()
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">_update_shape</span>()
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> set_color(value: <span style="color:#a6e22e">Color</span>) <span style="color:#f92672">-&gt;</span> void:
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">set_color</span>(value: <span style="color:#a6e22e">Color</span>) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
 </span></span><span style="display:flex;"><span>	color <span style="color:#f92672">=</span> value
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> is_inside_tree():
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> <span style="color:#a6e22e">is_inside_tree</span>():
 </span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span>
 </span></span><span style="display:flex;"><span>	shape<span style="color:#f92672">.</span>color <span style="color:#f92672">=</span> color
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> set_shadow_color(value: <span style="color:#a6e22e">Color</span>) <span style="color:#f92672">-&gt;</span> void:
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">set_shadow_color</span>(value: <span style="color:#a6e22e">Color</span>) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
 </span></span><span style="display:flex;"><span>	shadow_color <span style="color:#f92672">=</span> value
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> is_inside_tree():
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> <span style="color:#a6e22e">is_inside_tree</span>():
 </span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span>
 </span></span><span style="display:flex;"><span>	shadow<span style="color:#f92672">.</span>color <span style="color:#f92672">=</span> shadow_color
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> set_shadow_offset(value: <span style="color:#a6e22e">Vector2</span>) <span style="color:#f92672">-&gt;</span> void:
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">set_shadow_offset</span>(value: <span style="color:#a6e22e">Vector2</span>) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
 </span></span><span style="display:flex;"><span>	shadow_offset <span style="color:#f92672">=</span> value
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> is_inside_tree():
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> <span style="color:#a6e22e">is_inside_tree</span>():
 </span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span>
 </span></span><span style="display:flex;"><span>	shadow<span style="color:#f92672">.</span>position <span style="color:#f92672">=</span> shadow_offset
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> set_starting_angle(value: <span style="color:#a6e22e">float</span>) <span style="color:#f92672">-&gt;</span> void:
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">set_starting_angle</span>(value: <span style="color:#66d9ef">float</span>) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
 </span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> value <span style="color:#f92672">&gt;=</span> <span style="color:#ae81ff">0</span> <span style="color:#f92672">and</span> value <span style="color:#f92672">&lt;=</span> <span style="color:#ae81ff">360</span>:
 </span></span><span style="display:flex;"><span>		starting_angle <span style="color:#f92672">=</span> value
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> is_inside_tree():
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> <span style="color:#a6e22e">is_inside_tree</span>():
 </span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">return</span>
 </span></span><span style="display:flex;"><span>		shape<span style="color:#f92672">.</span>rotation_degrees <span style="color:#f92672">=</span> starting_angle
 </span></span><span style="display:flex;"><span>		shadow<span style="color:#f92672">.</span>rotation_degrees <span style="color:#f92672">=</span> starting_angle
