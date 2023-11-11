@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
-  <meta name="generator" content="Hugo 0.119.0">
+  <meta name="generator" content="Hugo 0.120.4">
   <link rel="canonical" href="https://selinadev.github.io/09-rogueliketutorial-05/">
 
   
@@ -205,11 +205,11 @@ In this tutorial we will start spawning more entities. But first, we need a way 
 </span></span><span style="display:flex;"><span>	texture <span style="color:#f92672">=</span> entity_definition<span style="color:#f92672">.</span>texture
 </span></span><span style="display:flex;"><span>	modulate <span style="color:#f92672">=</span> entity_definition<span style="color:#f92672">.</span>color
 </span></span></code></pre></div><p>This needs to be called within the <code>_init()</code> function:</p>
-<pre tabindex="0"><code>func _init(start_position: Vector2i, entity_definition: EntityDefinition) -&gt; void:
-	centered = false
-	grid_position = start_position
-	set_entity_type(entity_definition)
-</code></pre><p>Lastly, we need functions to access the properties in <code>_definition</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#a6e22e">func_init</span>(start_position: <span style="color:#a6e22e">Vector2i</span>, entity_definition: EntityDefinition) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
+</span></span><span style="display:flex;"><span>	centered <span style="color:#f92672">=</span> <span style="color:#66d9ef">false</span>
+</span></span><span style="display:flex;"><span>	grid_position <span style="color:#f92672">=</span> start_position
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">set_entity_type</span>(entity_definition)
+</span></span></code></pre></div><p>Lastly, we need functions to access the properties in <code>_definition</code>:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">is_blocking_movement</span>() <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">bool</span>:
 </span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> _definition<span style="color:#f92672">.</span>is_blocking_movment
 </span></span><span style="display:flex;"><span>
@@ -318,10 +318,9 @@ In this tutorial we will start spawning more entities. But first, we need a way 
 </span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> action:
 </span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">var</span> previous_player_position: <span style="color:#a6e22e">Vector2i</span> <span style="color:#f92672">=</span> player<span style="color:#f92672">.</span>grid_position
 </span></span><span style="display:flex;"><span>		action<span style="color:#f92672">.</span><span style="color:#a6e22e">perform</span>(self, player)
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> player<span style="color:#f92672">.</span>grid_position <span style="color:#f92672">!=</span> previous_player_position:
-</span></span><span style="display:flex;"><span>			map<span style="color:#f92672">.</span><span style="color:#a6e22e">update_fov</span>(player<span style="color:#f92672">.</span>grid_position)
 </span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">_handle_enemy_turns</span>()
-</span></span></code></pre></div><p>Here we added a call to a new function called <code>_handle_enemy_turns()</code> at the end. It is always executed immediately after the player actually takes an action. So let&rsquo;s code that function now:</p>
+</span></span><span style="display:flex;"><span>		map<span style="color:#f92672">.</span><span style="color:#a6e22e">update_fov</span>(player<span style="color:#f92672">.</span>grid_position)
+</span></span></code></pre></div><p>Here we added a call to a new function called <code>_handle_enemy_turns()</code> at the end. It is always executed immediately after the player actually takes an action. We&rsquo;ll have to make sure to update the field of view afterwards, because eventually enemy movement might cause enemies to walk into the field of view, which we need to account for in the update. So let&rsquo;s code the function handling enemy turns now:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">_handle_enemy_turns</span>() <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
 </span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">for</span> entity <span style="color:#f92672">in</span> <span style="color:#a6e22e">get_map_data</span>()<span style="color:#f92672">.</span>entities:
 </span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> entity <span style="color:#f92672">==</span> player:

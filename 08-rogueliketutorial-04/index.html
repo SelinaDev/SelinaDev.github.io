@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
-  <meta name="generator" content="Hugo 0.119.0">
+  <meta name="generator" content="Hugo 0.120.4">
   <link rel="canonical" href="https://selinadev.github.io/08-rogueliketutorial-04/">
 
   
@@ -205,7 +205,7 @@ Last time we created a dungeon to explore, but we also noticed that it’s not t
 </span></span><span style="display:flex;"><span>		action<span style="color:#f92672">.</span><span style="color:#a6e22e">perform</span>(self, player)
 </span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> player<span style="color:#f92672">.</span>grid_position <span style="color:#f92672">!=</span> previous_player_position:
 </span></span><span style="display:flex;"><span>			map<span style="color:#f92672">.</span><span style="color:#a6e22e">update_fov</span>(player<span style="color:#f92672">.</span>grid_position)
-</span></span></code></pre></div><p>The field of view of view only changes when the player position changes. So we record the player position before the action, and then compare it to that after the action. Then, if those two positions are different, we update the field of view. However, this only works for updates. We still need an initial field of view for the first turn. So we add another update to the end of the <code>_ready()</code> function:</p>
+</span></span></code></pre></div><p>After the player&rsquo;s action, we update the field of view. However, this only works for updates. We still need an initial field of view for the first turn. So we add another update to the end of the <code>_ready()</code> function:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">_ready</span>() <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
 </span></span><span style="display:flex;"><span>	player <span style="color:#f92672">=</span> Entity<span style="color:#f92672">.</span><span style="color:#a6e22e">new</span>(<span style="color:#a6e22e">Vector2i</span><span style="color:#f92672">.</span>ZERO, player_definition)
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">remove_child</span>(camera)

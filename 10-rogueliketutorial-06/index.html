@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
-  <meta name="generator" content="Hugo 0.119.0">
+  <meta name="generator" content="Hugo 0.120.4">
   <link rel="canonical" href="https://selinadev.github.io/10-rogueliketutorial-06/">
 
   
@@ -261,9 +261,8 @@ Refactoring At this point the original tutorial refactors some code, and we will
 </span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> action:
 </span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">var</span> previous_player_position: <span style="color:#a6e22e">Vector2i</span> <span style="color:#f92672">=</span> player<span style="color:#f92672">.</span>grid_position
 </span></span><span style="display:flex;"><span>		action<span style="color:#f92672">.</span><span style="color:#a6e22e">perform</span>()
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> player<span style="color:#f92672">.</span>grid_position <span style="color:#f92672">!=</span> previous_player_position:
-</span></span><span style="display:flex;"><span>			map<span style="color:#f92672">.</span><span style="color:#a6e22e">update_fov</span>(player<span style="color:#f92672">.</span>grid_position)
 </span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">_handle_enemy_turns</span>()
+</span></span><span style="display:flex;"><span>		map<span style="color:#f92672">.</span><span style="color:#a6e22e">update_fov</span>(player<span style="color:#f92672">.</span>grid_position)
 </span></span></code></pre></div><p>Here we change <code>action.perform(self, player)</code> to <code>action.perform()</code>, as the action already knows everything it needs to perform itself. Now that we have the refactoring out of the way we can move on to &hellip;</p>
 <h2 id="part-6">Part 6</h2>
 <p>In this tutorial we will create our combat system. This will include things like health and dealing damage. This also includes a (very simple) enemy AI. We will do this by composition. Entities will be able to hold several components that extend their functionality. A <em>Fighter</em> component will hold health and similar. And an <em>AI</em> component will handle the actions the enemies will perform.</p>
