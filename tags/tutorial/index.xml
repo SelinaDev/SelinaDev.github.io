@@ -9,14 +9,6 @@
     <lastBuildDate>Sun, 03 Sep 2023 16:00:00 +0100</lastBuildDate>
     <atom:link href="https://selinadev.github.io/tags/tutorial/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>Yet Another Roguelike Tutorial, Part 10</title>
-      <link>https://selinadev.github.io/14-rogueliketutorial-10/</link>
-      <pubDate>Sun, 03 Sep 2023 16:00:00 +0100</pubDate>
-      <guid>https://selinadev.github.io/14-rogueliketutorial-10/</guid>
-      <description>Part 10: Saving and Loading Welcome back to the roguelike tutorial series. This tutorial will continue from where the last one left off. You can find the previous tutorial here: https://selinadev.github.io/13-rogueliketutorial-09/
-It&amp;rsquo;s been a while since the last tutorial, but luckily we can jump right back in. And this time we&amp;rsquo;ll make it so that our players may do the same. Up until now if a player wanted to pause and return to the game later they would have to keep the game open in tha background.</description>
-    </item>
-    <item>
       <title>Yet Another Roguelike Tutorial, Part 9</title>
       <link>https://selinadev.github.io/13-rogueliketutorial-09/</link>
       <pubDate>Sun, 03 Sep 2023 16:00:00 +0100</pubDate>
