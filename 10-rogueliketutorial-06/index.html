@@ -11,7 +11,7 @@
   
     
     <meta name="description" content="Part 6: Doing (and taking) some damage Welcome back to the roguelike tutorial series. This tutorial will continue from where the last one left off. You can find the previous tutorial here: https://selinadev.github.io/09-rogueliketutorial-05/
-Refactoring At this point the original tutorial refactors some code, and we will do so as well. Some things will turn out cleaner this way (and I will have to keep less differences in mind when converting the code).">
+Note on Godot Version Please make sure to use (at least) Godot 4.1. The previous tutorials should also work with Godot 4.0, but this part utilizes the AStarGrid2D, which has changed slightly from 4.0 to 4.1, meaning that this part (and all further parts, as they build on this one) will not work in 4.">
   
 
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
@@ -97,6 +97,16 @@ Refactoring At this point the original tutorial refactors some code, and we will
           
           
           
+          <a href="#note-on-godot-version">
+            Note on Godot Version
+          </a>
+        </li>
+      
+        <li>
+          
+          
+          
+          
           <a href="#refactoring">
             Refactoring
           </a>
@@ -120,6 +130,8 @@ Refactoring At this point the original tutorial refactors some code, and we will
 
 <h1 id="part-6-doing-and-taking-some-damage">Part 6: Doing (and taking) some damage</h1>
 <p>Welcome back to the roguelike tutorial series. This tutorial will continue from where the last one left off. You can find the previous tutorial here: <a href="https://selinadev.github.io/09-rogueliketutorial-05/">https://selinadev.github.io/09-rogueliketutorial-05/</a></p>
+<h2 id="note-on-godot-version">Note on Godot Version</h2>
+<p>Please make sure to use (at least) Godot 4.1. The previous tutorials should also work with Godot 4.0, but this part utilizes the <code>AStarGrid2D</code>, which has changed slightly from 4.0 to 4.1, meaning that this part (and all further parts, as they build on this one) will not work in 4.0.</p>
 <h2 id="refactoring">Refactoring</h2>
 <p>At this point the original tutorial refactors some code, and we will do so as well. Some things will turn out cleaner this way (and I will have to keep less differences in mind when converting the code).</p>
 <p>First, let&rsquo;s start with the action system. We won&rsquo;t really change how we use it now, but in principle the Command Pattern allows delaying a command (or <em>action</em> as we call it here). We only delay it very little, creating an action in one function and executing it once it&rsquo;s returned. That&rsquo;s why we can easily keep track of the entity associated with that action, and therefore can pass it once we call <code>perform()</code>. But a better way would be to encode the entity right in the action, so once we have the action we only need to call <code>perform()</code>, without any arguments, and whatever action we encoded before just happens.</p>

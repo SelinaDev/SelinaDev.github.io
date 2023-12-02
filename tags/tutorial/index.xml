@@ -46,7 +46,7 @@ A note beforehand: I noticed that in the current version the parser won&amp;rsqu
       <pubDate>Fri, 28 Jul 2023 18:00:00 +0100</pubDate>
       <guid>https://selinadev.github.io/10-rogueliketutorial-06/</guid>
       <description>Part 6: Doing (and taking) some damage Welcome back to the roguelike tutorial series. This tutorial will continue from where the last one left off. You can find the previous tutorial here: https://selinadev.github.io/09-rogueliketutorial-05/
-Refactoring At this point the original tutorial refactors some code, and we will do so as well. Some things will turn out cleaner this way (and I will have to keep less differences in mind when converting the code).</description>
+Note on Godot Version Please make sure to use (at least) Godot 4.1. The previous tutorials should also work with Godot 4.0, but this part utilizes the AStarGrid2D, which has changed slightly from 4.0 to 4.1, meaning that this part (and all further parts, as they build on this one) will not work in 4.</description>
     </item>
     <item>
       <title>Yet Another Roguelike Tutorial, Part 4</title>
@@ -85,6 +85,15 @@ So let&amp;rsquo;s start with creating out entity class. I want to point out tha
       <pubDate>Tue, 04 Jul 2023 08:00:00 +0100</pubDate>
       <guid>https://selinadev.github.io/05-rogueliketutorial-01/</guid>
       <description>Here i&amp;rsquo;ll start an attempt for something I&amp;rsquo;ve wanted to do for a long time. I&amp;rsquo;ve been interested in traditional roguelikes for a while now. Given that I&amp;rsquo;m also interested in game development, it should not come as a surprise that I have looked into how to make a roguelike as well. There is a very nice and reasonably comprehensive tutorial online, that exists in multiple versions. One of the more well known versions has to be the one at Roguelike Tutorials.</description>
+    </item>
+    <item>
+      <title>Yet Another Roguelike Tutorial, Part 11</title>
+      <link>https://selinadev.github.io/15-rogueliketutorial-11/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://selinadev.github.io/15-rogueliketutorial-11/</guid>
+      <description>Part 11: Delving into the Dungeon Welcome back to the roguelike tutorial series. This tutorial will continue from where the last one left off. You can find the previous tutorial here: https://selinadev.github.io/14-rogueliketutorial-10/
+This part will be all about levels, both descending the levels of the dungeon as well as levelling up the player character.
+To start out we add a new color to Colors.gd which we use for the message log when the player descends:</description>
     </item>
   </channel>
 </rss>
