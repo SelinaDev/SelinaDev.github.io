@@ -6,30 +6,35 @@
     <description>Recent content in tutorials on SelinaDev</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Tue, 25 Apr 2023 14:55:00 +0100</lastBuildDate>
-    <atom:link href="https://selinadev.github.io/tags/tutorials/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Tue, 25 Apr 2023 14:55:00 +0100</lastBuildDate><atom:link href="https://selinadev.github.io/tags/tutorials/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Godot 3 Tutorial: Drop-down Menu</title>
       <link>https://selinadev.github.io/03-dropdown-menu/</link>
       <pubDate>Tue, 25 Apr 2023 14:55:00 +0100</pubDate>
+      
       <guid>https://selinadev.github.io/03-dropdown-menu/</guid>
       <description>Godot provides a lot of tools out of the box, including a system for user interfaces, such as drop-down menus. After all, the Godot editor is built on just that technology an it has some of those UI elements. And those elements and the styling options work fine for something that looks like a UI-heavy application, as is the case with the Godot editor. However, sometimes we want something a bit more flashy for a game.</description>
     </item>
+    
     <item>
       <title>Godot 3 Tutorial: Scene Transitions</title>
       <link>https://selinadev.github.io/02-scene-transitions/</link>
       <pubDate>Sat, 19 Feb 2022 14:55:00 +0100</pubDate>
+      
       <guid>https://selinadev.github.io/02-scene-transitions/</guid>
       <description>In this tutorial I will tackle scene transitions in three steps of complexity. The first will be a simple fade to black. The second will use a wipe to black based on a shader, and the third and final one will be a wipe from one scene directly to the other.
 Dummy Assets To make this visually somewhat appealing I will be using the following two photographs by Peter Janzen for this tutorial.</description>
     </item>
+    
     <item>
       <title>Godot 3 Tutorial: Creating shapes in code</title>
       <link>https://selinadev.github.io/01-crereating-procedural-shapes/</link>
-      <pubDate>Sun, 16 Jan 2022 08:00:00 +0100</pubDate>
+      <pubDate>Sun, 16 Jan 2022 18:00:00 +0100</pubDate>
+      
       <guid>https://selinadev.github.io/01-crereating-procedural-shapes/</guid>
       <description>In this tutorial I will tackle how to create procedural shapes in Godot, using GDScipt and Polygon2D nodes. I will go into a bit of detail about some other topics as well, such as tool scripts and setter functions.
 A while back, Patrick Zoch Alves (@PatrickZochAlve), a fellow gamedev, asked me to try out his then-new game &amp;ldquo;Color Maze&amp;rdquo; (you can try it out for yourself on GOTM: https://gotm.io/klustergames/colormaze). I like the concept, and the overall clean design of it.</description>
     </item>
+    
   </channel>
 </rss>

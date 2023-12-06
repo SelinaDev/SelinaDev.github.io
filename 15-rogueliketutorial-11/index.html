@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
-  <meta name="generator" content="Hugo 0.120.4">
+  <meta name="generator" content="Hugo 0.92.2" />
   <link rel="canonical" href="https://selinadev.github.io/15-rogueliketutorial-11/">
 
   
@@ -72,7 +72,7 @@ To start out we add a new color to Colors.gd which we use for the message log wh
 <h1 class="post-title">Yet Another Roguelike Tutorial, Part 11</h1>
 
 
-<strong>Publish date: </strong>Jan 1, 0001
+<strong>Publish date: </strong>Dec 2, 2023
 <br>
 
   <strong>Tags: </strong>
@@ -94,196 +94,196 @@ To start out we add a new color to Colors.gd which we use for the message log wh
 <p>Welcome back to the roguelike tutorial series. This tutorial will continue from where the last one left off. You can find the previous tutorial here: <a href="https://selinadev.github.io/14-rogueliketutorial-10/">https://selinadev.github.io/14-rogueliketutorial-10/</a></p>
 <p>This part will be all about levels, both descending the levels of the dungeon as well as levelling up the player character.</p>
 <p>To start out we add a new color to <em>Colors.gd</em> which we use for the message log when the player descends:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">const</span> PLAYER_ATTACK <span style="color:#f92672">=</span> <span style="color:#a6e22e">Color</span>(<span style="color:#e6db74">&#34;e0e0e0&#34;</span>)
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">const</span> ENEMY_ATTACK <span style="color:#f92672">=</span> <span style="color:#a6e22e">Color</span>(<span style="color:#e6db74">&#34;ffc0c0&#34;</span>)
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">const</span> STATUS_EFFECT_APPLIED <span style="color:#f92672">=</span> <span style="color:#a6e22e">Color</span>(<span style="color:#e6db74">&#34;3fff3f&#34;</span>)
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">const</span> DESCEND <span style="color:#f92672">=</span> <span style="color:#a6e22e">Color</span>(<span style="color:#e6db74">&#34;9f3fff&#34;</span>)
-</span></span></code></pre></div><p>Next, we create a new <code>TileDefinition</code> resource at <em>res://assets/definitions/tiles/tile_definition_down_stairs.tres</em>. Use the same method as before to set the texture to an appropriate icon. I have used pure white for <em>Color Lit</em> and mid grey (&quot;#7f7f7f&quot;) for <em>Color Dark</em>. Just as the floor, the down stairs tile <em>Is Walkable</em> and <em>Is Transparent</em>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">const</span> PLAYER_ATTACK <span style="color:#f92672">=</span> <span style="color:#a6e22e">Color</span>(<span style="color:#e6db74">&#34;e0e0e0&#34;</span>)
+<span style="color:#66d9ef">const</span> ENEMY_ATTACK <span style="color:#f92672">=</span> <span style="color:#a6e22e">Color</span>(<span style="color:#e6db74">&#34;ffc0c0&#34;</span>)
+<span style="color:#66d9ef">const</span> STATUS_EFFECT_APPLIED <span style="color:#f92672">=</span> <span style="color:#a6e22e">Color</span>(<span style="color:#e6db74">&#34;3fff3f&#34;</span>)
+<span style="color:#66d9ef">const</span> DESCEND <span style="color:#f92672">=</span> <span style="color:#a6e22e">Color</span>(<span style="color:#e6db74">&#34;9f3fff&#34;</span>)
+</code></pre></div><p>Next, we create a new <code>TileDefinition</code> resource at <em>res://assets/definitions/tiles/tile_definition_down_stairs.tres</em>. Use the same method as before to set the texture to an appropriate icon. I have used pure white for <em>Color Lit</em> and mid grey (&quot;#7f7f7f&quot;) for <em>Color Dark</em>. Just as the floor, the down stairs tile <em>Is Walkable</em> and <em>Is Transparent</em>.</p>
 <p>We will later need to check if the player is standing on a down stairs tile, so we prepare a variable in <em>map_data.gd</em> to store its location. While we&rsquo;re at it we&rsquo;ll also introduce a variable to store the floor level we&rsquo;re on currently:</p>
 <pre tabindex="0"><code>var entities: Array[Entity]
 var player: Entity
 var down_stairs_location: Vector2i
 var current_floor: int = 0
 </code></pre><p>We have a save system since the last part, so we need to remember to make these variables persistent. We expand <code>get_save_data()</code> as follows:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">get_save_data</span>() <span style="color:#f92672">-&gt;</span> <span style="color:#a6e22e">Dictionary</span>:
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> save_data <span style="color:#f92672">:=</span> {
-</span></span><span style="display:flex;"><span>		<span style="color:#e6db74">&#34;width&#34;</span>: width,
-</span></span><span style="display:flex;"><span>		<span style="color:#e6db74">&#34;height&#34;</span>: height,
-</span></span><span style="display:flex;"><span>		<span style="color:#e6db74">&#34;player&#34;</span>: player<span style="color:#f92672">.</span><span style="color:#a6e22e">get_save_data</span>(),
-</span></span><span style="display:flex;"><span>		<span style="color:#e6db74">&#34;current_floor&#34;</span>: current_floor,
-</span></span><span style="display:flex;"><span>		<span style="color:#e6db74">&#34;down_stairs_location&#34;</span>: {<span style="color:#e6db74">&#34;x&#34;</span>: down_stairs_location<span style="color:#f92672">.</span>x, <span style="color:#e6db74">&#34;y&#34;</span>: down_stairs_location<span style="color:#f92672">.</span>y},
-</span></span><span style="display:flex;"><span>		<span style="color:#e6db74">&#34;entities&#34;</span>: [],
-</span></span><span style="display:flex;"><span>		<span style="color:#e6db74">&#34;tiles&#34;</span>: []
-</span></span><span style="display:flex;"><span>	}
-</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># ...</span>
-</span></span></code></pre></div><p>This will make sure the location gets saved, but we also need to retrieve it:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">restore</span>(save_data: <span style="color:#a6e22e">Dictionary</span>) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
-</span></span><span style="display:flex;"><span>	width <span style="color:#f92672">=</span> save_data[<span style="color:#e6db74">&#34;width&#34;</span>]
-</span></span><span style="display:flex;"><span>	height <span style="color:#f92672">=</span> save_data[<span style="color:#e6db74">&#34;height&#34;</span>]
-</span></span><span style="display:flex;"><span>	down_stairs_location <span style="color:#f92672">=</span> <span style="color:#a6e22e">Vector2i</span>(save_data[<span style="color:#e6db74">&#34;down_stairs_location&#34;</span>][<span style="color:#e6db74">&#34;x&#34;</span>], save_data[<span style="color:#e6db74">&#34;down_stairs_location&#34;</span>][<span style="color:#e6db74">&#34;y&#34;</span>])
-</span></span><span style="display:flex;"><span>	current_floor <span style="color:#f92672">=</span> save_data[<span style="color:#e6db74">&#34;current_floor&#34;</span>]
-</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">_setup_tiles</span>()
-</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># ...</span>
-</span></span></code></pre></div><p>And just like that this information will be properly saved and restored. Now we just have to actually create this tile. We do so in <em>dungeon_generator.gd</em>, in the <code>generate_dungeon()</code> function. Here is how this function looks now:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">generate_dungeon</span>(player: Entity, current_floor: <span style="color:#66d9ef">int</span>) <span style="color:#f92672">-&gt;</span> MapData:
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> dungeon <span style="color:#f92672">:=</span> MapData<span style="color:#f92672">.</span><span style="color:#a6e22e">new</span>(map_width, map_height, player)
-</span></span><span style="display:flex;"><span>	dungeon<span style="color:#f92672">.</span>current_floor <span style="color:#f92672">=</span> current_floor
-</span></span><span style="display:flex;"><span>	dungeon<span style="color:#f92672">.</span>entities<span style="color:#f92672">.</span><span style="color:#a6e22e">append</span>(player)
-</span></span><span style="display:flex;"><span>	
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> rooms: <span style="color:#a6e22e">Array</span>[Rect2i] <span style="color:#f92672">=</span> []
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> center_last_room: <span style="color:#a6e22e">Vector2i</span>
-</span></span><span style="display:flex;"><span>	
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">for</span> _try_room <span style="color:#f92672">in</span> max_rooms:
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">var</span> room_width: <span style="color:#66d9ef">int</span> <span style="color:#f92672">=</span> _rng<span style="color:#f92672">.</span>randi_range(room_min_size, room_max_size)
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">var</span> room_height: <span style="color:#66d9ef">int</span> <span style="color:#f92672">=</span> _rng<span style="color:#f92672">.</span>randi_range(room_min_size, room_max_size)
-</span></span><span style="display:flex;"><span>		
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">var</span> x: <span style="color:#66d9ef">int</span> <span style="color:#f92672">=</span> _rng<span style="color:#f92672">.</span>randi_range(<span style="color:#ae81ff">0</span>, dungeon<span style="color:#f92672">.</span>width <span style="color:#f92672">-</span> room_width <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>)
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">var</span> y: <span style="color:#66d9ef">int</span> <span style="color:#f92672">=</span> _rng<span style="color:#f92672">.</span>randi_range(<span style="color:#ae81ff">0</span>, dungeon<span style="color:#f92672">.</span>height <span style="color:#f92672">-</span> room_height <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>)
-</span></span><span style="display:flex;"><span>		
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">var</span> new_room <span style="color:#f92672">:=</span> <span style="color:#a6e22e">Rect2i</span>(x, y, room_width, room_height)
-</span></span><span style="display:flex;"><span>		
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">var</span> has_intersections <span style="color:#f92672">:=</span> <span style="color:#66d9ef">false</span>
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">for</span> room <span style="color:#f92672">in</span> rooms:
-</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">if</span> room<span style="color:#f92672">.</span><span style="color:#a6e22e">intersects</span>(new_room):
-</span></span><span style="display:flex;"><span>				has_intersections <span style="color:#f92672">=</span> <span style="color:#66d9ef">true</span>
-</span></span><span style="display:flex;"><span>				<span style="color:#66d9ef">break</span>
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> has_intersections:
-</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">continue</span>
-</span></span><span style="display:flex;"><span>		
-</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">_carve_room</span>(dungeon, new_room)
-</span></span><span style="display:flex;"><span>		center_last_room <span style="color:#f92672">=</span> new_room<span style="color:#f92672">.</span><span style="color:#a6e22e">get_center</span>()
-</span></span><span style="display:flex;"><span>		
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> rooms<span style="color:#f92672">.</span><span style="color:#a6e22e">is_empty</span>():
-</span></span><span style="display:flex;"><span>			player<span style="color:#f92672">.</span>grid_position <span style="color:#f92672">=</span> new_room<span style="color:#f92672">.</span><span style="color:#a6e22e">get_center</span>()
-</span></span><span style="display:flex;"><span>			player<span style="color:#f92672">.</span>map_data <span style="color:#f92672">=</span> dungeon
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">else</span>:
-</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">_tunnel_between</span>(dungeon, rooms<span style="color:#f92672">.</span><span style="color:#a6e22e">back</span>()<span style="color:#f92672">.</span><span style="color:#a6e22e">get_center</span>(), new_room<span style="color:#f92672">.</span><span style="color:#a6e22e">get_center</span>())
-</span></span><span style="display:flex;"><span>		
-</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">_place_entities</span>(dungeon, new_room)
-</span></span><span style="display:flex;"><span>		
-</span></span><span style="display:flex;"><span>		rooms<span style="color:#f92672">.</span><span style="color:#a6e22e">append</span>(new_room)
-</span></span><span style="display:flex;"><span>	
-</span></span><span style="display:flex;"><span>	dungeon<span style="color:#f92672">.</span>down_stairs_location <span style="color:#f92672">=</span> center_last_room
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> down_tile: Tile <span style="color:#f92672">=</span> dungeon<span style="color:#f92672">.</span><span style="color:#a6e22e">get_tile</span>(center_last_room)
-</span></span><span style="display:flex;"><span>	down_tile<span style="color:#f92672">.</span><span style="color:#a6e22e">set_tile_type</span>(<span style="color:#e6db74">&#34;down_stairs&#34;</span>)
-</span></span><span style="display:flex;"><span>	
-</span></span><span style="display:flex;"><span>	dungeon<span style="color:#f92672">.</span><span style="color:#a6e22e">setup_pathfinding</span>()
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> dungeon
-</span></span></code></pre></div><p>The only things we&rsquo;re really changing here is that we keep track of the center of the last room while generating. Then, once generation of the rooms is complete, we know that that definitely was the last room, so we assign this position to the variable we previously created. After that we get the tile at that position and set it to the down stairs type.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> get_save_data() <span style="color:#f92672">-&gt;</span> <span style="color:#a6e22e">Dictionary</span>:
+	<span style="color:#66d9ef">var</span> save_data :<span style="color:#f92672">=</span> {
+		<span style="color:#e6db74">&#34;width&#34;</span>: width,
+		<span style="color:#e6db74">&#34;height&#34;</span>: height,
+		<span style="color:#e6db74">&#34;player&#34;</span>: player<span style="color:#f92672">.</span>get_save_data(),
+		<span style="color:#e6db74">&#34;current_floor&#34;</span>: current_floor,
+		<span style="color:#e6db74">&#34;down_stairs_location&#34;</span>: {<span style="color:#e6db74">&#34;x&#34;</span>: down_stairs_location<span style="color:#f92672">.</span>x, <span style="color:#e6db74">&#34;y&#34;</span>: down_stairs_location<span style="color:#f92672">.</span>y},
+		<span style="color:#e6db74">&#34;entities&#34;</span>: [],
+		<span style="color:#e6db74">&#34;tiles&#34;</span>: []
+	}
+    <span style="color:#75715e"># ...</span>
+</code></pre></div><p>This will make sure the location gets saved, but we also need to retrieve it:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> restore(save_data: <span style="color:#a6e22e">Dictionary</span>) <span style="color:#f92672">-&gt;</span> void:
+	width <span style="color:#f92672">=</span> save_data[<span style="color:#e6db74">&#34;width&#34;</span>]
+	height <span style="color:#f92672">=</span> save_data[<span style="color:#e6db74">&#34;height&#34;</span>]
+	down_stairs_location <span style="color:#f92672">=</span> Vector2i(save_data[<span style="color:#e6db74">&#34;down_stairs_location&#34;</span>][<span style="color:#e6db74">&#34;x&#34;</span>], save_data[<span style="color:#e6db74">&#34;down_stairs_location&#34;</span>][<span style="color:#e6db74">&#34;y&#34;</span>])
+	current_floor <span style="color:#f92672">=</span> save_data[<span style="color:#e6db74">&#34;current_floor&#34;</span>]
+	_setup_tiles()
+    <span style="color:#75715e"># ...</span>
+</code></pre></div><p>And just like that this information will be properly saved and restored. Now we just have to actually create this tile. We do so in <em>dungeon_generator.gd</em>, in the <code>generate_dungeon()</code> function. Here is how this function looks now:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> generate_dungeon(player: Entity, current_floor: <span style="color:#a6e22e">int</span>) <span style="color:#f92672">-&gt;</span> MapData:
+	<span style="color:#66d9ef">var</span> dungeon :<span style="color:#f92672">=</span> MapData<span style="color:#f92672">.</span>new(map_width, map_height, player)
+	dungeon<span style="color:#f92672">.</span>current_floor <span style="color:#f92672">=</span> current_floor
+	dungeon<span style="color:#f92672">.</span>entities<span style="color:#f92672">.</span>append(player)
+	
+	<span style="color:#66d9ef">var</span> rooms: <span style="color:#a6e22e">Array</span>[Rect2i] <span style="color:#f92672">=</span> []
+	<span style="color:#66d9ef">var</span> center_last_room: Vector2i
+	
+	<span style="color:#66d9ef">for</span> _try_room <span style="color:#f92672">in</span> max_rooms:
+		<span style="color:#66d9ef">var</span> room_width: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> _rng<span style="color:#f92672">.</span>randi_range(room_min_size, room_max_size)
+		<span style="color:#66d9ef">var</span> room_height: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> _rng<span style="color:#f92672">.</span>randi_range(room_min_size, room_max_size)
+		
+		<span style="color:#66d9ef">var</span> x: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> _rng<span style="color:#f92672">.</span>randi_range(<span style="color:#ae81ff">0</span>, dungeon<span style="color:#f92672">.</span>width <span style="color:#f92672">-</span> room_width <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>)
+		<span style="color:#66d9ef">var</span> y: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> _rng<span style="color:#f92672">.</span>randi_range(<span style="color:#ae81ff">0</span>, dungeon<span style="color:#f92672">.</span>height <span style="color:#f92672">-</span> room_height <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>)
+		
+		<span style="color:#66d9ef">var</span> new_room :<span style="color:#f92672">=</span> Rect2i(x, y, room_width, room_height)
+		
+		<span style="color:#66d9ef">var</span> has_intersections :<span style="color:#f92672">=</span> false
+		<span style="color:#66d9ef">for</span> room <span style="color:#f92672">in</span> rooms:
+			<span style="color:#66d9ef">if</span> room<span style="color:#f92672">.</span>intersects(new_room):
+				has_intersections <span style="color:#f92672">=</span> true
+				<span style="color:#66d9ef">break</span>
+		<span style="color:#66d9ef">if</span> has_intersections:
+			<span style="color:#66d9ef">continue</span>
+		
+		_carve_room(dungeon, new_room)
+		center_last_room <span style="color:#f92672">=</span> new_room<span style="color:#f92672">.</span>get_center()
+		
+		<span style="color:#66d9ef">if</span> rooms<span style="color:#f92672">.</span>is_empty():
+			player<span style="color:#f92672">.</span>grid_position <span style="color:#f92672">=</span> new_room<span style="color:#f92672">.</span>get_center()
+			player<span style="color:#f92672">.</span>map_data <span style="color:#f92672">=</span> dungeon
+		<span style="color:#66d9ef">else</span>:
+			_tunnel_between(dungeon, rooms<span style="color:#f92672">.</span>back()<span style="color:#f92672">.</span>get_center(), new_room<span style="color:#f92672">.</span>get_center())
+		
+		_place_entities(dungeon, new_room)
+		
+		rooms<span style="color:#f92672">.</span>append(new_room)
+	
+	dungeon<span style="color:#f92672">.</span>down_stairs_location <span style="color:#f92672">=</span> center_last_room
+	<span style="color:#66d9ef">var</span> down_tile: Tile <span style="color:#f92672">=</span> dungeon<span style="color:#f92672">.</span>get_tile(center_last_room)
+	down_tile<span style="color:#f92672">.</span>set_tile_type(<span style="color:#e6db74">&#34;down_stairs&#34;</span>)
+	
+	dungeon<span style="color:#f92672">.</span>setup_pathfinding()
+	<span style="color:#66d9ef">return</span> dungeon
+</code></pre></div><p>The only things we&rsquo;re really changing here is that we keep track of the center of the last room while generating. Then, once generation of the rooms is complete, we know that that definitely was the last room, so we assign this position to the variable we previously created. After that we get the tile at that position and set it to the down stairs type.</p>
 <p>Of course for that to work we need to add our tile definition to the range of available tiles. To do that we append the <code>tile_types</code> constant in <em>tile.gd</em> by one entry:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">const</span> tile_types <span style="color:#f92672">=</span> {
-</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;floor&#34;</span>: preload(<span style="color:#e6db74">&#34;res://assets/definitions/tiles/tile_definition_floor.tres&#34;</span>),
-</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;wall&#34;</span>: preload(<span style="color:#e6db74">&#34;res://assets/definitions/tiles/tile_definition_wall.tres&#34;</span>),
-</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;down_stairs&#34;</span>: preload(<span style="color:#e6db74">&#34;res://assets/definitions/tiles/tile_definition_down_stairs.tres&#34;</span>),
-</span></span><span style="display:flex;"><span>}
-</span></span></code></pre></div><p>At this point new dungeons should already get generated with a down stair tile in the &ldquo;last&rdquo; room. However, we can&rsquo;t interact with it yet. To do that we&rsquo;ll need an appropriate action.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">const</span> tile_types <span style="color:#f92672">=</span> {
+	<span style="color:#e6db74">&#34;floor&#34;</span>: preload(<span style="color:#e6db74">&#34;res://assets/definitions/tiles/tile_definition_floor.tres&#34;</span>),
+	<span style="color:#e6db74">&#34;wall&#34;</span>: preload(<span style="color:#e6db74">&#34;res://assets/definitions/tiles/tile_definition_wall.tres&#34;</span>),
+	<span style="color:#e6db74">&#34;down_stairs&#34;</span>: preload(<span style="color:#e6db74">&#34;res://assets/definitions/tiles/tile_definition_down_stairs.tres&#34;</span>),
+}
+</code></pre></div><p>At this point new dungeons should already get generated with a down stair tile in the &ldquo;last&rdquo; room. However, we can&rsquo;t interact with it yet. To do that we&rsquo;ll need an appropriate action.</p>
 <p>Before that we will quickly configure an entry in the input map to trigger that action. In <em>Project</em> &gt; <em>Project Settings</em> &gt; <em>Input Map</em> add a new input action called &ldquo;<em>descend</em>&rdquo;. I configured it to the <em>&lt;</em> key.</p>
 <p>Now it&rsquo;s time to create the action. Create a new script extending <code>Action</code> at <em>res://src/Entities/Actors/Actions/take_stairs_action.gd</em>. Here is the code:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">class_name</span> <span style="color:#a6e22e">TakeStairsAction</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">extends</span> <span style="color:#a6e22e">Action</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">perform</span>() <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">bool</span>:
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> entity<span style="color:#f92672">.</span>grid_position <span style="color:#f92672">==</span> <span style="color:#a6e22e">get_map_data</span>()<span style="color:#f92672">.</span>down_stairs_location:
-</span></span><span style="display:flex;"><span>		SignalBus<span style="color:#f92672">.</span>player_descended<span style="color:#f92672">.</span><span style="color:#a6e22e">emit</span>()
-</span></span><span style="display:flex;"><span>		MessageLog<span style="color:#f92672">.</span><span style="color:#a6e22e">send_message</span>(<span style="color:#e6db74">&#34;You descend the staircase.&#34;</span>, GameColors<span style="color:#f92672">.</span>DESCEND)
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">else</span>:
-</span></span><span style="display:flex;"><span>		MessageLog<span style="color:#f92672">.</span><span style="color:#a6e22e">send_message</span>(<span style="color:#e6db74">&#34;There are no stairs here.&#34;</span>, GameColors<span style="color:#f92672">.</span>IMPOSSIBLE)
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">false</span>
-</span></span></code></pre></div><p>Inside <code>perform()</code> we first check if the entity is standing on the stairs location. If they are, we emit a signal via the <code>SignalBus</code> that the player descended. We use a signal here because we will handle our next level code in the <strong>Map</strong> node, and getting that information there would be cumbersome otherwise. We also print a message to the log, telling the player that they have descended. In the <code>else</code> branch we just inform the player that they need to find stairs to perform that action. Regardless of whether we can descend or not we return <code>false</code>. If we don&rsquo;t, then it shouldn&rsquo;t cost the player a turn, and if we do we want the player to take the first turn on the new floor.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd">class_name TakeStairsAction
+<span style="color:#66d9ef">extends</span> Action
+
+
+<span style="color:#66d9ef">func</span> perform() <span style="color:#f92672">-&gt;</span> <span style="color:#a6e22e">bool</span>:
+	<span style="color:#66d9ef">if</span> entity<span style="color:#f92672">.</span>grid_position <span style="color:#f92672">==</span> get_map_data()<span style="color:#f92672">.</span>down_stairs_location:
+		SignalBus<span style="color:#f92672">.</span>player_descended<span style="color:#f92672">.</span>emit()
+		MessageLog<span style="color:#f92672">.</span>send_message(<span style="color:#e6db74">&#34;You descend the staircase.&#34;</span>, GameColors<span style="color:#f92672">.</span>DESCEND)
+	<span style="color:#66d9ef">else</span>:
+		MessageLog<span style="color:#f92672">.</span>send_message(<span style="color:#e6db74">&#34;There are no stairs here.&#34;</span>, GameColors<span style="color:#f92672">.</span>IMPOSSIBLE)
+	<span style="color:#66d9ef">return</span> false
+</code></pre></div><p>Inside <code>perform()</code> we first check if the entity is standing on the stairs location. If they are, we emit a signal via the <code>SignalBus</code> that the player descended. We use a signal here because we will handle our next level code in the <strong>Map</strong> node, and getting that information there would be cumbersome otherwise. We also print a message to the log, telling the player that they have descended. In the <code>else</code> branch we just inform the player that they need to find stairs to perform that action. Regardless of whether we can descend or not we return <code>false</code>. If we don&rsquo;t, then it shouldn&rsquo;t cost the player a turn, and if we do we want the player to take the first turn on the new floor.</p>
 <p>We can handle this action in <em>res://src/Game/EventHandlers/main_game_input_handler.gd</em>, in the <code>get_action()</code> function:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">Input</span><span style="color:#f92672">.</span><span style="color:#a6e22e">is_action_just_pressed</span>(<span style="color:#e6db74">&#34;look&#34;</span>):
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">await</span> <span style="color:#a6e22e">get_grid_position</span>(player, <span style="color:#ae81ff">0</span>)
-</span></span><span style="display:flex;"><span>	
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">Input</span><span style="color:#f92672">.</span><span style="color:#a6e22e">is_action_just_pressed</span>(<span style="color:#e6db74">&#34;descend&#34;</span>):
-</span></span><span style="display:flex;"><span>		action <span style="color:#f92672">=</span> TakeStairsAction<span style="color:#f92672">.</span><span style="color:#a6e22e">new</span>(player)
-</span></span></code></pre></div><p>As mentioned above we extend the list of signals in <em>signal_bus.gd</em>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">signal</span> player_died
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">signal</span> player_descended
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">signal</span> <span style="color:#a6e22e">message_sent</span>(text, color)
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">signal</span> escape_requested
-</span></span></code></pre></div><p>In <code>map.gd</code> we will connect this signal to a function we&rsquo;ll shortly write:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">_ready</span>() <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
-</span></span><span style="display:flex;"><span>	SignalBus<span style="color:#f92672">.</span>player_descended<span style="color:#f92672">.</span><span style="color:#a6e22e">connect</span>(next_floor)
-</span></span></code></pre></div><p>Here is the corresponding <code>next_floor()</code> function:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">next_floor</span>() <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> player: Entity <span style="color:#f92672">=</span> map_data<span style="color:#f92672">.</span>player
-</span></span><span style="display:flex;"><span>	entities<span style="color:#f92672">.</span><span style="color:#a6e22e">remove_child</span>(player)
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">for</span> entity <span style="color:#f92672">in</span> entities<span style="color:#f92672">.</span><span style="color:#a6e22e">get_children</span>():
-</span></span><span style="display:flex;"><span>		entity<span style="color:#f92672">.</span><span style="color:#a6e22e">queue_free</span>()
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">for</span> tile <span style="color:#f92672">in</span> tiles<span style="color:#f92672">.</span><span style="color:#a6e22e">get_children</span>():
-</span></span><span style="display:flex;"><span>		tile<span style="color:#f92672">.</span><span style="color:#a6e22e">queue_free</span>()
-</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">generate</span>(player, map_data<span style="color:#f92672">.</span>current_floor <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>)
-</span></span><span style="display:flex;"><span>	player<span style="color:#f92672">.</span><span style="color:#a6e22e">get_node</span>(<span style="color:#e6db74">&#34;Camera2D&#34;</span>)<span style="color:#f92672">.</span><span style="color:#a6e22e">make_current</span>()
-</span></span><span style="display:flex;"><span>	field_of_view<span style="color:#f92672">.</span><span style="color:#a6e22e">reset_fov</span>()
-</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">update_fov</span>(player<span style="color:#f92672">.</span>grid_position)
-</span></span></code></pre></div><p>First, we obtain a reference to the player, because they are the only entity we need to keep between levels. We remove the player from the entities node, before freeing all the existing entity and tile nodes. We then use the <code>generate()</code> function to simply overwrite our map data, automatically placing our player in the new map. The player&rsquo;s camera had left the tree momentarily, so we need to set it as the current camera again. Lastly, we need to handle the field of view.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd">	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">Input</span><span style="color:#f92672">.</span>is_action_just_pressed(<span style="color:#e6db74">&#34;look&#34;</span>):
+		await get_grid_position(player, <span style="color:#ae81ff">0</span>)
+	
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">Input</span><span style="color:#f92672">.</span>is_action_just_pressed(<span style="color:#e6db74">&#34;descend&#34;</span>):
+		action <span style="color:#f92672">=</span> TakeStairsAction<span style="color:#f92672">.</span>new(player)
+</code></pre></div><p>As mentioned above we extend the list of signals in <em>signal_bus.gd</em>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">signal</span> player_died
+<span style="color:#66d9ef">signal</span> player_descended
+<span style="color:#66d9ef">signal</span> message_sent(text, color)
+<span style="color:#66d9ef">signal</span> escape_requested
+</code></pre></div><p>In <code>map.gd</code> we will connect this signal to a function we&rsquo;ll shortly write:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> _ready() <span style="color:#f92672">-&gt;</span> void:
+	SignalBus<span style="color:#f92672">.</span>player_descended<span style="color:#f92672">.</span>connect(next_floor)
+</code></pre></div><p>Here is the corresponding <code>next_floor()</code> function:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> next_floor() <span style="color:#f92672">-&gt;</span> void:
+	<span style="color:#66d9ef">var</span> player: Entity <span style="color:#f92672">=</span> map_data<span style="color:#f92672">.</span>player
+	entities<span style="color:#f92672">.</span>remove_child(player)
+	<span style="color:#66d9ef">for</span> entity <span style="color:#f92672">in</span> entities<span style="color:#f92672">.</span>get_children():
+		entity<span style="color:#f92672">.</span>queue_free()
+	<span style="color:#66d9ef">for</span> tile <span style="color:#f92672">in</span> tiles<span style="color:#f92672">.</span>get_children():
+		tile<span style="color:#f92672">.</span>queue_free()
+	generate(player, map_data<span style="color:#f92672">.</span>current_floor <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>)
+	player<span style="color:#f92672">.</span>get_node(<span style="color:#e6db74">&#34;Camera2D&#34;</span>)<span style="color:#f92672">.</span>make_current()
+	field_of_view<span style="color:#f92672">.</span>reset_fov()
+	update_fov(player<span style="color:#f92672">.</span>grid_position)
+</code></pre></div><p>First, we obtain a reference to the player, because they are the only entity we need to keep between levels. We remove the player from the entities node, before freeing all the existing entity and tile nodes. We then use the <code>generate()</code> function to simply overwrite our map data, automatically placing our player in the new map. The player&rsquo;s camera had left the tree momentarily, so we need to set it as the current camera again. Lastly, we need to handle the field of view.</p>
 <p>There are two changes here we need to account for. We call <code>generate()</code> with an additional parameter, so that the floor number increases. Also we have a new <code>reset_fov()</code> function the <strong>FieldOfView</strong> node. Let&rsquo;s implement the latter first. In <em>field_of_view.gd</em> add the following function:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">reset_fov</span>() <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
-</span></span><span style="display:flex;"><span>	_fov <span style="color:#f92672">=</span> []
-</span></span></code></pre></div><p>This simply clears the <code>_fov</code> array which would otherwise still hold references to freed nodes, and we need to make sure we don&rsquo;t try to access them anymore.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> reset_fov() <span style="color:#f92672">-&gt;</span> void:
+	_fov <span style="color:#f92672">=</span> []
+</code></pre></div><p>This simply clears the <code>_fov</code> array which would otherwise still hold references to freed nodes, and we need to make sure we don&rsquo;t try to access them anymore.</p>
 <p>Back in <em>map.gd</em> we change <code>generate()</code> as follows:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">generate</span>(player: Entity, current_floor: <span style="color:#66d9ef">int</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
-</span></span><span style="display:flex;"><span>	map_data <span style="color:#f92672">=</span> dungeon_generator<span style="color:#f92672">.</span><span style="color:#a6e22e">generate_dungeon</span>(player, current_floor)
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> map_data<span style="color:#f92672">.</span>entity_placed<span style="color:#f92672">.</span><span style="color:#a6e22e">is_connected</span>(entities<span style="color:#f92672">.</span>add_child):
-</span></span><span style="display:flex;"><span>		map_data<span style="color:#f92672">.</span>entity_placed<span style="color:#f92672">.</span><span style="color:#a6e22e">connect</span>(entities<span style="color:#f92672">.</span>add_child)
-</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">_place_tiles</span>()
-</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">_place_entities</span>()
-</span></span><span style="display:flex;"><span>	dungeon_floor_changed<span style="color:#f92672">.</span><span style="color:#a6e22e">emit</span>(current_floor)
-</span></span></code></pre></div><p>We now have a <code>current_floor</code> argument, which we hand over to the dungeon generator. We use a default argument of 1, so when we start a new game and this function gets called as usual without the extra argument we&rsquo;ll start on floor 1. Also we&rsquo;ll emit a new signal, which we&rsquo;ll use for hooking up information about the dungeon depth with the gui in a moment. We need to add that signal as well:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">class_name</span> <span style="color:#a6e22e">Map</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">extends</span> <span style="color:#a6e22e">Node2D</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">signal</span> <span style="color:#a6e22e">dungeon_floor_changed</span>(floor)
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> map_data: MapData
-</span></span></code></pre></div><p>We&rsquo;ve seen that <code>generate()</code> in the <strong>Map</strong> node delegates to <code>generate_dungeon()</code> in the <strong>DungeonGenerator</strong>. We still need to handle information about the current floor in <em>dungeon_generator.gd</em>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">generate_dungeon</span>(player: Entity, current_floor: <span style="color:#66d9ef">int</span>) <span style="color:#f92672">-&gt;</span> MapData:
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> dungeon <span style="color:#f92672">:=</span> MapData<span style="color:#f92672">.</span><span style="color:#a6e22e">new</span>(map_width, map_height, player)
-</span></span><span style="display:flex;"><span>	dungeon<span style="color:#f92672">.</span>current_floor <span style="color:#f92672">=</span> current_floor
-</span></span><span style="display:flex;"><span>	dungeon<span style="color:#f92672">.</span>entities<span style="color:#f92672">.</span><span style="color:#a6e22e">append</span>(player)
-</span></span><span style="display:flex;"><span>    <span style="color:#75715e">#...</span>
-</span></span></code></pre></div><p>We had to change things at a few places, but that&rsquo;s it. Stairs are generated in the dungeon generation, the player can interact with them, and descending the stairs will drop the player in a brand new map.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> generate(player: Entity, current_floor: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>) <span style="color:#f92672">-&gt;</span> void:
+	map_data <span style="color:#f92672">=</span> dungeon_generator<span style="color:#f92672">.</span>generate_dungeon(player, current_floor)
+	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> map_data<span style="color:#f92672">.</span>entity_placed<span style="color:#f92672">.</span>is_connected(entities<span style="color:#f92672">.</span>add_child):
+		map_data<span style="color:#f92672">.</span>entity_placed<span style="color:#f92672">.</span>connect(entities<span style="color:#f92672">.</span>add_child)
+	_place_tiles()
+	_place_entities()
+	dungeon_floor_changed<span style="color:#f92672">.</span>emit(current_floor)
+</code></pre></div><p>We now have a <code>current_floor</code> argument, which we hand over to the dungeon generator. We use a default argument of 1, so when we start a new game and this function gets called as usual without the extra argument we&rsquo;ll start on floor 1. Also we&rsquo;ll emit a new signal, which we&rsquo;ll use for hooking up information about the dungeon depth with the gui in a moment. We need to add that signal as well:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd">class_name Map
+<span style="color:#66d9ef">extends</span> <span style="color:#a6e22e">Node2D</span>
+
+<span style="color:#66d9ef">signal</span> dungeon_floor_changed(floor)
+
+<span style="color:#66d9ef">var</span> map_data: MapData
+</code></pre></div><p>We&rsquo;ve seen that <code>generate()</code> in the <strong>Map</strong> node delegates to <code>generate_dungeon()</code> in the <strong>DungeonGenerator</strong>. We still need to handle information about the current floor in <em>dungeon_generator.gd</em>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> generate_dungeon(player: Entity, current_floor: <span style="color:#a6e22e">int</span>) <span style="color:#f92672">-&gt;</span> MapData:
+	<span style="color:#66d9ef">var</span> dungeon :<span style="color:#f92672">=</span> MapData<span style="color:#f92672">.</span>new(map_width, map_height, player)
+	dungeon<span style="color:#f92672">.</span>current_floor <span style="color:#f92672">=</span> current_floor
+	dungeon<span style="color:#f92672">.</span>entities<span style="color:#f92672">.</span>append(player)
+    <span style="color:#75715e">#...</span>
+</code></pre></div><p>We had to change things at a few places, but that&rsquo;s it. Stairs are generated in the dungeon generation, the player can interact with them, and descending the stairs will drop the player in a brand new map.</p>
 <p>The player will want to know what floor they&rsquo;re on. To do that we add a new node of type <code>Label</code> under <strong>InfoBar</strong>/<strong>StatsPanel</strong>/<strong>VBoxContainer</strong>, right after the <strong>HpDisplay</strong> node. We&rsquo;ll call that new label <strong>DungeonFloorLabel</strong>, and as usual we&rsquo;ll add some <code>LabelSettings</code> to it which we will fill with our font. We need a tiny bit of functionality, so we&rsquo;ll add a script to the node and save it at <em>res://src/GUI/dungeon_floor_label.gd</em>. Here&rsquo;s that script:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">extends</span> <span style="color:#a6e22e">Label</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">set_dungeon_floor</span>(current_floor: <span style="color:#66d9ef">int</span>) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
-</span></span><span style="display:flex;"><span>	text <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Dungeon Level: </span><span style="color:#e6db74">%d</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">%</span> current_floor
-</span></span></code></pre></div><p>It&rsquo;s not a lot, but it allows us to just call this function and supply the floor number, and the label will know what to do with that. Now on the <strong>Map</strong> node find the signals tab and double click on our <code>dungeon_floor_changed</code> signal. Select the <strong>DungeonFloorLabel</strong> node in the window that popped up and then click on <em>Pick</em> to the lower right. Select the <code>set_dungeon_floor()</code> function and click on ok. Now, whenever the <code>generate()</code> function on the <strong>Map</strong> node is executed, the gui will update automatically to reflect the current floor.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">extends</span> <span style="color:#a6e22e">Label</span>
+
+
+<span style="color:#66d9ef">func</span> set_dungeon_floor(current_floor: <span style="color:#a6e22e">int</span>) <span style="color:#f92672">-&gt;</span> void:
+	text <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Dungeon Level: </span><span style="color:#e6db74">%d</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">%</span> current_floor
+</code></pre></div><p>It&rsquo;s not a lot, but it allows us to just call this function and supply the floor number, and the label will know what to do with that. Now on the <strong>Map</strong> node find the signals tab and double click on our <code>dungeon_floor_changed</code> signal. Select the <strong>DungeonFloorLabel</strong> node in the window that popped up and then click on <em>Pick</em> to the lower right. Select the <code>set_dungeon_floor()</code> function and click on ok. Now, whenever the <code>generate()</code> function on the <strong>Map</strong> node is executed, the gui will update automatically to reflect the current floor.</p>
 <p>There&rsquo;s still one problem with this approach. When we save the game and then load it, we won&rsquo;t call <code>generate()</code>. That means we need to emit the signal from the <code>load_game()</code> function in <em>map.gd</em> as well:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">load_game</span>(player: Entity) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">bool</span>:
-</span></span><span style="display:flex;"><span>	map_data <span style="color:#f92672">=</span> MapData<span style="color:#f92672">.</span><span style="color:#a6e22e">new</span>(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, player)
-</span></span><span style="display:flex;"><span>	map_data<span style="color:#f92672">.</span>entity_placed<span style="color:#f92672">.</span><span style="color:#a6e22e">connect</span>(entities<span style="color:#f92672">.</span>add_child)
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> map_data<span style="color:#f92672">.</span><span style="color:#a6e22e">load_game</span>():
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">false</span>
-</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">_place_tiles</span>()
-</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">_place_entities</span>()
-</span></span><span style="display:flex;"><span>	dungeon_floor_changed<span style="color:#f92672">.</span><span style="color:#a6e22e">emit</span>(map_data<span style="color:#f92672">.</span>current_floor)
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">true</span>
-</span></span></code></pre></div><p>And now dungeon levels should work properly. Try it out, if you like. Of course, right now that basically just means &ldquo;more map&rdquo;. We&rsquo;ll handle how to do increasing risk and reward in the next part. For now, however, we&rsquo;ll add another type of levels: character levels.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> load_game(player: Entity) <span style="color:#f92672">-&gt;</span> <span style="color:#a6e22e">bool</span>:
+	map_data <span style="color:#f92672">=</span> MapData<span style="color:#f92672">.</span>new(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, player)
+	map_data<span style="color:#f92672">.</span>entity_placed<span style="color:#f92672">.</span>connect(entities<span style="color:#f92672">.</span>add_child)
+	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> map_data<span style="color:#f92672">.</span>load_game():
+		<span style="color:#66d9ef">return</span> false
+	_place_tiles()
+	_place_entities()
+	dungeon_floor_changed<span style="color:#f92672">.</span>emit(map_data<span style="color:#f92672">.</span>current_floor)
+	<span style="color:#66d9ef">return</span> true
+</code></pre></div><p>And now dungeon levels should work properly. Try it out, if you like. Of course, right now that basically just means &ldquo;more map&rdquo;. We&rsquo;ll handle how to do increasing risk and reward in the next part. For now, however, we&rsquo;ll add another type of levels: character levels.</p>
 <p>We&rsquo;ll create a new component that handles both gaining experience points as well as awarding them on death (in case of the enemies). Once enough xp have accumulated, this component will handle leveling up, which will increase the stats of the fighter component. Again, we will start with the data part, i.e., a definition. Create a new script extending <code>Resource</code> at <em>res://src/Entities/Actors/Components/ComponentDefinitions/level_component_definition.gd</em>. Add the following code to it:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">class_name</span> <span style="color:#a6e22e">LevelComponentDefinition</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">extends</span> <span style="color:#a6e22e">Resource</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#a6e22e">@export</span> <span style="color:#66d9ef">var</span> level_up_base: <span style="color:#66d9ef">int</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
-</span></span><span style="display:flex;"><span><span style="color:#a6e22e">@export</span> <span style="color:#66d9ef">var</span> level_up_factor: <span style="color:#66d9ef">int</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">150</span>
-</span></span><span style="display:flex;"><span><span style="color:#a6e22e">@export</span> <span style="color:#66d9ef">var</span> xp_given: <span style="color:#66d9ef">int</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
-</span></span></code></pre></div><p>We define three variables. The first two are parts of our level equation. They&rsquo;ll allow the level component to calculate how many xp are necessary to reach each level. The last variable defines how much xp an entity will award when it dies.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd">class_name LevelComponentDefinition
+<span style="color:#66d9ef">extends</span> <span style="color:#a6e22e">Resource</span>
+
+<span style="color:#960050;background-color:#1e0010">@</span><span style="color:#66d9ef">export</span> <span style="color:#66d9ef">var</span> level_up_base: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+<span style="color:#960050;background-color:#1e0010">@</span><span style="color:#66d9ef">export</span> <span style="color:#66d9ef">var</span> level_up_factor: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">150</span>
+<span style="color:#960050;background-color:#1e0010">@</span><span style="color:#66d9ef">export</span> <span style="color:#66d9ef">var</span> xp_given: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</code></pre></div><p>We define three variables. The first two are parts of our level equation. They&rsquo;ll allow the level component to calculate how many xp are necessary to reach each level. The last variable defines how much xp an entity will award when it dies.</p>
 <p>Now onto the level component itself. This one is a bit more extensive, so we&rsquo;ll go through it bit by bit. First, create a new script extending <code>Component</code> at <em>res://src/Entities/Actors/Components/level_component.gd</em>. Here&rsquo;s the top of the script:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">class_name</span> <span style="color:#a6e22e">LevelComponent</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">extends</span> <span style="color:#a6e22e">Component</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">signal</span> level_up_required
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">signal</span> leveled_up
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">signal</span> <span style="color:#a6e22e">xp_changed</span>(xp, max_xp)
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> current_level: <span style="color:#66d9ef">int</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> current_xp: <span style="color:#66d9ef">int</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> level_up_base: <span style="color:#66d9ef">int</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> level_up_factor: <span style="color:#66d9ef">int</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> xp_given: <span style="color:#66d9ef">int</span>
-</span></span></code></pre></div><p>We have three signals. The first one is emitted when we have enough xp for a level up, the second one when we actually level up. The player will get a choice with every level up, so we need to separate those steps. The last signal is emitted when we gain xp. We&rsquo;ll use these signals to properly communicate with the gui.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd">class_name LevelComponent
+<span style="color:#66d9ef">extends</span> Component
+
+<span style="color:#66d9ef">signal</span> level_up_required
+<span style="color:#66d9ef">signal</span> leveled_up
+<span style="color:#66d9ef">signal</span> xp_changed(xp, max_xp)
+
+<span style="color:#66d9ef">var</span> current_level: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>
+<span style="color:#66d9ef">var</span> current_xp: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+<span style="color:#66d9ef">var</span> level_up_base: <span style="color:#a6e22e">int</span>
+<span style="color:#66d9ef">var</span> level_up_factor: <span style="color:#a6e22e">int</span>
+<span style="color:#66d9ef">var</span> xp_given: <span style="color:#a6e22e">int</span>
+</code></pre></div><p>We have three signals. The first one is emitted when we have enough xp for a level up, the second one when we actually level up. The player will get a choice with every level up, so we need to separate those steps. The last signal is emitted when we gain xp. We&rsquo;ll use these signals to properly communicate with the gui.</p>
 <p>Next we have two variables holding information about the current level and current xp, as well as three variables corresponding to the ones from the level definition.</p>
 <pre tabindex="0"><code class="language-g" data-lang="g">func _init(definition: LevelComponentDefinition) -&gt; void:
 	level_up_base = definition.level_up_base
@@ -298,226 +298,226 @@ func get_experience_to_next_level() -&gt; int:
 func is_level_up_required() -&gt; bool:
 	return current_xp &gt;= get_experience_to_next_level()
 </code></pre><p>The <code>_init()</code> function simply initializes the variables just mentioned from the definition, just as we did for other components. Next are two very simple functions. One calculates the xp required for the next level, the other can tell us if we already fulfill the requirements for a level up. The first of these is the one you&rsquo;ll want to change if you want another type of function for the level progression. Currently we have a linear function, but certain kinds of polynomial or exponential functions are also popular.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">add_xp</span>(xp: <span style="color:#66d9ef">int</span>) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> xp <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span> <span style="color:#f92672">or</span> level_up_base <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>:
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span>
-</span></span><span style="display:flex;"><span>	
-</span></span><span style="display:flex;"><span>	current_xp <span style="color:#f92672">+=</span> xp
-</span></span><span style="display:flex;"><span>	MessageLog<span style="color:#f92672">.</span><span style="color:#a6e22e">send_message</span>(<span style="color:#e6db74">&#34;You gain </span><span style="color:#e6db74">%d</span><span style="color:#e6db74"> experience points.&#34;</span> <span style="color:#f92672">%</span> xp, <span style="color:#a6e22e">Color</span><span style="color:#f92672">.</span>WHITE)
-</span></span><span style="display:flex;"><span>	xp_changed<span style="color:#f92672">.</span><span style="color:#a6e22e">emit</span>(current_xp, <span style="color:#a6e22e">get_experience_to_next_level</span>())
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">is_level_up_required</span>():
-</span></span><span style="display:flex;"><span>		MessageLog<span style="color:#f92672">.</span><span style="color:#a6e22e">send_message</span>(<span style="color:#e6db74">&#34;You advance to level </span><span style="color:#e6db74">%d</span><span style="color:#e6db74">!&#34;</span> <span style="color:#f92672">%</span> (current_level <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>), <span style="color:#a6e22e">Color</span><span style="color:#f92672">.</span>WHITE)
-</span></span><span style="display:flex;"><span>		level_up_required<span style="color:#f92672">.</span><span style="color:#a6e22e">emit</span>()
-</span></span></code></pre></div><p>Here we have a function we&rsquo;ll call when we add xp. We first check whether adding xp even makes sense (e.g., we don&rsquo;t want a message telling us we gained 0 xp). We add the xp and inform the player in the message log, and inform the gui via the signal. After that we check whether we already meet the requirements for the next level. If we do, we also log that to the message log, and emit the appropriate signal for that. We&rsquo;ll see later how we&rsquo;ll handle that signal.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">increase_level</span>() <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
-</span></span><span style="display:flex;"><span>	current_xp <span style="color:#f92672">-=</span> <span style="color:#a6e22e">get_experience_to_next_level</span>()
-</span></span><span style="display:flex;"><span>	current_level <span style="color:#f92672">+=</span> <span style="color:#ae81ff">1</span>
-</span></span></code></pre></div><p>This function does the actual leveling up. It subtracts the xp necessary to get to the next level. We subtract from the current xp rather than set them to 0, because if the player just got xp and overshot the requirement for the next level we don&rsquo;t want to let those overshooting xp go to waste.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">increase_max_hp</span>(amount: <span style="color:#66d9ef">int</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">20</span>) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> fighter: FighterComponent <span style="color:#f92672">=</span> entity<span style="color:#f92672">.</span>fighter_component
-</span></span><span style="display:flex;"><span>	fighter<span style="color:#f92672">.</span>max_hp <span style="color:#f92672">+=</span> amount
-</span></span><span style="display:flex;"><span>	fighter<span style="color:#f92672">.</span>hp <span style="color:#f92672">+=</span> amount
-</span></span><span style="display:flex;"><span>	
-</span></span><span style="display:flex;"><span>	MessageLog<span style="color:#f92672">.</span><span style="color:#a6e22e">send_message</span>(<span style="color:#e6db74">&#34;Your health improves!&#34;</span>, <span style="color:#a6e22e">Color</span><span style="color:#f92672">.</span>WHITE)
-</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">increase_level</span>()
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">increase_power</span>(amount: <span style="color:#66d9ef">int</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> fighter: FighterComponent <span style="color:#f92672">=</span> entity<span style="color:#f92672">.</span>fighter_component
-</span></span><span style="display:flex;"><span>	fighter<span style="color:#f92672">.</span>power <span style="color:#f92672">+=</span> amount
-</span></span><span style="display:flex;"><span>	
-</span></span><span style="display:flex;"><span>	MessageLog<span style="color:#f92672">.</span><span style="color:#a6e22e">send_message</span>(<span style="color:#e6db74">&#34;You feel stronger!&#34;</span>, <span style="color:#a6e22e">Color</span><span style="color:#f92672">.</span>WHITE)
-</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">increase_level</span>()
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">increase_defense</span>(amount: <span style="color:#66d9ef">int</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> fighter: FighterComponent <span style="color:#f92672">=</span> entity<span style="color:#f92672">.</span>fighter_component
-</span></span><span style="display:flex;"><span>	fighter<span style="color:#f92672">.</span>defense <span style="color:#f92672">+=</span> amount
-</span></span><span style="display:flex;"><span>	
-</span></span><span style="display:flex;"><span>	MessageLog<span style="color:#f92672">.</span><span style="color:#a6e22e">send_message</span>(<span style="color:#e6db74">&#34;Your movements are getting swifter!&#34;</span>, <span style="color:#a6e22e">Color</span><span style="color:#f92672">.</span>WHITE)
-</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">increase_level</span>()
-</span></span></code></pre></div><p>When the player levels up they will get to choose which stat they want to increase. Once they do we&rsquo;ll call one of these functions. They all get the fighter, increase the stat, inform the player via the message log and the gui via a signal, so that it can update the display of the current stats (which we still have to implement).</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">get_save_data</span>() <span style="color:#f92672">-&gt;</span> <span style="color:#a6e22e">Dictionary</span>:
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> {
-</span></span><span style="display:flex;"><span>		<span style="color:#e6db74">&#34;current_level&#34;</span>: current_level,
-</span></span><span style="display:flex;"><span>		<span style="color:#e6db74">&#34;current_xp&#34;</span>: current_xp,
-</span></span><span style="display:flex;"><span>		<span style="color:#e6db74">&#34;level_up_base&#34;</span>: level_up_base,
-</span></span><span style="display:flex;"><span>		<span style="color:#e6db74">&#34;level_up_factor&#34;</span>: level_up_factor,
-</span></span><span style="display:flex;"><span>		<span style="color:#e6db74">&#34;xp_given&#34;</span>: xp_given
-</span></span><span style="display:flex;"><span>	}
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">restore</span>(save_data: <span style="color:#a6e22e">Dictionary</span>) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
-</span></span><span style="display:flex;"><span>	current_level <span style="color:#f92672">=</span> save_data[<span style="color:#e6db74">&#34;current_level&#34;</span>]
-</span></span><span style="display:flex;"><span>	current_xp <span style="color:#f92672">=</span> save_data[<span style="color:#e6db74">&#34;current_xp&#34;</span>]
-</span></span><span style="display:flex;"><span>	level_up_base <span style="color:#f92672">=</span> save_data[<span style="color:#e6db74">&#34;level_up_base&#34;</span>]
-</span></span><span style="display:flex;"><span>	level_up_factor <span style="color:#f92672">=</span> save_data[<span style="color:#e6db74">&#34;level_up_factor&#34;</span>]
-</span></span><span style="display:flex;"><span>	xp_given <span style="color:#f92672">=</span> save_data[<span style="color:#e6db74">&#34;xp_given&#34;</span>]
-</span></span></code></pre></div><p>Lastly we ensure the player will keep their hard earned levels and xp after they save and load the game. That&rsquo;s the level component done, now we have to add it to <em>entity.gd</em>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">var</span> fighter_component: FighterComponent
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> ai_component: BaseAIComponent
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> consumable_component: ConsumableComponent
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> inventory_component: InventoryComponent
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> level_component: LevelComponent
-</span></span></code></pre></div><p>Add the following to <code>set_entity_type()</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> entity_definition<span style="color:#f92672">.</span>level_info:
-</span></span><span style="display:flex;"><span>		level_component <span style="color:#f92672">=</span> LevelComponent<span style="color:#f92672">.</span><span style="color:#a6e22e">new</span>(entity_definition<span style="color:#f92672">.</span>level_info)
-</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">add_child</span>(level_component)
-</span></span></code></pre></div><p>Of course, the entity also needs to make sure to include this new component in its save data. In <code>get_save_data()</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> inventory_component:
-</span></span><span style="display:flex;"><span>		save_data[<span style="color:#e6db74">&#34;inventory_component&#34;</span>] <span style="color:#f92672">=</span> inventory_component<span style="color:#f92672">.</span><span style="color:#a6e22e">get_save_data</span>()
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> level_component:
-</span></span><span style="display:flex;"><span>		save_data[<span style="color:#e6db74">&#34;level_component&#34;</span>] <span style="color:#f92672">=</span> level_component<span style="color:#f92672">.</span><span style="color:#a6e22e">get_save_data</span>()
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> save_data
-</span></span></code></pre></div><p>And at the end of <code>restore()</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> inventory_component <span style="color:#f92672">and</span> save_data<span style="color:#f92672">.</span><span style="color:#a6e22e">has</span>(<span style="color:#e6db74">&#34;inventory_component&#34;</span>):
-</span></span><span style="display:flex;"><span>		inventory_component<span style="color:#f92672">.</span><span style="color:#a6e22e">restore</span>(save_data[<span style="color:#e6db74">&#34;inventory_component&#34;</span>])
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> level_component <span style="color:#f92672">and</span> save_data<span style="color:#f92672">.</span><span style="color:#a6e22e">has</span>(<span style="color:#e6db74">&#34;level_component&#34;</span>):
-</span></span><span style="display:flex;"><span>		level_component<span style="color:#f92672">.</span><span style="color:#a6e22e">restore</span>(save_data[<span style="color:#e6db74">&#34;level_component&#34;</span>])
-</span></span></code></pre></div><p>We also need to add a new slot to <em>entity_definition.gd</em>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#a6e22e">@export_category</span>(<span style="color:#e6db74">&#34;Components&#34;</span>)
-</span></span><span style="display:flex;"><span><span style="color:#a6e22e">@export</span> <span style="color:#66d9ef">var</span> fighter_definition: FighterComponentDefinition
-</span></span><span style="display:flex;"><span><span style="color:#a6e22e">@export</span> <span style="color:#66d9ef">var</span> ai_type: Entity<span style="color:#f92672">.</span>AIType
-</span></span><span style="display:flex;"><span><span style="color:#a6e22e">@export</span> <span style="color:#66d9ef">var</span> consumable_definition: ConsumableComponentDefinition
-</span></span><span style="display:flex;"><span><span style="color:#a6e22e">@export</span> <span style="color:#66d9ef">var</span> inventory_capacity: <span style="color:#66d9ef">int</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
-</span></span><span style="display:flex;"><span><span style="color:#a6e22e">@export</span> <span style="color:#66d9ef">var</span> level_info: LevelComponentDefinition
-</span></span></code></pre></div><p>Now it&rsquo;s time to go over our entities again and add some level definitions. Add a new <code>LevelComponentDefinition</code> in <em>Level Info</em> of <em>entity_definition_player.tres</em>. Set the <em>Level Up Base</em> to <em>200</em>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> add_xp(xp: <span style="color:#a6e22e">int</span>) <span style="color:#f92672">-&gt;</span> void:
+	<span style="color:#66d9ef">if</span> xp <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span> <span style="color:#f92672">or</span> level_up_base <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>:
+		<span style="color:#66d9ef">return</span>
+	
+	current_xp <span style="color:#f92672">+=</span> xp
+	MessageLog<span style="color:#f92672">.</span>send_message(<span style="color:#e6db74">&#34;You gain </span><span style="color:#e6db74">%d</span><span style="color:#e6db74"> experience points.&#34;</span> <span style="color:#f92672">%</span> xp, <span style="color:#a6e22e">Color</span><span style="color:#f92672">.</span>WHITE)
+	xp_changed<span style="color:#f92672">.</span>emit(current_xp, get_experience_to_next_level())
+	<span style="color:#66d9ef">if</span> is_level_up_required():
+		MessageLog<span style="color:#f92672">.</span>send_message(<span style="color:#e6db74">&#34;You advance to level </span><span style="color:#e6db74">%d</span><span style="color:#e6db74">!&#34;</span> <span style="color:#f92672">%</span> (current_level <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>), <span style="color:#a6e22e">Color</span><span style="color:#f92672">.</span>WHITE)
+		level_up_required<span style="color:#f92672">.</span>emit()
+</code></pre></div><p>Here we have a function we&rsquo;ll call when we add xp. We first check whether adding xp even makes sense (e.g., we don&rsquo;t want a message telling us we gained 0 xp). We add the xp and inform the player in the message log, and inform the gui via the signal. After that we check whether we already meet the requirements for the next level. If we do, we also log that to the message log, and emit the appropriate signal for that. We&rsquo;ll see later how we&rsquo;ll handle that signal.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> increase_level() <span style="color:#f92672">-&gt;</span> void:
+	current_xp <span style="color:#f92672">-=</span> get_experience_to_next_level()
+	current_level <span style="color:#f92672">+=</span> <span style="color:#ae81ff">1</span>
+</code></pre></div><p>This function does the actual leveling up. It subtracts the xp necessary to get to the next level. We subtract from the current xp rather than set them to 0, because if the player just got xp and overshot the requirement for the next level we don&rsquo;t want to let those overshooting xp go to waste.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> increase_max_hp(amount: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">20</span>) <span style="color:#f92672">-&gt;</span> void:
+	<span style="color:#66d9ef">var</span> fighter: FighterComponent <span style="color:#f92672">=</span> entity<span style="color:#f92672">.</span>fighter_component
+	fighter<span style="color:#f92672">.</span>max_hp <span style="color:#f92672">+=</span> amount
+	fighter<span style="color:#f92672">.</span>hp <span style="color:#f92672">+=</span> amount
+	
+	MessageLog<span style="color:#f92672">.</span>send_message(<span style="color:#e6db74">&#34;Your health improves!&#34;</span>, <span style="color:#a6e22e">Color</span><span style="color:#f92672">.</span>WHITE)
+	increase_level()
+
+
+<span style="color:#66d9ef">func</span> increase_power(amount: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>) <span style="color:#f92672">-&gt;</span> void:
+	<span style="color:#66d9ef">var</span> fighter: FighterComponent <span style="color:#f92672">=</span> entity<span style="color:#f92672">.</span>fighter_component
+	fighter<span style="color:#f92672">.</span>power <span style="color:#f92672">+=</span> amount
+	
+	MessageLog<span style="color:#f92672">.</span>send_message(<span style="color:#e6db74">&#34;You feel stronger!&#34;</span>, <span style="color:#a6e22e">Color</span><span style="color:#f92672">.</span>WHITE)
+	increase_level()
+
+
+<span style="color:#66d9ef">func</span> increase_defense(amount: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>) <span style="color:#f92672">-&gt;</span> void:
+	<span style="color:#66d9ef">var</span> fighter: FighterComponent <span style="color:#f92672">=</span> entity<span style="color:#f92672">.</span>fighter_component
+	fighter<span style="color:#f92672">.</span>defense <span style="color:#f92672">+=</span> amount
+	
+	MessageLog<span style="color:#f92672">.</span>send_message(<span style="color:#e6db74">&#34;Your movements are getting swifter!&#34;</span>, <span style="color:#a6e22e">Color</span><span style="color:#f92672">.</span>WHITE)
+	increase_level()
+</code></pre></div><p>When the player levels up they will get to choose which stat they want to increase. Once they do we&rsquo;ll call one of these functions. They all get the fighter, increase the stat, inform the player via the message log and the gui via a signal, so that it can update the display of the current stats (which we still have to implement).</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> get_save_data() <span style="color:#f92672">-&gt;</span> <span style="color:#a6e22e">Dictionary</span>:
+	<span style="color:#66d9ef">return</span> {
+		<span style="color:#e6db74">&#34;current_level&#34;</span>: current_level,
+		<span style="color:#e6db74">&#34;current_xp&#34;</span>: current_xp,
+		<span style="color:#e6db74">&#34;level_up_base&#34;</span>: level_up_base,
+		<span style="color:#e6db74">&#34;level_up_factor&#34;</span>: level_up_factor,
+		<span style="color:#e6db74">&#34;xp_given&#34;</span>: xp_given
+	}
+
+
+<span style="color:#66d9ef">func</span> restore(save_data: <span style="color:#a6e22e">Dictionary</span>) <span style="color:#f92672">-&gt;</span> void:
+	current_level <span style="color:#f92672">=</span> save_data[<span style="color:#e6db74">&#34;current_level&#34;</span>]
+	current_xp <span style="color:#f92672">=</span> save_data[<span style="color:#e6db74">&#34;current_xp&#34;</span>]
+	level_up_base <span style="color:#f92672">=</span> save_data[<span style="color:#e6db74">&#34;level_up_base&#34;</span>]
+	level_up_factor <span style="color:#f92672">=</span> save_data[<span style="color:#e6db74">&#34;level_up_factor&#34;</span>]
+	xp_given <span style="color:#f92672">=</span> save_data[<span style="color:#e6db74">&#34;xp_given&#34;</span>]
+</code></pre></div><p>Lastly we ensure the player will keep their hard earned levels and xp after they save and load the game. That&rsquo;s the level component done, now we have to add it to <em>entity.gd</em>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">var</span> fighter_component: FighterComponent
+<span style="color:#66d9ef">var</span> ai_component: BaseAIComponent
+<span style="color:#66d9ef">var</span> consumable_component: ConsumableComponent
+<span style="color:#66d9ef">var</span> inventory_component: InventoryComponent
+<span style="color:#66d9ef">var</span> level_component: LevelComponent
+</code></pre></div><p>Add the following to <code>set_entity_type()</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd">	<span style="color:#66d9ef">if</span> entity_definition<span style="color:#f92672">.</span>level_info:
+		level_component <span style="color:#f92672">=</span> LevelComponent<span style="color:#f92672">.</span>new(entity_definition<span style="color:#f92672">.</span>level_info)
+		add_child(level_component)
+</code></pre></div><p>Of course, the entity also needs to make sure to include this new component in its save data. In <code>get_save_data()</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd">	<span style="color:#66d9ef">if</span> inventory_component:
+		save_data[<span style="color:#e6db74">&#34;inventory_component&#34;</span>] <span style="color:#f92672">=</span> inventory_component<span style="color:#f92672">.</span>get_save_data()
+	<span style="color:#66d9ef">if</span> level_component:
+		save_data[<span style="color:#e6db74">&#34;level_component&#34;</span>] <span style="color:#f92672">=</span> level_component<span style="color:#f92672">.</span>get_save_data()
+	<span style="color:#66d9ef">return</span> save_data
+</code></pre></div><p>And at the end of <code>restore()</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd">	<span style="color:#66d9ef">if</span> inventory_component <span style="color:#f92672">and</span> save_data<span style="color:#f92672">.</span>has(<span style="color:#e6db74">&#34;inventory_component&#34;</span>):
+		inventory_component<span style="color:#f92672">.</span>restore(save_data[<span style="color:#e6db74">&#34;inventory_component&#34;</span>])
+	<span style="color:#66d9ef">if</span> level_component <span style="color:#f92672">and</span> save_data<span style="color:#f92672">.</span>has(<span style="color:#e6db74">&#34;level_component&#34;</span>):
+		level_component<span style="color:#f92672">.</span>restore(save_data[<span style="color:#e6db74">&#34;level_component&#34;</span>])
+</code></pre></div><p>We also need to add a new slot to <em>entity_definition.gd</em>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#960050;background-color:#1e0010">@</span>export_category(<span style="color:#e6db74">&#34;Components&#34;</span>)
+<span style="color:#960050;background-color:#1e0010">@</span><span style="color:#66d9ef">export</span> <span style="color:#66d9ef">var</span> fighter_definition: FighterComponentDefinition
+<span style="color:#960050;background-color:#1e0010">@</span><span style="color:#66d9ef">export</span> <span style="color:#66d9ef">var</span> ai_type: Entity<span style="color:#f92672">.</span>AIType
+<span style="color:#960050;background-color:#1e0010">@</span><span style="color:#66d9ef">export</span> <span style="color:#66d9ef">var</span> consumable_definition: ConsumableComponentDefinition
+<span style="color:#960050;background-color:#1e0010">@</span><span style="color:#66d9ef">export</span> <span style="color:#66d9ef">var</span> inventory_capacity: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+<span style="color:#960050;background-color:#1e0010">@</span><span style="color:#66d9ef">export</span> <span style="color:#66d9ef">var</span> level_info: LevelComponentDefinition
+</code></pre></div><p>Now it&rsquo;s time to go over our entities again and add some level definitions. Add a new <code>LevelComponentDefinition</code> in <em>Level Info</em> of <em>entity_definition_player.tres</em>. Set the <em>Level Up Base</em> to <em>200</em>.</p>
 <p>Add such a component to the definitions for the orc and troll as well. However, here we will only change the <em>Xp Given</em>. The orc will give 35 xp, and the troll will give 100 xp.</p>
 <p>The game still doesn&rsquo;t do anything with these xp though. To change that we need to handle xp in the <code>die()</code> function of <em>fighter_component.gd</em>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">die</span>(trigger_side_effects <span style="color:#f92672">:=</span> <span style="color:#66d9ef">true</span>) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> death_message: <span style="color:#a6e22e">String</span>
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> death_message_color: <span style="color:#a6e22e">Color</span>
-</span></span><span style="display:flex;"><span>	
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">get_map_data</span>()<span style="color:#f92672">.</span>player <span style="color:#f92672">==</span> entity:
-</span></span><span style="display:flex;"><span>		death_message <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;You died!&#34;</span>
-</span></span><span style="display:flex;"><span>		death_message_color <span style="color:#f92672">=</span> GameColors<span style="color:#f92672">.</span>PLAYER_DIE
-</span></span><span style="display:flex;"><span>		SignalBus<span style="color:#f92672">.</span>player_died<span style="color:#f92672">.</span><span style="color:#a6e22e">emit</span>()
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">else</span>:
-</span></span><span style="display:flex;"><span>		death_message <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">%s</span><span style="color:#e6db74"> is dead!&#34;</span> <span style="color:#f92672">%</span> entity<span style="color:#f92672">.</span><span style="color:#a6e22e">get_entity_name</span>()
-</span></span><span style="display:flex;"><span>		death_message_color <span style="color:#f92672">=</span> GameColors<span style="color:#f92672">.</span>ENEMY_DIE
-</span></span><span style="display:flex;"><span>	
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> trigger_side_effects:
-</span></span><span style="display:flex;"><span>		MessageLog<span style="color:#f92672">.</span><span style="color:#a6e22e">send_message</span>(death_message, death_message_color)
-</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">get_map_data</span>()<span style="color:#f92672">.</span>player<span style="color:#f92672">.</span>level_component<span style="color:#f92672">.</span><span style="color:#a6e22e">add_xp</span>(entity<span style="color:#f92672">.</span>level_component<span style="color:#f92672">.</span>xp_given)
-</span></span><span style="display:flex;"><span>	entity<span style="color:#f92672">.</span>texture <span style="color:#f92672">=</span> death_texture
-</span></span><span style="display:flex;"><span>	entity<span style="color:#f92672">.</span>modulate <span style="color:#f92672">=</span> death_color
-</span></span><span style="display:flex;"><span>	entity<span style="color:#f92672">.</span>ai_component<span style="color:#f92672">.</span><span style="color:#a6e22e">queue_free</span>()
-</span></span><span style="display:flex;"><span>	entity<span style="color:#f92672">.</span>ai_component <span style="color:#f92672">=</span> <span style="color:#66d9ef">null</span>
-</span></span><span style="display:flex;"><span>	entity<span style="color:#f92672">.</span>entity_name <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Remains of </span><span style="color:#e6db74">%s</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">%</span> entity<span style="color:#f92672">.</span>entity_name
-</span></span><span style="display:flex;"><span>	entity<span style="color:#f92672">.</span>blocks_movement <span style="color:#f92672">=</span> <span style="color:#66d9ef">false</span>
-</span></span><span style="display:flex;"><span>	entity<span style="color:#f92672">.</span>type <span style="color:#f92672">=</span> Entity<span style="color:#f92672">.</span>EntityType<span style="color:#f92672">.</span>CORPSE
-</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">get_map_data</span>()<span style="color:#f92672">.</span><span style="color:#a6e22e">unregister_blocking_entity</span>(entity)
-</span></span></code></pre></div><p>I have changed the name of the <code>log_message</code> parameter we introduced last time to <code>trigger_side_effects</code>, to be a bit more clear, as we will use that same parameter to decide whether we should give the player xp. We don&rsquo;t want to give the player a bunch of xp from just loading the game. In the <code>if trigger_side_effects</code> block you see a new line of code next to the message log. it retrieves the player&rsquo;s level component and calls <code>add_xp()</code> on it with the xp the dying entity&rsquo;s level component defines.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> die(trigger_side_effects :<span style="color:#f92672">=</span> true) <span style="color:#f92672">-&gt;</span> void:
+	<span style="color:#66d9ef">var</span> death_message: <span style="color:#a6e22e">String</span>
+	<span style="color:#66d9ef">var</span> death_message_color: <span style="color:#a6e22e">Color</span>
+	
+	<span style="color:#66d9ef">if</span> get_map_data()<span style="color:#f92672">.</span>player <span style="color:#f92672">==</span> entity:
+		death_message <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;You died!&#34;</span>
+		death_message_color <span style="color:#f92672">=</span> GameColors<span style="color:#f92672">.</span>PLAYER_DIE
+		SignalBus<span style="color:#f92672">.</span>player_died<span style="color:#f92672">.</span>emit()
+	<span style="color:#66d9ef">else</span>:
+		death_message <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">%s</span><span style="color:#e6db74"> is dead!&#34;</span> <span style="color:#f92672">%</span> entity<span style="color:#f92672">.</span>get_entity_name()
+		death_message_color <span style="color:#f92672">=</span> GameColors<span style="color:#f92672">.</span>ENEMY_DIE
+	
+	<span style="color:#66d9ef">if</span> trigger_side_effects:
+		MessageLog<span style="color:#f92672">.</span>send_message(death_message, death_message_color)
+		get_map_data()<span style="color:#f92672">.</span>player<span style="color:#f92672">.</span>level_component<span style="color:#f92672">.</span>add_xp(entity<span style="color:#f92672">.</span>level_component<span style="color:#f92672">.</span>xp_given)
+	entity<span style="color:#f92672">.</span>texture <span style="color:#f92672">=</span> death_texture
+	entity<span style="color:#f92672">.</span>modulate <span style="color:#f92672">=</span> death_color
+	entity<span style="color:#f92672">.</span>ai_component<span style="color:#f92672">.</span>queue_free()
+	entity<span style="color:#f92672">.</span>ai_component <span style="color:#f92672">=</span> null
+	entity<span style="color:#f92672">.</span>entity_name <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Remains of </span><span style="color:#e6db74">%s</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">%</span> entity<span style="color:#f92672">.</span>entity_name
+	entity<span style="color:#f92672">.</span>blocks_movement <span style="color:#f92672">=</span> false
+	entity<span style="color:#f92672">.</span>type <span style="color:#f92672">=</span> Entity<span style="color:#f92672">.</span>EntityType<span style="color:#f92672">.</span>CORPSE
+	get_map_data()<span style="color:#f92672">.</span>unregister_blocking_entity(entity)
+</code></pre></div><p>I have changed the name of the <code>log_message</code> parameter we introduced last time to <code>trigger_side_effects</code>, to be a bit more clear, as we will use that same parameter to decide whether we should give the player xp. We don&rsquo;t want to give the player a bunch of xp from just loading the game. In the <code>if trigger_side_effects</code> block you see a new line of code next to the message log. it retrieves the player&rsquo;s level component and calls <code>add_xp()</code> on it with the xp the dying entity&rsquo;s level component defines.</p>
 <p>I want to take the opportunity here to point out that this code is getting a bit more &ldquo;fragile&rdquo; than I would like it to be. It should work, but I fear that it might easily break. However, I don&rsquo;t want to get too verbose here with error handling, and I don&rsquo;t know what would be a better solution. The issue here is that components should facilitate composition in a very loosely coupled way. There may be dependencies, right now we&rsquo;re not handling those very well. If we create an entity that has a fighter component but no level component, we would expect this combination to result in the player not getting xp when the entity died. However, if you look at the code above, you will see that such setup would simply crash the game, because the fighter component expects its entity to have a valid level component. As long as we keep to the rules we set up and give every entity with a fighter component a level component, this will work just fine. Still, if you work on a bigger game I would recommend thinking a bit about better decoupling and dependency handling.</p>
 <p>Back to our tutorial. The logic of leveling works fine, but we need some gui to tie it together. Firstly, we&rsquo;ll need a screen to handle the player&rsquo;s choice when leveling up. Secondly, we want to show the player their current level, xp, etc. We&rsquo;ll start with the level up menu. Create a new scene with a <code>CanvasLayer</code> node as its root, which we will call <strong>LevelUpMenu</strong>. Save this scene under <em>res://src/GUI/LevelUpMenu/level_up_menu.tscn</em>.</p>
 <p>Let&rsquo;s start with the scene structure. Add a <code>CenterContainer</code> to the root node. Add a <code>PanelContainer</code> to the <strong>CenterContainer</strong> node. Add a <code>VBoxContainer</code> to the <strong>PanelContainer</strong>. The following nodes will all be children of that <strong>VBoxContainer</strong>. Add two <code>Label</code> nodes, a <code>HSeparator</code>. To save us some work, open the <em>inventory_menu_item.tscn</em> scene, copy the <strong>InventoryMenuItem</strong> button from there and add it to our level up menu scene as well. Copy it twice, so you have three buttons.</p>
 <p>Now to configuring the nodes. Set the <em>Anchor Preset</em> of <strong>CenterContainer</strong> to <em>Full Rect</em>. Open the <em>inventory_menu.tscn</em> scene and select the <strong>PanelContainer</strong> there. Under <em>Theme Overrides</em> &gt; <em>Styles</em> &gt; <em>Panel</em> copy the existing style box resource. Then, back in the level up menu scene paste this in the same slot on the <strong>PanelContainer</strong> there. The label will get the same configuration we have used previously (you could simply copy the <em>Label Settings</em> from another scene as well). Set the labels <em>Horizontal Alignment</em> and <em>Vertical Alignment</em> both to <em>Center</em>. Set the text of the first label to &ldquo;Level Up&rdquo;, and the text of the second one to &ldquo;Congratulations! You level up! Select an attribute to increase.&rdquo;. On the <strong>HSeparator</strong> we go into <em>Theme Overrides</em>. Set <em>Constants</em> &gt; <em>Separation</em> to 0, and in <em>Styles</em> &gt; <em>Separator</em> create a new <code>StyleBoxLine</code>. We only need to change the <em>Color</em> on that style box to white.</p>
 <p>Now for the buttons. We rename the first one to <strong>HealthUpgradeButton</strong>, the second one to <strong>PowerUpgradeButton</strong> and the third one to <strong>DefenseUpgradeButton</strong>. We already have shortcuts on the button defined, however, currently the buttons share that resource. Therefore, we need to right click the <code>Shortcut</code> resource and select <em>Make Unique</em>. Do the same with the <code>InputEventKey</code> resource inside the shortcut. Then change the first button&rsquo;s shortcut key to <em>a</em>, the second one&rsquo;s to <em>b</em>, and the third one&rsquo;s to <em>c</em>. As a las step set all three buttons to <em>Access as Unique Name</em> in the scene tree.</p>
 <p>Now create a new script on the <strong>LevelUpMenu</strong> node, and save it at <em>res://src/GUI/LevelUpMenu/level_up_menu.gd</em>. Here&rsquo;s the top of the script:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">class_name</span> <span style="color:#a6e22e">LevelUpMenu</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">extends</span> <span style="color:#a6e22e">CanvasLayer</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">signal</span> level_up_completed
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> player: Entity
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#a6e22e">@onready</span> <span style="color:#66d9ef">var</span> health_upgrade_button: <span style="color:#a6e22e">Button</span> <span style="color:#f92672">=</span> <span style="color:#960050;background-color:#1e0010">$</span><span style="color:#e6db74">&#34;%HealthUpgradeButton&#34;</span>
-</span></span><span style="display:flex;"><span><span style="color:#a6e22e">@onready</span> <span style="color:#66d9ef">var</span> power_upgrade_button: <span style="color:#a6e22e">Button</span> <span style="color:#f92672">=</span> <span style="color:#960050;background-color:#1e0010">$</span><span style="color:#e6db74">&#34;%PowerUpgradeButton&#34;</span>
-</span></span><span style="display:flex;"><span><span style="color:#a6e22e">@onready</span> <span style="color:#66d9ef">var</span> defense_upgrade_button: <span style="color:#a6e22e">Button</span> <span style="color:#f92672">=</span> <span style="color:#960050;background-color:#1e0010">$</span><span style="color:#e6db74">&#34;%DefenseUpgradeButton&#34;</span>
-</span></span></code></pre></div><p>We need to keep a reference to the player, and to the three buttons. Next we&rsquo;ll have a <code>setup()</code> function.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">setup</span>(player: Entity) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
-</span></span><span style="display:flex;"><span>	self<span style="color:#f92672">.</span>player <span style="color:#f92672">=</span> player
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> fighter: FighterComponent <span style="color:#f92672">=</span> player<span style="color:#f92672">.</span>fighter_component
-</span></span><span style="display:flex;"><span>	health_upgrade_button<span style="color:#f92672">.</span>text <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;(a) Constitution (+20 HP, from </span><span style="color:#e6db74">%d</span><span style="color:#e6db74">)&#34;</span> <span style="color:#f92672">%</span> fighter<span style="color:#f92672">.</span>max_hp
-</span></span><span style="display:flex;"><span>	power_upgrade_button<span style="color:#f92672">.</span>text <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;(b) Strength (+1 attack, from </span><span style="color:#e6db74">%d</span><span style="color:#e6db74">)&#34;</span> <span style="color:#f92672">%</span> fighter<span style="color:#f92672">.</span>power
-</span></span><span style="display:flex;"><span>	defense_upgrade_button<span style="color:#f92672">.</span>text <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;(c) Agility (+1 defense, from </span><span style="color:#e6db74">%d</span><span style="color:#e6db74">)&#34;</span> <span style="color:#f92672">%</span> fighter<span style="color:#f92672">.</span>defense
-</span></span><span style="display:flex;"><span>	health_upgrade_button<span style="color:#f92672">.</span><span style="color:#a6e22e">grab_focus</span>()
-</span></span></code></pre></div><p>We get the player and obtain its fighter component. We&rsquo;ll use that to create the texts of the buttons, so that they also display the current value of the stat they improve. Next, on each of the buttons connect the <code>button_pressed</code> signal to this script. We&rsquo;ll fill the created functions with the following code:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">_on_health_upgrade_button_pressed</span>() <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
-</span></span><span style="display:flex;"><span>	player<span style="color:#f92672">.</span>level_component<span style="color:#f92672">.</span><span style="color:#a6e22e">increase_max_hp</span>()
-</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">queue_free</span>()
-</span></span><span style="display:flex;"><span>	level_up_completed<span style="color:#f92672">.</span><span style="color:#a6e22e">emit</span>()
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">_on_power_upgrade_button_pressed</span>() <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
-</span></span><span style="display:flex;"><span>	player<span style="color:#f92672">.</span>level_component<span style="color:#f92672">.</span><span style="color:#a6e22e">increase_power</span>()
-</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">queue_free</span>()
-</span></span><span style="display:flex;"><span>	level_up_completed<span style="color:#f92672">.</span><span style="color:#a6e22e">emit</span>()
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">_on_defense_upgrade_button_pressed</span>() <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
-</span></span><span style="display:flex;"><span>	player<span style="color:#f92672">.</span>level_component<span style="color:#f92672">.</span><span style="color:#a6e22e">increase_defense</span>()
-</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">queue_free</span>()
-</span></span><span style="display:flex;"><span>	level_up_completed<span style="color:#f92672">.</span><span style="color:#a6e22e">emit</span>()
-</span></span></code></pre></div><p>Depending on which button was pressed we will call the corresponding function on the level component. After that each of the buttons will call <code>queue_free()</code>, deleting the level up menu, and then emit the <code>level_up_completed</code> signal. Now we need a place to bind all these signals together. We will do that in the <strong>Game</strong> node. Inside <em>game.gd</em> we add a new constant:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">const</span> level_up_menu_scene: <span style="color:#a6e22e">PackedScene</span> <span style="color:#f92672">=</span> preload(<span style="color:#e6db74">&#34;res://src/GUI/LevelUpMenu/level_up_menu.tscn&#34;</span>)
-</span></span></code></pre></div><p>We will use this in the following new function:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">_on_player_level_up_requested</span>() <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> level_up_menu: LevelUpMenu <span style="color:#f92672">=</span> level_up_menu_scene<span style="color:#f92672">.</span><span style="color:#a6e22e">instantiate</span>()
-</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">add_child</span>(level_up_menu)
-</span></span><span style="display:flex;"><span>	level_up_menu<span style="color:#f92672">.</span><span style="color:#a6e22e">setup</span>(player)
-</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">set_physics_process</span>(<span style="color:#66d9ef">false</span>)
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">await</span> level_up_menu<span style="color:#f92672">.</span>level_up_completed
-</span></span><span style="display:flex;"><span>	set_physics_process<span style="color:#f92672">.</span><span style="color:#a6e22e">bind</span>(<span style="color:#66d9ef">true</span>)<span style="color:#f92672">.</span><span style="color:#a6e22e">call_deferred</span>()
-</span></span></code></pre></div><p>We instantiate the level up menu, add it as a child and set it up with the player. Then we disable physics processing. As the code getting actions is called in the physics processing this will interrupt the game (and is by the way a much cleaner way than the dummy state I have used previously). We wait until we get the <code>level_up_completed</code> signal from the level up menu, after which we enable physics processing, and thereby our game loop, again. Now we need to make sure this function gets called when the player needs a level up. We connect it in <code>new_game()</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">new_game</span>() <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
-</span></span><span style="display:flex;"><span>	player <span style="color:#f92672">=</span> Entity<span style="color:#f92672">.</span><span style="color:#a6e22e">new</span>(<span style="color:#66d9ef">null</span>, <span style="color:#a6e22e">Vector2i</span><span style="color:#f92672">.</span>ZERO, <span style="color:#e6db74">&#34;player&#34;</span>)
-</span></span><span style="display:flex;"><span>	player<span style="color:#f92672">.</span>level_component<span style="color:#f92672">.</span>level_up_required<span style="color:#f92672">.</span><span style="color:#a6e22e">connect</span>(_on_player_level_up_requested)
-</span></span><span style="display:flex;"><span>	<span style="color:#75715e">#...</span>
-</span></span></code></pre></div><p>Of course, we need to make sure its also connected when loading a game:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">load_game</span>() <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">bool</span>:
-</span></span><span style="display:flex;"><span>	player <span style="color:#f92672">=</span> Entity<span style="color:#f92672">.</span><span style="color:#a6e22e">new</span>(<span style="color:#66d9ef">null</span>, <span style="color:#a6e22e">Vector2i</span><span style="color:#f92672">.</span>ZERO, <span style="color:#e6db74">&#34;&#34;</span>)
-</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">remove_child</span>(camera)
-</span></span><span style="display:flex;"><span>	player<span style="color:#f92672">.</span><span style="color:#a6e22e">add_child</span>(camera)
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> map<span style="color:#f92672">.</span><span style="color:#a6e22e">load_game</span>(player):
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">false</span>
-</span></span><span style="display:flex;"><span>	player<span style="color:#f92672">.</span>level_component<span style="color:#f92672">.</span>level_up_required<span style="color:#f92672">.</span><span style="color:#a6e22e">connect</span>(_on_player_level_up_requested)
-</span></span><span style="display:flex;"><span>	<span style="color:#75715e">#...</span>
-</span></span></code></pre></div><p>At this point the player is ready to level up and increase their stats. However, we also need to show the player how much xp they still need. And while we&rsquo;re at it we&rsquo;ll also show them their stats.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd">class_name LevelUpMenu
+<span style="color:#66d9ef">extends</span> <span style="color:#a6e22e">CanvasLayer</span>
+
+<span style="color:#66d9ef">signal</span> level_up_completed
+
+<span style="color:#66d9ef">var</span> player: Entity
+
+<span style="color:#960050;background-color:#1e0010">@</span><span style="color:#66d9ef">onready</span> <span style="color:#66d9ef">var</span> health_upgrade_button: <span style="color:#a6e22e">Button</span> <span style="color:#f92672">=</span> <span style="color:#f92672">$</span><span style="color:#e6db74">&#34;%HealthUpgradeButton&#34;</span>
+<span style="color:#960050;background-color:#1e0010">@</span><span style="color:#66d9ef">onready</span> <span style="color:#66d9ef">var</span> power_upgrade_button: <span style="color:#a6e22e">Button</span> <span style="color:#f92672">=</span> <span style="color:#f92672">$</span><span style="color:#e6db74">&#34;%PowerUpgradeButton&#34;</span>
+<span style="color:#960050;background-color:#1e0010">@</span><span style="color:#66d9ef">onready</span> <span style="color:#66d9ef">var</span> defense_upgrade_button: <span style="color:#a6e22e">Button</span> <span style="color:#f92672">=</span> <span style="color:#f92672">$</span><span style="color:#e6db74">&#34;%DefenseUpgradeButton&#34;</span>
+</code></pre></div><p>We need to keep a reference to the player, and to the three buttons. Next we&rsquo;ll have a <code>setup()</code> function.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> setup(player: Entity) <span style="color:#f92672">-&gt;</span> void:
+	self<span style="color:#f92672">.</span>player <span style="color:#f92672">=</span> player
+	<span style="color:#66d9ef">var</span> fighter: FighterComponent <span style="color:#f92672">=</span> player<span style="color:#f92672">.</span>fighter_component
+	health_upgrade_button<span style="color:#f92672">.</span>text <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;(a) Constitution (+20 HP, from </span><span style="color:#e6db74">%d</span><span style="color:#e6db74">)&#34;</span> <span style="color:#f92672">%</span> fighter<span style="color:#f92672">.</span>max_hp
+	power_upgrade_button<span style="color:#f92672">.</span>text <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;(b) Strength (+1 attack, from </span><span style="color:#e6db74">%d</span><span style="color:#e6db74">)&#34;</span> <span style="color:#f92672">%</span> fighter<span style="color:#f92672">.</span>power
+	defense_upgrade_button<span style="color:#f92672">.</span>text <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;(c) Agility (+1 defense, from </span><span style="color:#e6db74">%d</span><span style="color:#e6db74">)&#34;</span> <span style="color:#f92672">%</span> fighter<span style="color:#f92672">.</span>defense
+	health_upgrade_button<span style="color:#f92672">.</span>grab_focus()
+</code></pre></div><p>We get the player and obtain its fighter component. We&rsquo;ll use that to create the texts of the buttons, so that they also display the current value of the stat they improve. Next, on each of the buttons connect the <code>button_pressed</code> signal to this script. We&rsquo;ll fill the created functions with the following code:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> _on_health_upgrade_button_pressed() <span style="color:#f92672">-&gt;</span> void:
+	player<span style="color:#f92672">.</span>level_component<span style="color:#f92672">.</span>increase_max_hp()
+	queue_free()
+	level_up_completed<span style="color:#f92672">.</span>emit()
+
+
+<span style="color:#66d9ef">func</span> _on_power_upgrade_button_pressed() <span style="color:#f92672">-&gt;</span> void:
+	player<span style="color:#f92672">.</span>level_component<span style="color:#f92672">.</span>increase_power()
+	queue_free()
+	level_up_completed<span style="color:#f92672">.</span>emit()
+
+
+<span style="color:#66d9ef">func</span> _on_defense_upgrade_button_pressed() <span style="color:#f92672">-&gt;</span> void:
+	player<span style="color:#f92672">.</span>level_component<span style="color:#f92672">.</span>increase_defense()
+	queue_free()
+	level_up_completed<span style="color:#f92672">.</span>emit()
+</code></pre></div><p>Depending on which button was pressed we will call the corresponding function on the level component. After that each of the buttons will call <code>queue_free()</code>, deleting the level up menu, and then emit the <code>level_up_completed</code> signal. Now we need a place to bind all these signals together. We will do that in the <strong>Game</strong> node. Inside <em>game.gd</em> we add a new constant:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">const</span> level_up_menu_scene: <span style="color:#a6e22e">PackedScene</span> <span style="color:#f92672">=</span> preload(<span style="color:#e6db74">&#34;res://src/GUI/LevelUpMenu/level_up_menu.tscn&#34;</span>)
+</code></pre></div><p>We will use this in the following new function:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> _on_player_level_up_requested() <span style="color:#f92672">-&gt;</span> void:
+	<span style="color:#66d9ef">var</span> level_up_menu: LevelUpMenu <span style="color:#f92672">=</span> level_up_menu_scene<span style="color:#f92672">.</span>instantiate()
+	add_child(level_up_menu)
+	level_up_menu<span style="color:#f92672">.</span>setup(player)
+	set_physics_process(false)
+	await level_up_menu<span style="color:#f92672">.</span>level_up_completed
+	set_physics_process<span style="color:#f92672">.</span>bind(true)<span style="color:#f92672">.</span>call_deferred()
+</code></pre></div><p>We instantiate the level up menu, add it as a child and set it up with the player. Then we disable physics processing. As the code getting actions is called in the physics processing this will interrupt the game (and is by the way a much cleaner way than the dummy state I have used previously). We wait until we get the <code>level_up_completed</code> signal from the level up menu, after which we enable physics processing, and thereby our game loop, again. Now we need to make sure this function gets called when the player needs a level up. We connect it in <code>new_game()</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> new_game() <span style="color:#f92672">-&gt;</span> void:
+	player <span style="color:#f92672">=</span> Entity<span style="color:#f92672">.</span>new(null, Vector2i<span style="color:#f92672">.</span>ZERO, <span style="color:#e6db74">&#34;player&#34;</span>)
+	player<span style="color:#f92672">.</span>level_component<span style="color:#f92672">.</span>level_up_required<span style="color:#f92672">.</span>connect(_on_player_level_up_requested)
+	<span style="color:#75715e">#...</span>
+</code></pre></div><p>Of course, we need to make sure its also connected when loading a game:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> load_game() <span style="color:#f92672">-&gt;</span> <span style="color:#a6e22e">bool</span>:
+	player <span style="color:#f92672">=</span> Entity<span style="color:#f92672">.</span>new(null, Vector2i<span style="color:#f92672">.</span>ZERO, <span style="color:#e6db74">&#34;&#34;</span>)
+	remove_child(camera)
+	player<span style="color:#f92672">.</span>add_child(camera)
+	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> map<span style="color:#f92672">.</span>load_game(player):
+		<span style="color:#66d9ef">return</span> false
+	player<span style="color:#f92672">.</span>level_component<span style="color:#f92672">.</span>level_up_required<span style="color:#f92672">.</span>connect(_on_player_level_up_requested)
+	<span style="color:#75715e">#...</span>
+</code></pre></div><p>At this point the player is ready to level up and increase their stats. However, we also need to show the player how much xp they still need. And while we&rsquo;re at it we&rsquo;ll also show them their stats.</p>
 <p>Still in <em>game.tscn</em> duplicate the <strong>HpDisplay</strong> node. Rename the new node to <strong>XpDisplay</strong>, and its children to <strong>XpBar</strong> and <strong>XpLabel</strong>. Make those two children accessible as unique names. To differentiate the two bars by color go into <em>Theme Overrides</em> &gt; <em>Styles</em> on the <strong>XpBar</strong>. Make sure to right click both style boxes and select <em>Make Unique</em>. Then change the color on each. For the <em>Background</em> I chose a mid blue (#00007f), and for the <em>Fill</em> a light blue (#0000ff). Remove script from <strong>XpLabel</strong> and create a new one on it, which we&rsquo;ll save at <em>res://src/GUI/xp_display.gd</em>. The logic is very similar to the <strong>HpDisplay</strong>, we just need to listen for different signals and take our initial data from a different source:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">extends</span> <span style="color:#a6e22e">MarginContainer</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#a6e22e">@onready</span> <span style="color:#66d9ef">var</span> xp_bar: <span style="color:#a6e22e">ProgressBar</span> <span style="color:#f92672">=</span> <span style="color:#960050;background-color:#1e0010">$</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">%X</span><span style="color:#e6db74">pBar&#34;</span>
-</span></span><span style="display:flex;"><span><span style="color:#a6e22e">@onready</span> <span style="color:#66d9ef">var</span> xp_label: <span style="color:#a6e22e">Label</span> <span style="color:#f92672">=</span> <span style="color:#960050;background-color:#1e0010">$</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">%X</span><span style="color:#e6db74">pLabel&#34;</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">initialize</span>(player: Entity) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> <span style="color:#a6e22e">is_inside_tree</span>():
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">await</span> ready
-</span></span><span style="display:flex;"><span>	player<span style="color:#f92672">.</span>level_component<span style="color:#f92672">.</span>xp_changed<span style="color:#f92672">.</span><span style="color:#a6e22e">connect</span>(player_xp_changed)
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> player_xp: <span style="color:#66d9ef">int</span> <span style="color:#f92672">=</span> player<span style="color:#f92672">.</span>level_component<span style="color:#f92672">.</span>current_xp
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> player_max_xp: <span style="color:#66d9ef">int</span> <span style="color:#f92672">=</span> player<span style="color:#f92672">.</span>level_component<span style="color:#f92672">.</span><span style="color:#a6e22e">get_experience_to_next_level</span>()
-</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">player_xp_changed</span>(player_xp, player_max_xp)
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">player_xp_changed</span>(xp: <span style="color:#66d9ef">int</span>, max_xp: <span style="color:#66d9ef">int</span>) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
-</span></span><span style="display:flex;"><span>	xp_bar<span style="color:#f92672">.</span>max_value <span style="color:#f92672">=</span> max_xp
-</span></span><span style="display:flex;"><span>	xp_bar<span style="color:#f92672">.</span>value <span style="color:#f92672">=</span> xp
-</span></span><span style="display:flex;"><span>	xp_label<span style="color:#f92672">.</span>text <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;XP: </span><span style="color:#e6db74">%d</span><span style="color:#e6db74">/</span><span style="color:#e6db74">%d</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">%</span> [xp, max_xp]
-</span></span></code></pre></div><p>Under the same <strong>VBoxContainer</strong>, between <strong>XpDisplay</strong> and <strong>DungeonFlorLabel</strong> we&rsquo;ll create a new <strong>HBoxContainer</strong>, which we&rsquo;ll call <strong>CharacterInfoBox</strong>. We create three <strong>Label</strong> nodes as children, which we call <strong>LevelLabel</strong>, <strong>AttackLabel</strong>, and <strong>DefenseLabel</strong>. Set them up just like all the other labels, with a <code>LabelSettings</code> resource pointing to the usual font. Also set both their <em>Alignment</em> properties to <em>Center</em>, and tick the <em>Expand</em> box under <em>Layout</em> &gt; <em>Container Sizing</em> &gt; <em>Horizontal</em>. Now create a new script on <strong>CharacterInfoBox</strong>, and save it at <em>res://src/GUI/character_info_box.gd</em>. Here is that script:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">extends</span> <span style="color:#a6e22e">HBoxContainer</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> _player: Entity
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#a6e22e">@onready</span> <span style="color:#66d9ef">var</span> level_label: <span style="color:#a6e22e">Label</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">$LevelLabel</span>
-</span></span><span style="display:flex;"><span><span style="color:#a6e22e">@onready</span> <span style="color:#66d9ef">var</span> attack_label: <span style="color:#a6e22e">Label</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">$AttackLabel</span>
-</span></span><span style="display:flex;"><span><span style="color:#a6e22e">@onready</span> <span style="color:#66d9ef">var</span> defense_label: <span style="color:#a6e22e">Label</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">$DefenseLabel</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">setup</span>(player: Entity) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
-</span></span><span style="display:flex;"><span>	_player <span style="color:#f92672">=</span> player
-</span></span><span style="display:flex;"><span>	_player<span style="color:#f92672">.</span>level_component<span style="color:#f92672">.</span>leveled_up<span style="color:#f92672">.</span><span style="color:#a6e22e">connect</span>(update_labels)
-</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">update_labels</span>()
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">update_labels</span>() <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
-</span></span><span style="display:flex;"><span>	level_label<span style="color:#f92672">.</span>text <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;LVL: </span><span style="color:#e6db74">%d</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">%</span> _player<span style="color:#f92672">.</span>level_component<span style="color:#f92672">.</span>current_level
-</span></span><span style="display:flex;"><span>	attack_label<span style="color:#f92672">.</span>text <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;ATK: </span><span style="color:#e6db74">%d</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">%</span> _player<span style="color:#f92672">.</span>fighter_component<span style="color:#f92672">.</span>power
-</span></span><span style="display:flex;"><span>	defense_label<span style="color:#f92672">.</span>text <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;DEF: </span><span style="color:#e6db74">%d</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">%</span> _player<span style="color:#f92672">.</span>fighter_component<span style="color:#f92672">.</span>defense
-</span></span></code></pre></div><p>We have an <code>update_labels()</code> function, which pulls data from the level and fighter components of the player. In the <code>setup()</code> function we get a reference to the player, and also connect its level component&rsquo;s <code>leveled_up</code> signal to our update function.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">extends</span> <span style="color:#a6e22e">MarginContainer</span>
+
+<span style="color:#960050;background-color:#1e0010">@</span><span style="color:#66d9ef">onready</span> <span style="color:#66d9ef">var</span> xp_bar: <span style="color:#a6e22e">ProgressBar</span> <span style="color:#f92672">=</span> <span style="color:#f92672">$</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">%X</span><span style="color:#e6db74">pBar&#34;</span>
+<span style="color:#960050;background-color:#1e0010">@</span><span style="color:#66d9ef">onready</span> <span style="color:#66d9ef">var</span> xp_label: <span style="color:#a6e22e">Label</span> <span style="color:#f92672">=</span> <span style="color:#f92672">$</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">%X</span><span style="color:#e6db74">pLabel&#34;</span>
+
+
+<span style="color:#66d9ef">func</span> initialize(player: Entity) <span style="color:#f92672">-&gt;</span> void:
+	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> is_inside_tree():
+		await ready
+	player<span style="color:#f92672">.</span>level_component<span style="color:#f92672">.</span>xp_changed<span style="color:#f92672">.</span>connect(player_xp_changed)
+	<span style="color:#66d9ef">var</span> player_xp: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> player<span style="color:#f92672">.</span>level_component<span style="color:#f92672">.</span>current_xp
+	<span style="color:#66d9ef">var</span> player_max_xp: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> player<span style="color:#f92672">.</span>level_component<span style="color:#f92672">.</span>get_experience_to_next_level()
+	player_xp_changed(player_xp, player_max_xp)
+
+
+<span style="color:#66d9ef">func</span> player_xp_changed(xp: <span style="color:#a6e22e">int</span>, max_xp: <span style="color:#a6e22e">int</span>) <span style="color:#f92672">-&gt;</span> void:
+	xp_bar<span style="color:#f92672">.</span>max_value <span style="color:#f92672">=</span> max_xp
+	xp_bar<span style="color:#f92672">.</span>value <span style="color:#f92672">=</span> xp
+	xp_label<span style="color:#f92672">.</span>text <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;XP: </span><span style="color:#e6db74">%d</span><span style="color:#e6db74">/</span><span style="color:#e6db74">%d</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">%</span> [xp, max_xp]
+</code></pre></div><p>Under the same <strong>VBoxContainer</strong>, between <strong>XpDisplay</strong> and <strong>DungeonFlorLabel</strong> we&rsquo;ll create a new <strong>HBoxContainer</strong>, which we&rsquo;ll call <strong>CharacterInfoBox</strong>. We create three <strong>Label</strong> nodes as children, which we call <strong>LevelLabel</strong>, <strong>AttackLabel</strong>, and <strong>DefenseLabel</strong>. Set them up just like all the other labels, with a <code>LabelSettings</code> resource pointing to the usual font. Also set both their <em>Alignment</em> properties to <em>Center</em>, and tick the <em>Expand</em> box under <em>Layout</em> &gt; <em>Container Sizing</em> &gt; <em>Horizontal</em>. Now create a new script on <strong>CharacterInfoBox</strong>, and save it at <em>res://src/GUI/character_info_box.gd</em>. Here is that script:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">extends</span> <span style="color:#a6e22e">HBoxContainer</span>
+
+<span style="color:#66d9ef">var</span> _player: Entity
+
+<span style="color:#960050;background-color:#1e0010">@</span><span style="color:#66d9ef">onready</span> <span style="color:#66d9ef">var</span> level_label: <span style="color:#a6e22e">Label</span> <span style="color:#f92672">=</span> <span style="color:#f92672">$</span>LevelLabel
+<span style="color:#960050;background-color:#1e0010">@</span><span style="color:#66d9ef">onready</span> <span style="color:#66d9ef">var</span> attack_label: <span style="color:#a6e22e">Label</span> <span style="color:#f92672">=</span> <span style="color:#f92672">$</span>AttackLabel
+<span style="color:#960050;background-color:#1e0010">@</span><span style="color:#66d9ef">onready</span> <span style="color:#66d9ef">var</span> defense_label: <span style="color:#a6e22e">Label</span> <span style="color:#f92672">=</span> <span style="color:#f92672">$</span>DefenseLabel
+
+
+<span style="color:#66d9ef">func</span> setup(player: Entity) <span style="color:#f92672">-&gt;</span> void:
+	_player <span style="color:#f92672">=</span> player
+	_player<span style="color:#f92672">.</span>level_component<span style="color:#f92672">.</span>leveled_up<span style="color:#f92672">.</span>connect(update_labels)
+	update_labels()
+
+
+<span style="color:#66d9ef">func</span> update_labels() <span style="color:#f92672">-&gt;</span> void:
+	level_label<span style="color:#f92672">.</span>text <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;LVL: </span><span style="color:#e6db74">%d</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">%</span> _player<span style="color:#f92672">.</span>level_component<span style="color:#f92672">.</span>current_level
+	attack_label<span style="color:#f92672">.</span>text <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;ATK: </span><span style="color:#e6db74">%d</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">%</span> _player<span style="color:#f92672">.</span>fighter_component<span style="color:#f92672">.</span>power
+	defense_label<span style="color:#f92672">.</span>text <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;DEF: </span><span style="color:#e6db74">%d</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">%</span> _player<span style="color:#f92672">.</span>fighter_component<span style="color:#f92672">.</span>defense
+</code></pre></div><p>We have an <code>update_labels()</code> function, which pulls data from the level and fighter components of the player. In the <code>setup()</code> function we get a reference to the player, and also connect its level component&rsquo;s <code>leveled_up</code> signal to our update function.</p>
 <p>Now we have two new UI elements that still need to be initialized with the player. Select the <strong>Game</strong> node and go into the <em>Node</em> &gt; <em>Signals</em> tab. The <code>player_created</code> signal should already be connected to the <code>initialize()</code> function of the <strong>HpDisplay</strong>. Now we connect the same signal to the <code>initialize()</code> function of the <strong>XpDisplay</strong> and the <code>setup()</code> function of the <strong>CharacterInfoBox</strong> (the reason these functions have different names is that I did not pay enough attention to consistency). And now the new UI elements are connected to the game. You should now be able to run it, and see your XP increase after killing some monsters. At some point you should then see our level up screen pop up.</p>
 <p>This concludes this part of the tutorial. If you are stuck and can&rsquo;t get the code to run you can find the complete project in the accompanying GitHub repository: <a href="https://github.com/SelinaDev/Godot-Roguelike-Tutorial">https://github.com/SelinaDev/Godot-Roguelike-Tutorial</a></p>
-<p>Our character can now go deeper into the dungeon. However, right now all the floors are identical in their challenge. The RNG will mean that they will encounter different mixtures of monsters and items, but it still lacks progression. So next time we will look at a way to increase both the difficulty and the reward the deeper the player goes.</p>
+<p>Our character can now go deeper into the dungeon. However, right now all the floors are identical in their challenge. The RNG will mean that they will encounter different mixtures of monsters and items, but it still lacks progression. So next time we will look at a way to increase both the difficulty and the reward the deeper the player goes. You can find the next part here: <a href="https://selinadev.github.io/16-rogueliketutorial-12/">https://selinadev.github.io/16-rogueliketutorial-12/</a></p>
 
 
 

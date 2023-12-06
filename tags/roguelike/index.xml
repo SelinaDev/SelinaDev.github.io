@@ -6,94 +6,125 @@
     <description>Recent content in roguelike on SelinaDev</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 12 Nov 2023 16:00:00 +0100</lastBuildDate>
-    <atom:link href="https://selinadev.github.io/tags/roguelike/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 06 Dec 2023 17:00:00 +0100</lastBuildDate><atom:link href="https://selinadev.github.io/tags/roguelike/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>Yet Another Roguelike Tutorial, Part 10</title>
-      <link>https://selinadev.github.io/14-rogueliketutorial-10/</link>
-      <pubDate>Sun, 12 Nov 2023 16:00:00 +0100</pubDate>
-      <guid>https://selinadev.github.io/14-rogueliketutorial-10/</guid>
-      <description>Part 10: Saving and Loading Welcome back to the roguelike tutorial series. This tutorial will continue from where the last one left off. You can find the previous tutorial here: https://selinadev.github.io/13-rogueliketutorial-09/
-It&amp;rsquo;s been a while since the last tutorial, but luckily we can jump right back in. And this time we&amp;rsquo;ll make it so that our players may do the same. Up until now if a player wanted to pause and return to the game later they would have to keep the game open in tha background.</description>
+      <title>Yet Another Roguelike Tutorial, Part 12</title>
+      <link>https://selinadev.github.io/16-rogueliketutorial-12/</link>
+      <pubDate>Wed, 06 Dec 2023 17:00:00 +0100</pubDate>
+      
+      <guid>https://selinadev.github.io/16-rogueliketutorial-12/</guid>
+      <description>Part 12: Increasing Difficulty Welcome back to the roguelike tutorial series. This tutorial will continue from where the last one left off. You can find the previous tutorial here: https://selinadev.github.io/15-rogueliketutorial-11/
+In the last part we implemented the ability to down into deeper levels of the dungeon. However, currently the only thing that really does is create a new map and increase the displayed depth. Sure, it&amp;rsquo;s a new dungeon in the same run, but that new floor is essentially the same as the last one.</description>
     </item>
-    <item>
-      <title>Yet Another Roguelike Tutorial, Part 9</title>
-      <link>https://selinadev.github.io/13-rogueliketutorial-09/</link>
-      <pubDate>Sun, 03 Sep 2023 16:00:00 +0100</pubDate>
-      <guid>https://selinadev.github.io/13-rogueliketutorial-09/</guid>
-      <description>Part 9: Ranged Scrolls and Targeting Welcome back to the roguelike tutorial series. This tutorial will continue from where the last one left off. You can find the previous tutorial here: https://selinadev.github.io/12-rogueliketutorial-08/
-Last time we started handling items, and filled our dungeon with healing potions. This time we will expand our arsenal with some more offensive consumables, by implementing some magic scrolls. We will create three types of scrolls. The first one will be a lightning strike hitting our closest enemy.</description>
-    </item>
-    <item>
-      <title>Yet Another Roguelike Tutorial, Part 8</title>
-      <link>https://selinadev.github.io/12-rogueliketutorial-08/</link>
-      <pubDate>Thu, 10 Aug 2023 16:00:00 +0100</pubDate>
-      <guid>https://selinadev.github.io/12-rogueliketutorial-08/</guid>
-      <description>Part 8: Items and Inventory Welcome back to the roguelike tutorial series. This tutorial will continue from where the last one left off. You can find the previous tutorial here: https://selinadev.github.io/11-rogueliketutorial-07/
-This part will tackle items, as well as inventory. As you might expect this will involve some (basic) inventory UI. As such we will get a lot of use out of Godot&amp;rsquo;s UI system. We will depart from the way the original python tutorial does things, as we did in the last part, and I will show you some more Godot tricks you may or may not be familiar with.</description>
-    </item>
-    <item>
-      <title>Yet Another Roguelike Tutorial, Part 7</title>
-      <link>https://selinadev.github.io/11-rogueliketutorial-07/</link>
-      <pubDate>Mon, 31 Jul 2023 19:00:00 +0100</pubDate>
-      <guid>https://selinadev.github.io/11-rogueliketutorial-07/</guid>
-      <description>Part 7: Creating the Interface Welcome back to the roguelike tutorial series. This tutorial will continue from where the last one left off. You can find the previous tutorial here: https://selinadev.github.io/10-rogueliketutorial-06/
-A note beforehand: I noticed that in the current version the parser won&amp;rsquo;t properly reparse the project, or at least some changes are not registered from other scripts. Sometimes throughout writing this code that has caused issues for me, when something would report an error, or a new option was not shown in an exported variable.</description>
-    </item>
-    <item>
-      <title>Yet Another Roguelike Tutorial, Part 6</title>
-      <link>https://selinadev.github.io/10-rogueliketutorial-06/</link>
-      <pubDate>Fri, 28 Jul 2023 18:00:00 +0100</pubDate>
-      <guid>https://selinadev.github.io/10-rogueliketutorial-06/</guid>
-      <description>Part 6: Doing (and taking) some damage Welcome back to the roguelike tutorial series. This tutorial will continue from where the last one left off. You can find the previous tutorial here: https://selinadev.github.io/09-rogueliketutorial-05/
-Note on Godot Version Please make sure to use (at least) Godot 4.1. The previous tutorials should also work with Godot 4.0, but this part utilizes the AStarGrid2D, which has changed slightly from 4.0 to 4.1, meaning that this part (and all further parts, as they build on this one) will not work in 4.</description>
-    </item>
-    <item>
-      <title>Yet Another Roguelike Tutorial, Part 4</title>
-      <link>https://selinadev.github.io/08-rogueliketutorial-04/</link>
-      <pubDate>Tue, 18 Jul 2023 06:00:00 +0100</pubDate>
-      <guid>https://selinadev.github.io/08-rogueliketutorial-04/</guid>
-      <description>Part 4: Field of View Welcome back to the roguelike tutorial series. This tutorial will continue from where the last one left off. You can find the previous tutorial here: https://selinadev.github.io/07-rogueliketutorial-03/
-Last time we created a dungeon to explore, but we also noticed that it&amp;rsquo;s not that exciting to explore if you know where all the rooms are from the beginning (also those rooms are empty, but we&amp;rsquo;ll handle that next time, one thing at a time).</description>
-    </item>
-    <item>
-      <title>Yet Another Roguelike Tutorial, Part 5</title>
-      <link>https://selinadev.github.io/09-rogueliketutorial-05/</link>
-      <pubDate>Tue, 18 Jul 2023 06:00:00 +0100</pubDate>
-      <guid>https://selinadev.github.io/09-rogueliketutorial-05/</guid>
-      <description>Part 5: Placing Enemies and Kicking Them (harmlessly) Welcome back to the roguelike tutorial series. This tutorial will continue from where the last one left off. You can find the previous tutorial here: https://selinadev.github.io/08-rogueliketutorial-04/
-In this tutorial we will start spawning more entities. But first, we need a way to keep track of them, and coordinate all this with the tiles, that are also in the map. We already had an Entities node as child of Game.</description>
-    </item>
-    <item>
-      <title>Yet Another Roguelike Tutorial, Part 3</title>
-      <link>https://selinadev.github.io/07-rogueliketutorial-03/</link>
-      <pubDate>Thu, 13 Jul 2023 08:00:00 +0100</pubDate>
-      <guid>https://selinadev.github.io/07-rogueliketutorial-03/</guid>
-      <description>Part 3: Generating a Dungeon This is the next part to https://selinadev.github.io/06-rogueliketutorial-02/. In this part we will handle dungeon generation. We will write a procedural dungeon generator that will give us a new dungeon each time. The algorithm we will use is relatively simple, we will place rooms in a way that they don&amp;rsquo;t overlap, then connect each room to the previous with an L-shaped tunnel. We can think about it like starting with solid stone and carving these structures out of it.</description>
-    </item>
-    <item>
-      <title>Yet Another Roguelike Tutorial, Part 2</title>
-      <link>https://selinadev.github.io/06-rogueliketutorial-02/</link>
-      <pubDate>Tue, 11 Jul 2023 08:00:00 +0100</pubDate>
-      <guid>https://selinadev.github.io/06-rogueliketutorial-02/</guid>
-      <description>Part 2: Generic Entity and the Map Continuing from the last tutorial ( https://selinadev.github.io/05-rogueliketutorial-01/ ), we will now move to creating a more generic entity, and then start on the structure of our map.
-So let&amp;rsquo;s start with creating out entity class. I want to point out that my approach differs a bit from the original tutorial. In that tutorial all properties of an entity are set in its constructor. A later part eventually uses a factory pattern to create a few prototype entities in code and then spawn copies of them.</description>
-    </item>
-    <item>
-      <title>Yet Another Roguelike Tutorial, Parts 0 and 1</title>
-      <link>https://selinadev.github.io/05-rogueliketutorial-01/</link>
-      <pubDate>Tue, 04 Jul 2023 08:00:00 +0100</pubDate>
-      <guid>https://selinadev.github.io/05-rogueliketutorial-01/</guid>
-      <description>Here i&amp;rsquo;ll start an attempt for something I&amp;rsquo;ve wanted to do for a long time. I&amp;rsquo;ve been interested in traditional roguelikes for a while now. Given that I&amp;rsquo;m also interested in game development, it should not come as a surprise that I have looked into how to make a roguelike as well. There is a very nice and reasonably comprehensive tutorial online, that exists in multiple versions. One of the more well known versions has to be the one at Roguelike Tutorials.</description>
-    </item>
+    
     <item>
       <title>Yet Another Roguelike Tutorial, Part 11</title>
       <link>https://selinadev.github.io/15-rogueliketutorial-11/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <pubDate>Sat, 02 Dec 2023 17:00:00 +0100</pubDate>
+      
       <guid>https://selinadev.github.io/15-rogueliketutorial-11/</guid>
       <description>Part 11: Delving into the Dungeon Welcome back to the roguelike tutorial series. This tutorial will continue from where the last one left off. You can find the previous tutorial here: https://selinadev.github.io/14-rogueliketutorial-10/
 This part will be all about levels, both descending the levels of the dungeon as well as levelling up the player character.
 To start out we add a new color to Colors.gd which we use for the message log when the player descends:</description>
     </item>
+    
+    <item>
+      <title>Yet Another Roguelike Tutorial, Part 10</title>
+      <link>https://selinadev.github.io/14-rogueliketutorial-10/</link>
+      <pubDate>Sun, 12 Nov 2023 16:00:00 +0100</pubDate>
+      
+      <guid>https://selinadev.github.io/14-rogueliketutorial-10/</guid>
+      <description>Part 10: Saving and Loading Welcome back to the roguelike tutorial series. This tutorial will continue from where the last one left off. You can find the previous tutorial here: https://selinadev.github.io/13-rogueliketutorial-09/
+It&amp;rsquo;s been a while since the last tutorial, but luckily we can jump right back in. And this time we&amp;rsquo;ll make it so that our players may do the same. Up until now if a player wanted to pause and return to the game later they would have to keep the game open in tha background.</description>
+    </item>
+    
+    <item>
+      <title>Yet Another Roguelike Tutorial, Part 9</title>
+      <link>https://selinadev.github.io/13-rogueliketutorial-09/</link>
+      <pubDate>Sun, 03 Sep 2023 16:00:00 +0100</pubDate>
+      
+      <guid>https://selinadev.github.io/13-rogueliketutorial-09/</guid>
+      <description>Part 9: Ranged Scrolls and Targeting Welcome back to the roguelike tutorial series. This tutorial will continue from where the last one left off. You can find the previous tutorial here: https://selinadev.github.io/12-rogueliketutorial-08/
+Last time we started handling items, and filled our dungeon with healing potions. This time we will expand our arsenal with some more offensive consumables, by implementing some magic scrolls. We will create three types of scrolls. The first one will be a lightning strike hitting our closest enemy.</description>
+    </item>
+    
+    <item>
+      <title>Yet Another Roguelike Tutorial, Part 8</title>
+      <link>https://selinadev.github.io/12-rogueliketutorial-08/</link>
+      <pubDate>Thu, 10 Aug 2023 16:00:00 +0100</pubDate>
+      
+      <guid>https://selinadev.github.io/12-rogueliketutorial-08/</guid>
+      <description>Part 8: Items and Inventory Welcome back to the roguelike tutorial series. This tutorial will continue from where the last one left off. You can find the previous tutorial here: https://selinadev.github.io/11-rogueliketutorial-07/
+This part will tackle items, as well as inventory. As you might expect this will involve some (basic) inventory UI. As such we will get a lot of use out of Godot&amp;rsquo;s UI system. We will depart from the way the original python tutorial does things, as we did in the last part, and I will show you some more Godot tricks you may or may not be familiar with.</description>
+    </item>
+    
+    <item>
+      <title>Yet Another Roguelike Tutorial, Part 7</title>
+      <link>https://selinadev.github.io/11-rogueliketutorial-07/</link>
+      <pubDate>Mon, 31 Jul 2023 19:00:00 +0100</pubDate>
+      
+      <guid>https://selinadev.github.io/11-rogueliketutorial-07/</guid>
+      <description>Part 7: Creating the Interface Welcome back to the roguelike tutorial series. This tutorial will continue from where the last one left off. You can find the previous tutorial here: https://selinadev.github.io/10-rogueliketutorial-06/
+A note beforehand: I noticed that in the current version the parser won&amp;rsquo;t properly reparse the project, or at least some changes are not registered from other scripts. Sometimes throughout writing this code that has caused issues for me, when something would report an error, or a new option was not shown in an exported variable.</description>
+    </item>
+    
+    <item>
+      <title>Yet Another Roguelike Tutorial, Part 6</title>
+      <link>https://selinadev.github.io/10-rogueliketutorial-06/</link>
+      <pubDate>Fri, 28 Jul 2023 18:00:00 +0100</pubDate>
+      
+      <guid>https://selinadev.github.io/10-rogueliketutorial-06/</guid>
+      <description>Part 6: Doing (and taking) some damage Welcome back to the roguelike tutorial series. This tutorial will continue from where the last one left off. You can find the previous tutorial here: https://selinadev.github.io/09-rogueliketutorial-05/
+Note on Godot Version Please make sure to use (at least) Godot 4.1. The previous tutorials should also work with Godot 4.0, but this part utilizes the AStarGrid2D, which has changed slightly from 4.0 to 4.1, meaning that this part (and all further parts, as they build on this one) will not work in 4.</description>
+    </item>
+    
+    <item>
+      <title>Yet Another Roguelike Tutorial, Part 4</title>
+      <link>https://selinadev.github.io/08-rogueliketutorial-04/</link>
+      <pubDate>Tue, 18 Jul 2023 06:00:00 +0100</pubDate>
+      
+      <guid>https://selinadev.github.io/08-rogueliketutorial-04/</guid>
+      <description>Part 4: Field of View Welcome back to the roguelike tutorial series. This tutorial will continue from where the last one left off. You can find the previous tutorial here: https://selinadev.github.io/07-rogueliketutorial-03/
+Last time we created a dungeon to explore, but we also noticed that it&amp;rsquo;s not that exciting to explore if you know where all the rooms are from the beginning (also those rooms are empty, but we&amp;rsquo;ll handle that next time, one thing at a time).</description>
+    </item>
+    
+    <item>
+      <title>Yet Another Roguelike Tutorial, Part 5</title>
+      <link>https://selinadev.github.io/09-rogueliketutorial-05/</link>
+      <pubDate>Tue, 18 Jul 2023 06:00:00 +0100</pubDate>
+      
+      <guid>https://selinadev.github.io/09-rogueliketutorial-05/</guid>
+      <description>Part 5: Placing Enemies and Kicking Them (harmlessly) Welcome back to the roguelike tutorial series. This tutorial will continue from where the last one left off. You can find the previous tutorial here: https://selinadev.github.io/08-rogueliketutorial-04/
+In this tutorial we will start spawning more entities. But first, we need a way to keep track of them, and coordinate all this with the tiles, that are also in the map. We already had an Entities node as child of Game.</description>
+    </item>
+    
+    <item>
+      <title>Yet Another Roguelike Tutorial, Part 3</title>
+      <link>https://selinadev.github.io/07-rogueliketutorial-03/</link>
+      <pubDate>Thu, 13 Jul 2023 08:00:00 +0100</pubDate>
+      
+      <guid>https://selinadev.github.io/07-rogueliketutorial-03/</guid>
+      <description>Part 3: Generating a Dungeon This is the next part to https://selinadev.github.io/06-rogueliketutorial-02/. In this part we will handle dungeon generation. We will write a procedural dungeon generator that will give us a new dungeon each time. The algorithm we will use is relatively simple, we will place rooms in a way that they don&amp;rsquo;t overlap, then connect each room to the previous with an L-shaped tunnel. We can think about it like starting with solid stone and carving these structures out of it.</description>
+    </item>
+    
+    <item>
+      <title>Yet Another Roguelike Tutorial, Part 2</title>
+      <link>https://selinadev.github.io/06-rogueliketutorial-02/</link>
+      <pubDate>Tue, 11 Jul 2023 08:00:00 +0100</pubDate>
+      
+      <guid>https://selinadev.github.io/06-rogueliketutorial-02/</guid>
+      <description>Part 2: Generic Entity and the Map Continuing from the last tutorial ( https://selinadev.github.io/05-rogueliketutorial-01/ ), we will now move to creating a more generic entity, and then start on the structure of our map.
+So let&amp;rsquo;s start with creating out entity class. I want to point out that my approach differs a bit from the original tutorial. In that tutorial all properties of an entity are set in its constructor. A later part eventually uses a factory pattern to create a few prototype entities in code and then spawn copies of them.</description>
+    </item>
+    
+    <item>
+      <title>Yet Another Roguelike Tutorial, Parts 0 and 1</title>
+      <link>https://selinadev.github.io/05-rogueliketutorial-01/</link>
+      <pubDate>Tue, 04 Jul 2023 08:00:00 +0100</pubDate>
+      
+      <guid>https://selinadev.github.io/05-rogueliketutorial-01/</guid>
+      <description>Here i&amp;rsquo;ll start an attempt for something I&amp;rsquo;ve wanted to do for a long time. I&amp;rsquo;ve been interested in traditional roguelikes for a while now. Given that I&amp;rsquo;m also interested in game development, it should not come as a surprise that I have looked into how to make a roguelike as well. There is a very nice and reasonably comprehensive tutorial online, that exists in multiple versions. One of the more well known versions has to be the one at Roguelike Tutorials.</description>
+    </item>
+    
   </channel>
 </rss>

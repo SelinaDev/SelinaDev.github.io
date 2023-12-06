@@ -6,56 +6,69 @@
     <description>Recent content in Tags on SelinaDev</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 12 Nov 2023 16:00:00 +0100</lastBuildDate>
-    <atom:link href="https://selinadev.github.io/tags/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 06 Dec 2023 17:00:00 +0100</lastBuildDate><atom:link href="https://selinadev.github.io/tags/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>godot4</title>
       <link>https://selinadev.github.io/tags/godot4/</link>
-      <pubDate>Sun, 12 Nov 2023 16:00:00 +0100</pubDate>
+      <pubDate>Wed, 06 Dec 2023 17:00:00 +0100</pubDate>
+      
       <guid>https://selinadev.github.io/tags/godot4/</guid>
       <description></description>
     </item>
+    
     <item>
       <title>roguelike</title>
       <link>https://selinadev.github.io/tags/roguelike/</link>
-      <pubDate>Sun, 12 Nov 2023 16:00:00 +0100</pubDate>
+      <pubDate>Wed, 06 Dec 2023 17:00:00 +0100</pubDate>
+      
       <guid>https://selinadev.github.io/tags/roguelike/</guid>
       <description></description>
     </item>
+    
     <item>
       <title>tutorial</title>
       <link>https://selinadev.github.io/tags/tutorial/</link>
-      <pubDate>Sun, 12 Nov 2023 16:00:00 +0100</pubDate>
+      <pubDate>Wed, 06 Dec 2023 17:00:00 +0100</pubDate>
+      
       <guid>https://selinadev.github.io/tags/tutorial/</guid>
       <description></description>
     </item>
+    
     <item>
       <title>devblog</title>
       <link>https://selinadev.github.io/tags/devblog/</link>
       <pubDate>Tue, 16 May 2023 17:00:00 +0100</pubDate>
+      
       <guid>https://selinadev.github.io/tags/devblog/</guid>
       <description></description>
     </item>
+    
     <item>
       <title>dungeon crawler</title>
       <link>https://selinadev.github.io/tags/dungeon-crawler/</link>
       <pubDate>Tue, 16 May 2023 17:00:00 +0100</pubDate>
+      
       <guid>https://selinadev.github.io/tags/dungeon-crawler/</guid>
       <description></description>
     </item>
+    
     <item>
       <title>godot3</title>
       <link>https://selinadev.github.io/tags/godot3/</link>
       <pubDate>Tue, 25 Apr 2023 14:55:00 +0100</pubDate>
+      
       <guid>https://selinadev.github.io/tags/godot3/</guid>
       <description></description>
     </item>
+    
     <item>
       <title>tutorials</title>
       <link>https://selinadev.github.io/tags/tutorials/</link>
       <pubDate>Tue, 25 Apr 2023 14:55:00 +0100</pubDate>
+      
       <guid>https://selinadev.github.io/tags/tutorials/</guid>
       <description></description>
     </item>
+    
   </channel>
 </rss>

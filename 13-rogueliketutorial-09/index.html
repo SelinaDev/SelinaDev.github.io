@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
-  <meta name="generator" content="Hugo 0.120.4">
+  <meta name="generator" content="Hugo 0.92.2" />
   <link rel="canonical" href="https://selinadev.github.io/13-rogueliketutorial-09/">
 
   
@@ -93,126 +93,127 @@ Last time we started handling items, and filled our dungeon with healing potions
 <p>Welcome back to the roguelike tutorial series. This tutorial will continue from where the last one left off. You can find the previous tutorial here: <a href="https://selinadev.github.io/12-rogueliketutorial-08/">https://selinadev.github.io/12-rogueliketutorial-08/</a></p>
 <p>Last time we started handling items, and filled our dungeon with healing potions. This time we will expand our arsenal with some more offensive consumables, by implementing some magic scrolls. We will create three types of scrolls. The first one will be a lightning strike hitting our closest enemy. This will be the easiest to implement, as the player won&rsquo;t need to select a target. Next we create a scroll of confusion, causing a single enemy to stumble around aimlessly for a few turns. This will teach us how to have the player select a single target, and also how to temporarily replace an entity&rsquo;s AI. And the last scroll will be a fire ball, hitting everything in an area (including the player). For that we will extend our targeting by a system to show how big the area is, and then we will hit multiple entities at once.</p>
 <p>Let&rsquo;s start with a very simple prerequisite, as we want a color for messages regarding status effects (we will only have confusion as status effect in this tutorial). So open <em>colors.gd</em> and add one color for status effects:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">const</span> PLAYER_ATTACK <span style="color:#f92672">=</span> <span style="color:#a6e22e">Color</span>(<span style="color:#e6db74">&#34;e0e0e0&#34;</span>)
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">const</span> ENEMY_ATTACK <span style="color:#f92672">=</span> <span style="color:#a6e22e">Color</span>(<span style="color:#e6db74">&#34;ffc0c0&#34;</span>)
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">const</span> STATUS_EFFECT_APPLIED <span style="color:#f92672">=</span> <span style="color:#a6e22e">Color</span>(<span style="color:#e6db74">&#34;3fff3f&#34;</span>)
-</span></span></code></pre></div><p>Both the lightning scroll and the fireball scroll will need to know how far an entity is from a given position, so let&rsquo;s create a function for that in <em>entity.gd</em>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">distance</span>(other_position: <span style="color:#a6e22e">Vector2i</span>) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">int</span>:
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> relative: <span style="color:#a6e22e">Vector2i</span> <span style="color:#f92672">=</span> other_position <span style="color:#f92672">-</span> grid_position
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> maxi(relative<span style="color:#f92672">.</span>x, relative<span style="color:#f92672">.</span>y)
-</span></span></code></pre></div><p>Here we first calculate the relative vector. Then we return the bigger of the two vector components. This will give us the Chebyshev distance, just like we used it for movement (meaning the lightning scroll has a square targeting range, rather than a circular one). We will use this in the lightning damage consumable we&rsquo;ll shortly write. But, as you probably expect by now, first we need a definition resource for that. So let&rsquo;s create a new script extending <code>ConsumableComponentDefinition</code> at <em>res://src/Entities/Actors/Components/ComponentDefinitions/lightning_damage_consumable_component_definition.gd</em>. The definition consists of the following two variables:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">class_name</span> <span style="color:#a6e22e">LightningDamageConsumableComponentDefinition</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">extends</span> <span style="color:#a6e22e">ConsumableComponentDefinition</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#a6e22e">@export</span> <span style="color:#66d9ef">var</span> damage: <span style="color:#66d9ef">int</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
-</span></span><span style="display:flex;"><span><span style="color:#a6e22e">@export</span> <span style="color:#66d9ef">var</span> maximum_range: <span style="color:#66d9ef">int</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
-</span></span></code></pre></div><p>We have a damage the lightning effect can deal, and a maximum damage. Now let&rsquo;s get to the consumable itself. Create a new script extending <code>ConsumableComponent</code> at <em>res://src/Entities/Actors/Components/lightning_damage_consumable_component.gd</em>. Here&rsquo;s the top of the script:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">class_name</span> <span style="color:#a6e22e">LightningDamageConsumableComponent</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">extends</span> <span style="color:#a6e22e">ConsumableComponent</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> damage: <span style="color:#66d9ef">int</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> maximum_range: <span style="color:#66d9ef">int</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">_init</span>(definition: LightningDamageConsumableComponentDefinition) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
-</span></span><span style="display:flex;"><span>	damage <span style="color:#f92672">=</span> definition<span style="color:#f92672">.</span>damage
-</span></span><span style="display:flex;"><span>	maximum_range <span style="color:#f92672">=</span> definition<span style="color:#f92672">.</span>maximum_range
-</span></span></code></pre></div><p>We simply have the same variables again, and set them via the definition that we expect to be passed as an argument during creation of this component. The magic happens in the <code>activate()</code> function:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">activate</span>(action: ItemAction) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">bool</span>:
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> consumer: Entity <span style="color:#f92672">=</span> action<span style="color:#f92672">.</span>entity
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> target: Entity <span style="color:#f92672">=</span> <span style="color:#66d9ef">null</span>
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> closest_distance: <span style="color:#66d9ef">float</span> <span style="color:#f92672">=</span> maximum_range <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> map_data: MapData <span style="color:#f92672">=</span> <span style="color:#a6e22e">get_map_data</span>()
-</span></span><span style="display:flex;"><span>	
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">for</span> actor <span style="color:#f92672">in</span> map_data<span style="color:#f92672">.</span><span style="color:#a6e22e">get_actors</span>():
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> actor <span style="color:#f92672">!=</span> consumer <span style="color:#f92672">and</span> map_data<span style="color:#f92672">.</span><span style="color:#a6e22e">get_tile</span>(actor<span style="color:#f92672">.</span>grid_position)<span style="color:#f92672">.</span>is_in_view:
-</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">var</span> distance: <span style="color:#66d9ef">float</span> <span style="color:#f92672">=</span> consumer<span style="color:#f92672">.</span><span style="color:#a6e22e">distance</span>(actor<span style="color:#f92672">.</span>grid_position)
-</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">if</span> distance <span style="color:#f92672">&lt;</span> closest_distance:
-</span></span><span style="display:flex;"><span>				target <span style="color:#f92672">=</span> actor
-</span></span><span style="display:flex;"><span>				closest_distance <span style="color:#f92672">=</span> distance
-</span></span><span style="display:flex;"><span>	
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> target:
-</span></span><span style="display:flex;"><span>		MessageLog<span style="color:#f92672">.</span><span style="color:#a6e22e">send_message</span>(<span style="color:#e6db74">&#34;A lightning bolt strikes </span><span style="color:#e6db74">%s</span><span style="color:#e6db74"> with a loud thunder, for </span><span style="color:#e6db74">%d</span><span style="color:#e6db74"> damage!&#34;</span> <span style="color:#f92672">%</span> [target<span style="color:#f92672">.</span><span style="color:#a6e22e">get_entity_name</span>(), damage], <span style="color:#a6e22e">Color</span><span style="color:#f92672">.</span>WHITE)
-</span></span><span style="display:flex;"><span>		target<span style="color:#f92672">.</span>fighter_component<span style="color:#f92672">.</span><span style="color:#a6e22e">take_damage</span>(damage)
-</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">consume</span>(consumer)
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">true</span>
-</span></span><span style="display:flex;"><span>	
-</span></span><span style="display:flex;"><span>	MessageLog<span style="color:#f92672">.</span><span style="color:#a6e22e">send_message</span>(<span style="color:#e6db74">&#34;No enemy is close enough to strike.&#34;</span>, GameColors<span style="color:#f92672">.</span>IMPOSSIBLE)
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">false</span>
-</span></span></code></pre></div><p>First, we define a few variables we&rsquo;ll need. We create one for the consumer, i.e., the entity performing the action (which should always be the player). We also get the map data, which we will need repeatedly. We initialize a <code>target</code> variable and a <code>closest_distance</code>. Starting out, we don&rsquo;t have a target, and the closes distance is one step away from the furthest point we can reach. Next, we loop over all actors. The first <code>if</code> filters out the consumer (so you don&rsquo;t strike yourself), as well as entities outside the field of view (so you don&rsquo;t zap an orc through a wall). After that we get and check the distance between that entity and the consumer. If it is less then the smallest distance we have seen so far, we remember that distance and remember the actor as our new target. If we have a target after the loop we know it&rsquo;s the closest one, so we zap it. We create a message detailing the effect, then deal some damage to the target. Then we consume the item and return true. However, if we don&rsquo;t have a target we notify the player about that and return false.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">const</span> PLAYER_ATTACK <span style="color:#f92672">=</span> <span style="color:#a6e22e">Color</span>(<span style="color:#e6db74">&#34;e0e0e0&#34;</span>)
+<span style="color:#66d9ef">const</span> ENEMY_ATTACK <span style="color:#f92672">=</span> <span style="color:#a6e22e">Color</span>(<span style="color:#e6db74">&#34;ffc0c0&#34;</span>)
+<span style="color:#66d9ef">const</span> STATUS_EFFECT_APPLIED <span style="color:#f92672">=</span> <span style="color:#a6e22e">Color</span>(<span style="color:#e6db74">&#34;3fff3f&#34;</span>)
+</code></pre></div><p>Both the lightning scroll and the fireball scroll will need to know how far an entity is from a given position, so let&rsquo;s create a function for that in <em>entity.gd</em>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> distance(other_position: Vector2i) <span style="color:#f92672">-&gt;</span> <span style="color:#a6e22e">int</span>:
+	<span style="color:#66d9ef">var</span> relative: Vector2i <span style="color:#f92672">=</span> other_position <span style="color:#f92672">-</span> grid_position
+	<span style="color:#66d9ef">return</span> maxi(relative<span style="color:#f92672">.</span>x, relative<span style="color:#f92672">.</span>y)
+</code></pre></div><p>Here we first calculate the relative vector. Then we return the bigger of the two vector components. This will give us the Chebyshev distance, just like we used it for movement (meaning the lightning scroll has a square targeting range, rather than a circular one). We will use this in the lightning damage consumable we&rsquo;ll shortly write. But, as you probably expect by now, first we need a definition resource for that. So let&rsquo;s create a new script extending <code>ConsumableComponentDefinition</code> at <em>res://src/Entities/Actors/Components/ComponentDefinitions/lightning_damage_consumable_component_definition.gd</em>. The definition consists of the following two variables:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd">class_name LightningDamageConsumableComponentDefinition
+<span style="color:#66d9ef">extends</span> ConsumableComponentDefinition
+
+<span style="color:#960050;background-color:#1e0010">@</span><span style="color:#66d9ef">export</span> <span style="color:#66d9ef">var</span> damage: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+<span style="color:#960050;background-color:#1e0010">@</span><span style="color:#66d9ef">export</span> <span style="color:#66d9ef">var</span> maximum_range: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</code></pre></div><p>We have a damage the lightning effect can deal, and a maximum damage. Now let&rsquo;s get to the consumable itself. Create a new script extending <code>ConsumableComponent</code> at <em>res://src/Entities/Actors/Components/lightning_damage_consumable_component.gd</em>. Here&rsquo;s the top of the script:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd">class_name LightningDamageConsumableComponent
+<span style="color:#66d9ef">extends</span> ConsumableComponent
+
+<span style="color:#66d9ef">var</span> damage: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+<span style="color:#66d9ef">var</span> maximum_range: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+
+
+<span style="color:#66d9ef">func</span> _init(definition: LightningDamageConsumableComponentDefinition) <span style="color:#f92672">-&gt;</span> void:
+	damage <span style="color:#f92672">=</span> definition<span style="color:#f92672">.</span>damage
+	maximum_range <span style="color:#f92672">=</span> definition<span style="color:#f92672">.</span>maximum_range
+
+</code></pre></div><p>We simply have the same variables again, and set them via the definition that we expect to be passed as an argument during creation of this component. The magic happens in the <code>activate()</code> function:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> activate(action: ItemAction) <span style="color:#f92672">-&gt;</span> <span style="color:#a6e22e">bool</span>:
+	<span style="color:#66d9ef">var</span> consumer: Entity <span style="color:#f92672">=</span> action<span style="color:#f92672">.</span>entity
+	<span style="color:#66d9ef">var</span> target: Entity <span style="color:#f92672">=</span> null
+	<span style="color:#66d9ef">var</span> closest_distance: <span style="color:#a6e22e">float</span> <span style="color:#f92672">=</span> maximum_range <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>
+	<span style="color:#66d9ef">var</span> map_data: MapData <span style="color:#f92672">=</span> get_map_data()
+	
+	<span style="color:#66d9ef">for</span> actor <span style="color:#f92672">in</span> map_data<span style="color:#f92672">.</span>get_actors():
+		<span style="color:#66d9ef">if</span> actor <span style="color:#f92672">!=</span> consumer <span style="color:#f92672">and</span> map_data<span style="color:#f92672">.</span>get_tile(actor<span style="color:#f92672">.</span>grid_position)<span style="color:#f92672">.</span>is_in_view:
+			<span style="color:#66d9ef">var</span> distance: <span style="color:#a6e22e">float</span> <span style="color:#f92672">=</span> consumer<span style="color:#f92672">.</span>distance(actor<span style="color:#f92672">.</span>grid_position)
+			<span style="color:#66d9ef">if</span> distance <span style="color:#f92672">&lt;</span> closest_distance:
+				target <span style="color:#f92672">=</span> actor
+				closest_distance <span style="color:#f92672">=</span> distance
+	
+	<span style="color:#66d9ef">if</span> target:
+		MessageLog<span style="color:#f92672">.</span>send_message(<span style="color:#e6db74">&#34;A lightning bolt strikes </span><span style="color:#e6db74">%s</span><span style="color:#e6db74"> with a loud thunder, for </span><span style="color:#e6db74">%d</span><span style="color:#e6db74"> damage!&#34;</span> <span style="color:#f92672">%</span> [target<span style="color:#f92672">.</span>get_entity_name(), damage], <span style="color:#a6e22e">Color</span><span style="color:#f92672">.</span>WHITE)
+		target<span style="color:#f92672">.</span>fighter_component<span style="color:#f92672">.</span>take_damage(damage)
+		consume(consumer)
+		<span style="color:#66d9ef">return</span> true
+	
+	MessageLog<span style="color:#f92672">.</span>send_message(<span style="color:#e6db74">&#34;No enemy is close enough to strike.&#34;</span>, GameColors<span style="color:#f92672">.</span>IMPOSSIBLE)
+	<span style="color:#66d9ef">return</span> false
+</code></pre></div><p>First, we define a few variables we&rsquo;ll need. We create one for the consumer, i.e., the entity performing the action (which should always be the player). We also get the map data, which we will need repeatedly. We initialize a <code>target</code> variable and a <code>closest_distance</code>. Starting out, we don&rsquo;t have a target, and the closes distance is one step away from the furthest point we can reach. Next, we loop over all actors. The first <code>if</code> filters out the consumer (so you don&rsquo;t strike yourself), as well as entities outside the field of view (so you don&rsquo;t zap an orc through a wall). After that we get and check the distance between that entity and the consumer. If it is less then the smallest distance we have seen so far, we remember that distance and remember the actor as our new target. If we have a target after the loop we know it&rsquo;s the closest one, so we zap it. We create a message detailing the effect, then deal some damage to the target. Then we consume the item and return true. However, if we don&rsquo;t have a target we notify the player about that and return false.</p>
 <p>With the new component complete we need to make sure it&rsquo;s attached during creation of its entity. We will have quite a few consumables, so in order to handle them we create a new function in <em>entity.gd</em>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">_handle_consumable</span>(consumable_definition: ConsumableComponentDefinition) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> consumable_definition <span style="color:#f92672">is</span> HealingConsumableComponentDefinition:
-</span></span><span style="display:flex;"><span>		consumable_component <span style="color:#f92672">=</span> HealingConsumableComponent<span style="color:#f92672">.</span><span style="color:#a6e22e">new</span>(consumable_definition)
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">elif</span> consumable_definition <span style="color:#f92672">is</span> LightningDamageConsumableComponentDefinition:
-</span></span><span style="display:flex;"><span>		consumable_component <span style="color:#f92672">=</span> LightningDamageConsumableComponent<span style="color:#f92672">.</span><span style="color:#a6e22e">new</span>(consumable_definition)
-</span></span><span style="display:flex;"><span>	
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> consumable_component:
-</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">add_child</span>(consumable_component)
-</span></span></code></pre></div><p>This function checks which type of consumable should be instantiated and attaches it to the entity. We will expand this function two more times over the course of this tutorial. You might recognize the part with the <code>HealingConsumable</code>, as we had that in <code>set_entity_type()</code>. We need to modify that function to call <code>_handle_consumable()</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> entity_definition<span style="color:#f92672">.</span>fighter_definition:
-</span></span><span style="display:flex;"><span>		fighter_component <span style="color:#f92672">=</span> FighterComponent<span style="color:#f92672">.</span><span style="color:#a6e22e">new</span>(entity_definition<span style="color:#f92672">.</span>fighter_definition)
-</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">add_child</span>(fighter_component)
-</span></span><span style="display:flex;"><span>		
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> entity_definition<span style="color:#f92672">.</span>consumable_definition:
-</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">_handle_consumable</span>(entity_definition<span style="color:#f92672">.</span>consumable_definition)
-</span></span><span style="display:flex;"><span>	
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> entity_definition<span style="color:#f92672">.</span>inventory_capacity <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>:
-</span></span><span style="display:flex;"><span>		inventory_component <span style="color:#f92672">=</span> InventoryComponent<span style="color:#f92672">.</span><span style="color:#a6e22e">new</span>(entity_definition<span style="color:#f92672">.</span>inventory_capacity)
-</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">add_child</span>(inventory_component)
-</span></span></code></pre></div><p>Now the lightning component will correctly be attached to an item, but we still need an item that uses it. Create a new <code>EntityDefinition</code> resource at <em>res://assets/definitions/entities/items/lightning_scroll_definition.tres</em>. Set the <em>Name</em> to &ldquo;Lightning Scroll&rdquo;, and insert a nice scroll <em>Texture</em>. We use yellow (&quot;#ffff00&quot;) as our <em>Color</em>. Uncheck <em>Is Blocking</em> and change the <em>Type</em> to <em>Item</em>. Then, create a new <code>LightningDamageConsumableComponentDefinition</code> in the <em>Consumable Definition</em>. Set its <em>Damage</em> to 20 and the <em>Maximum Range</em> to 5.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> _handle_consumable(consumable_definition: ConsumableComponentDefinition) <span style="color:#f92672">-&gt;</span> void:
+	<span style="color:#66d9ef">if</span> consumable_definition is HealingConsumableComponentDefinition:
+		consumable_component <span style="color:#f92672">=</span> HealingConsumableComponent<span style="color:#f92672">.</span>new(consumable_definition)
+	<span style="color:#66d9ef">elif</span> consumable_definition is LightningDamageConsumableComponentDefinition:
+		consumable_component <span style="color:#f92672">=</span> LightningDamageConsumableComponent<span style="color:#f92672">.</span>new(consumable_definition)
+	
+	<span style="color:#66d9ef">if</span> consumable_component:
+		add_child(consumable_component)
+</code></pre></div><p>This function checks which type of consumable should be instantiated and attaches it to the entity. We will expand this function two more times over the course of this tutorial. You might recognize the part with the <code>HealingConsumable</code>, as we had that in <code>set_entity_type()</code>. We need to modify that function to call <code>_handle_consumable()</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd">    <span style="color:#66d9ef">if</span> entity_definition<span style="color:#f92672">.</span>fighter_definition:
+		fighter_component <span style="color:#f92672">=</span> FighterComponent<span style="color:#f92672">.</span>new(entity_definition<span style="color:#f92672">.</span>fighter_definition)
+		add_child(fighter_component)
+		
+	<span style="color:#66d9ef">if</span> entity_definition<span style="color:#f92672">.</span>consumable_definition:
+		_handle_consumable(entity_definition<span style="color:#f92672">.</span>consumable_definition)
+	
+	<span style="color:#66d9ef">if</span> entity_definition<span style="color:#f92672">.</span>inventory_capacity <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>:
+		inventory_component <span style="color:#f92672">=</span> InventoryComponent<span style="color:#f92672">.</span>new(entity_definition<span style="color:#f92672">.</span>inventory_capacity)
+		add_child(inventory_component)
+</code></pre></div><p>Now the lightning component will correctly be attached to an item, but we still need an item that uses it. Create a new <code>EntityDefinition</code> resource at <em>res://assets/definitions/entities/items/lightning_scroll_definition.tres</em>. Set the <em>Name</em> to &ldquo;Lightning Scroll&rdquo;, and insert a nice scroll <em>Texture</em>. We use yellow (&quot;#ffff00&quot;) as our <em>Color</em>. Uncheck <em>Is Blocking</em> and change the <em>Type</em> to <em>Item</em>. Then, create a new <code>LightningDamageConsumableComponentDefinition</code> in the <em>Consumable Definition</em>. Set its <em>Damage</em> to 20 and the <em>Maximum Range</em> to 5.</p>
 <p>The new scroll technically would work in the game now, we just need to spawn it. In <em>dungeon_generator.gd</em>, first append the <code>entity_types</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">const</span> entity_types <span style="color:#f92672">=</span> {
-</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;orc&#34;</span>: preload(<span style="color:#e6db74">&#34;res://assets/definitions/entities/actors/entity_definition_orc.tres&#34;</span>),
-</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;troll&#34;</span>: preload(<span style="color:#e6db74">&#34;res://assets/definitions/entities/actors/entity_definition_troll.tres&#34;</span>),
-</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;health_potion&#34;</span>: preload(<span style="color:#e6db74">&#34;res://assets/definitions/entities/items/health_potion_definition.tres&#34;</span>),
-</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;lightning_scroll&#34;</span>: preload(<span style="color:#e6db74">&#34;res://assets/definitions/entities/items/lightning_scroll_definition.tres&#34;</span>),
-</span></span><span style="display:flex;"><span>}
-</span></span></code></pre></div><p>Then, in the items part of <code>_place_entities()</code>, at the end change the part under <code>if can_place</code> as follows:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">if</span> can_place:
-</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">var</span> item_chance: <span style="color:#66d9ef">float</span> <span style="color:#f92672">=</span> _rng<span style="color:#f92672">.</span>randf()
-</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">var</span> new_entity: Entity
-</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">if</span> item_chance <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">0.7</span>:
-</span></span><span style="display:flex;"><span>				new_entity <span style="color:#f92672">=</span> Entity<span style="color:#f92672">.</span><span style="color:#a6e22e">new</span>(dungeon, new_entity_position, entity_types<span style="color:#f92672">.</span>health_potion)
-</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">else</span>:
-</span></span><span style="display:flex;"><span>				new_entity <span style="color:#f92672">=</span> Entity<span style="color:#f92672">.</span><span style="color:#a6e22e">new</span>(dungeon, new_entity_position, entity_types<span style="color:#f92672">.</span>lightning_scroll)
-</span></span><span style="display:flex;"><span>			dungeon<span style="color:#f92672">.</span>entities<span style="color:#f92672">.</span><span style="color:#a6e22e">append</span>(new_entity)
-</span></span></code></pre></div><p>This is similar to how we spawned both orcs and trolls. We now have a 70% chance to spawn a health potion, and the remaining 30% for a lightning scroll. If you run the game now, you might already find one, and if an enemy dares to go near you, you can use it to zap that enemy.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">const</span> entity_types <span style="color:#f92672">=</span> {
+	<span style="color:#e6db74">&#34;orc&#34;</span>: preload(<span style="color:#e6db74">&#34;res://assets/definitions/entities/actors/entity_definition_orc.tres&#34;</span>),
+	<span style="color:#e6db74">&#34;troll&#34;</span>: preload(<span style="color:#e6db74">&#34;res://assets/definitions/entities/actors/entity_definition_troll.tres&#34;</span>),
+	<span style="color:#e6db74">&#34;health_potion&#34;</span>: preload(<span style="color:#e6db74">&#34;res://assets/definitions/entities/items/health_potion_definition.tres&#34;</span>),
+	<span style="color:#e6db74">&#34;lightning_scroll&#34;</span>: preload(<span style="color:#e6db74">&#34;res://assets/definitions/entities/items/lightning_scroll_definition.tres&#34;</span>),
+}
+</code></pre></div><p>Then, in the items part of <code>_place_entities()</code>, at the end change the part under <code>if can_place</code> as follows:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">if</span> can_place:
+			<span style="color:#66d9ef">var</span> item_chance: <span style="color:#a6e22e">float</span> <span style="color:#f92672">=</span> _rng<span style="color:#f92672">.</span>randf()
+			<span style="color:#66d9ef">var</span> new_entity: Entity
+			<span style="color:#66d9ef">if</span> item_chance <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">0.7</span>:
+				new_entity <span style="color:#f92672">=</span> Entity<span style="color:#f92672">.</span>new(dungeon, new_entity_position, entity_types<span style="color:#f92672">.</span>health_potion)
+			<span style="color:#66d9ef">else</span>:
+				new_entity <span style="color:#f92672">=</span> Entity<span style="color:#f92672">.</span>new(dungeon, new_entity_position, entity_types<span style="color:#f92672">.</span>lightning_scroll)
+			dungeon<span style="color:#f92672">.</span>entities<span style="color:#f92672">.</span>append(new_entity)
+</code></pre></div><p>This is similar to how we spawned both orcs and trolls. We now have a 70% chance to spawn a health potion, and the remaining 30% for a lightning scroll. If you run the game now, you might already find one, and if an enemy dares to go near you, you can use it to zap that enemy.</p>
 <p>Now we move to the more interesting part of actually targeting an enemy. We need a UI element that shows the focussed tile. We&rsquo;ll create a pulsating semi-transparent rectangle for that. This reticle will remain in the center of the screen, and we will have the camera follow it as long as it&rsquo;s active. This behavior means that we will deviate from the python tutorial a bit, as that tutorial also allows selecting with the mouse, which does not make much sense however if the reticle remains in the center.</p>
 <p>So, create a new scene with a <code>Node2D</code> as root node. Rename that node to <strong>Reticle</strong>, then save the scene at <em>res://src/GUI/Reticle/reticle.tscn</em>. Add the following three nodes to it as children: a <code>Polygon2D</code>, an <code>AnimationPlayer</code>, and a <code>Camera2D</code>.</p>
 <p>Select the <strong>Reticle</strong> and in the inspector under <em>Ordering</em> set the <em>Z Index</em> to 10 and uncheck <em>Z as Relative</em>. We use the z-index for ordering our different types of entities, and if we don&rsquo;t account for that here the reticle would be drawn behind the entities. The 10 is just an arbitrary (high) number to give us room if we expand our layering.</p>
 <p>Select the <strong>Polygon2D</strong> and in the inspector under <em>Data</em> &gt; <em>Polygon</em> create a new <code>PackedVector2Array</code>. Increase its <em>Size</em> to 4, then fill the created points with the following values: (0, 0), (16, 0), (16, 16), (0, 16). As we have 16x16 pixel grid that means the polygon is now a square covering exactly one tile.</p>
 <p>Next we set up the animation. Select the <strong>AnimationPlayer</strong> and in the <em>Animation</em> pane popping up create a new animation called <em>&ldquo;pulse&rdquo;</em>. Select the <strong>Polygon2D</strong> node and click on the little key icon next to the <em>Color</em> field. If Godot asks, you don&rsquo;t need a reset track. Open the color selector and set the alpha value to 127, i.e., a half transparent white. Then click the key again to make that color the key for our key frame. Then move the slider in the <em>Animation</em> pane to 1 s, and create another key frame for <em>Color</em>. Then move the slider to 0.5 s. This time change the color to a fully transparent color (i.e., set the alpha to 0), and create a key frame for that as well. A few more touches in the <em>Animation</em> editor: at the far right of the <em>color</em> track you see three icons next to a trash can icon. Select the middle one and change the interpolation from <em>Linear</em> to <em>Cubic</em>. At the top right there is a loop icon. Click that once so it turns blue. And as a last step click the autoplay icon. You can find it between the name of the current animation (reading <em>pulse</em> right now) and the button that says <em>Edit</em>. Now the reticle square will automatically pulse between half transparent and fully transparent as soon as we use it, without the need for any coding.</p>
 <p>In the <strong>Camera2D</strong> we need to change two things, just so it matches our main camera. Set the <em>Zoom</em> to (2, 2), and set the <em>Process Mode</em> to <em>Physics</em>. Now we can create the script. Create a new script (extending <code>Node2D</code>) on <strong>Reticle</strong> and save it at <em>res://src/GUI/Reticle/reticle.gd</em>. Let&rsquo;s go through it bit by bit. Here&rsquo;s the start of the script:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">class_name</span> <span style="color:#a6e22e">Reticle</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">extends</span> <span style="color:#a6e22e">Node2D</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">signal</span> <span style="color:#a6e22e">position_selected</span>(grid_position)
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">const</span> directions <span style="color:#f92672">=</span> {
-</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;move_up&#34;</span>: <span style="color:#a6e22e">Vector2i</span><span style="color:#f92672">.</span>UP,
-</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;move_down&#34;</span>: <span style="color:#a6e22e">Vector2i</span><span style="color:#f92672">.</span>DOWN,
-</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;move_left&#34;</span>: <span style="color:#a6e22e">Vector2i</span><span style="color:#f92672">.</span>LEFT,
-</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;move_right&#34;</span>: <span style="color:#a6e22e">Vector2i</span><span style="color:#f92672">.</span>RIGHT,
-</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;move_up_left&#34;</span>: <span style="color:#a6e22e">Vector2i</span><span style="color:#f92672">.</span>UP <span style="color:#f92672">+</span> <span style="color:#a6e22e">Vector2i</span><span style="color:#f92672">.</span>LEFT,
-</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;move_up_right&#34;</span>: <span style="color:#a6e22e">Vector2i</span><span style="color:#f92672">.</span>UP <span style="color:#f92672">+</span> <span style="color:#a6e22e">Vector2i</span><span style="color:#f92672">.</span>RIGHT,
-</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;move_down_left&#34;</span>: <span style="color:#a6e22e">Vector2i</span><span style="color:#f92672">.</span>DOWN <span style="color:#f92672">+</span> <span style="color:#a6e22e">Vector2i</span><span style="color:#f92672">.</span>LEFT,
-</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;move_down_right&#34;</span>: <span style="color:#a6e22e">Vector2i</span><span style="color:#f92672">.</span>DOWN <span style="color:#f92672">+</span> <span style="color:#a6e22e">Vector2i</span><span style="color:#f92672">.</span>RIGHT,
-</span></span><span style="display:flex;"><span>}
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> grid_position: <span style="color:#a6e22e">Vector2i</span>:
-</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">set</span>(value):
-</span></span><span style="display:flex;"><span>		grid_position <span style="color:#f92672">=</span> value
-</span></span><span style="display:flex;"><span>		position <span style="color:#f92672">=</span> Grid<span style="color:#f92672">.</span><span style="color:#a6e22e">grid_to_world</span>(grid_position)
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> map_data: MapData
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#a6e22e">@onready</span> <span style="color:#66d9ef">var</span> camera: <span style="color:#a6e22e">Camera2D</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">$Camera2D</span>
-</span></span></code></pre></div><p>You see we have a signal. We will use this signal within this class to communicate between functions when we are done selecting a position. After that we have two blocks that probably look familiar, because the <code>directions</code> are copied over from the main game input handler, and the <code>grid_position</code> is copied from the entity class. We will have a similar system of moving, and the easiest way to do that (especially with the relatively small scope of this game) is to just duplicate that code. Lastly, below that you also see a reference to the <code>map_data</code> as well as to the <code>camera</code>.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">_ready</span>() <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
-</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">hide</span>()
-</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">set_physics_process</span>(<span style="color:#66d9ef">false</span>)
-</span></span></code></pre></div><p>Next, the <code>_ready()</code> function hides the reticle, because it shouldn&rsquo;t be there initially, and then also disables the physics processing, which is where we will do the moving around, thereby preventing the reticle from being invisibly moved while it is not needed.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd">class_name Reticle
+<span style="color:#66d9ef">extends</span> <span style="color:#a6e22e">Node2D</span>
+
+<span style="color:#66d9ef">signal</span> position_selected(grid_position)
+
+<span style="color:#66d9ef">const</span> directions <span style="color:#f92672">=</span> {
+	<span style="color:#e6db74">&#34;move_up&#34;</span>: Vector2i<span style="color:#f92672">.</span>UP,
+	<span style="color:#e6db74">&#34;move_down&#34;</span>: Vector2i<span style="color:#f92672">.</span>DOWN,
+	<span style="color:#e6db74">&#34;move_left&#34;</span>: Vector2i<span style="color:#f92672">.</span>LEFT,
+	<span style="color:#e6db74">&#34;move_right&#34;</span>: Vector2i<span style="color:#f92672">.</span>RIGHT,
+	<span style="color:#e6db74">&#34;move_up_left&#34;</span>: Vector2i<span style="color:#f92672">.</span>UP <span style="color:#f92672">+</span> Vector2i<span style="color:#f92672">.</span>LEFT,
+	<span style="color:#e6db74">&#34;move_up_right&#34;</span>: Vector2i<span style="color:#f92672">.</span>UP <span style="color:#f92672">+</span> Vector2i<span style="color:#f92672">.</span>RIGHT,
+	<span style="color:#e6db74">&#34;move_down_left&#34;</span>: Vector2i<span style="color:#f92672">.</span>DOWN <span style="color:#f92672">+</span> Vector2i<span style="color:#f92672">.</span>LEFT,
+	<span style="color:#e6db74">&#34;move_down_right&#34;</span>: Vector2i<span style="color:#f92672">.</span>DOWN <span style="color:#f92672">+</span> Vector2i<span style="color:#f92672">.</span>RIGHT,
+}
+
+<span style="color:#66d9ef">var</span> grid_position: Vector2i:
+	set(value):
+		grid_position <span style="color:#f92672">=</span> value
+		position <span style="color:#f92672">=</span> Grid<span style="color:#f92672">.</span>grid_to_world(grid_position)
+
+<span style="color:#66d9ef">var</span> map_data: MapData
+
+<span style="color:#960050;background-color:#1e0010">@</span><span style="color:#66d9ef">onready</span> <span style="color:#66d9ef">var</span> camera: <span style="color:#a6e22e">Camera2D</span> <span style="color:#f92672">=</span> <span style="color:#f92672">$</span><span style="color:#a6e22e">Camera2D</span>
+</code></pre></div><p>You see we have a signal. We will use this signal within this class to communicate between functions when we are done selecting a position. After that we have two blocks that probably look familiar, because the <code>directions</code> are copied over from the main game input handler, and the <code>grid_position</code> is copied from the entity class. We will have a similar system of moving, and the easiest way to do that (especially with the relatively small scope of this game) is to just duplicate that code. Lastly, below that you also see a reference to the <code>map_data</code> as well as to the <code>camera</code>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> _ready() <span style="color:#f92672">-&gt;</span> void:
+	hide()
+	set_physics_process(false)
+</code></pre></div><p>Next, the <code>_ready()</code> function hides the reticle, because it shouldn&rsquo;t be there initially, and then also disables the physics processing, which is where we will do the moving around, thereby preventing the reticle from being invisibly moved while it is not needed.</p>
 <pre tabindex="0"><code>func select_position(player: Entity, radius: int) -&gt; Vector2i:
 	map_data = player.map_data
 	grid_position = player.grid_position
@@ -233,321 +234,321 @@ Last time we started handling items, and filled our dungeon with healing potions
 </code></pre><p>This is the function we will call from the outside to activate the reticle and get the selected position back. You see we take in the <code>player</code>, as well as a <code>radius</code>. We won&rsquo;t need the latter right now, but we know we will need it later, to indicate the area of the fireball. Including it in the function signature now saves us a bit of refactoring later.</p>
 <p>In the function we first set the <code>map_data</code>. We could check if the <code>map_data</code> already holds a valid reference, and only set it the first time we activate the reticle, because all the other times we will just store the same <code>map_data</code> object again. However, it works like that anyway, and the checking mechanism would probably be more overhead anyway. We then also set the position of the reticle to the position of the player.</p>
 <p>Next comes the actual setup. We store the <code>player_camera</code> by getting the currently active camera. After that we make the reticles camera the current one. As the position of the player and the reticle are identical right now, players shouldn&rsquo;t notice any change, but later we can move the reticle independently of the player. Then we show the reticle, making it visible. We also await the next physics frame, again to make sure we don&rsquo;t have any interfering inputs. Then we defer a call to activate the reticle&rsquo;s physics processing. After that we wait for the <code>position_selected</code> signal, and use it to set the corresponding variable. All the handling of the reticle in action happens elsewhere, we simply whait until that&rsquo;s done and we receive the result. After we have it, and once this function continues to execute, we disable physics processing again, reactivate the player camera, and hide the reticle. After that, we return the selected position. So what does happen during physics processing?</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">_physics_process</span>(delta: <span style="color:#66d9ef">float</span>) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> offset <span style="color:#f92672">:=</span> <span style="color:#a6e22e">Vector2i</span><span style="color:#f92672">.</span>ZERO
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">for</span> direction <span style="color:#f92672">in</span> directions:
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">Input</span><span style="color:#f92672">.</span><span style="color:#a6e22e">is_action_just_pressed</span>(direction):
-</span></span><span style="display:flex;"><span>			offset <span style="color:#f92672">+=</span> directions[direction]
-</span></span><span style="display:flex;"><span>	grid_position <span style="color:#f92672">+=</span> offset
-</span></span><span style="display:flex;"><span>	
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">Input</span><span style="color:#f92672">.</span><span style="color:#a6e22e">is_action_just_pressed</span>(<span style="color:#e6db74">&#34;ui_accept&#34;</span>):
-</span></span><span style="display:flex;"><span>		position_selected<span style="color:#f92672">.</span><span style="color:#a6e22e">emit</span>(grid_position)
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">Input</span><span style="color:#f92672">.</span><span style="color:#a6e22e">is_action_just_pressed</span>(<span style="color:#e6db74">&#34;ui_back&#34;</span>):
-</span></span><span style="display:flex;"><span>		position_selected<span style="color:#f92672">.</span><span style="color:#a6e22e">emit</span>(<span style="color:#a6e22e">Vector2i</span>(<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>))
-</span></span></code></pre></div><p>This is very similar to how we handle movement in the main game event handler. We go throug all the directions, and if one of the movement actions is just pressed, we move the reticle one tile in the corresponding direction. We then check two other actions. If the accept action is pressed (meaning mostly the enter key), we emit <code>position_selected</code> with the current grid position. If the back action (which we mapped to the escape key) is pressed we emit <code>position_selected</code> with (-1, -1). The way we have coded our map only positive coordinates are valid, so here we use (-1, -1) to indicate returning from the position selection without a valid target. Once that&rsquo;s emitted the <code>select_position</code> function will resume and handle the rest, as laid out above.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> _physics_process(delta: <span style="color:#a6e22e">float</span>) <span style="color:#f92672">-&gt;</span> void:
+	<span style="color:#66d9ef">var</span> offset :<span style="color:#f92672">=</span> Vector2i<span style="color:#f92672">.</span>ZERO
+	<span style="color:#66d9ef">for</span> direction <span style="color:#f92672">in</span> directions:
+		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">Input</span><span style="color:#f92672">.</span>is_action_just_pressed(direction):
+			offset <span style="color:#f92672">+=</span> directions[direction]
+	grid_position <span style="color:#f92672">+=</span> offset
+	
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">Input</span><span style="color:#f92672">.</span>is_action_just_pressed(<span style="color:#e6db74">&#34;ui_accept&#34;</span>):
+		position_selected<span style="color:#f92672">.</span>emit(grid_position)
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">Input</span><span style="color:#f92672">.</span>is_action_just_pressed(<span style="color:#e6db74">&#34;ui_back&#34;</span>):
+		position_selected<span style="color:#f92672">.</span>emit(Vector2i(<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>))
+</code></pre></div><p>This is very similar to how we handle movement in the main game event handler. We go throug all the directions, and if one of the movement actions is just pressed, we move the reticle one tile in the corresponding direction. We then check two other actions. If the accept action is pressed (meaning mostly the enter key), we emit <code>position_selected</code> with the current grid position. If the back action (which we mapped to the escape key) is pressed we emit <code>position_selected</code> with (-1, -1). The way we have coded our map only positive coordinates are valid, so here we use (-1, -1) to indicate returning from the position selection without a valid target. Once that&rsquo;s emitted the <code>select_position</code> function will resume and handle the rest, as laid out above.</p>
 <p>With the reticle and it&rsquo;s code complete (for now, we will expand it later), we can now move to integrate it into the rest of the game. Back in the game scene add the reticle scene to the <strong>Map</strong> node. There&rsquo;s one little thing we do need to add to <em>game.gd</em> right away. The way Godot adds the cameras would make the reticle camera the active one, meaning we&rsquo;d have no way to get to the player&rsquo;s camera. So we need to make that the current camera. So expand the <code>_ready()</code> function by one line:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">_ready</span>() <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
-</span></span><span style="display:flex;"><span>	player <span style="color:#f92672">=</span> Entity<span style="color:#f92672">.</span><span style="color:#a6e22e">new</span>(<span style="color:#66d9ef">null</span>, <span style="color:#a6e22e">Vector2i</span><span style="color:#f92672">.</span>ZERO, player_definition)
-</span></span><span style="display:flex;"><span>	player_created<span style="color:#f92672">.</span><span style="color:#a6e22e">emit</span>(player)
-</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">remove_child</span>(camera)
-</span></span><span style="display:flex;"><span>	player<span style="color:#f92672">.</span><span style="color:#a6e22e">add_child</span>(camera)
-</span></span><span style="display:flex;"><span>	map<span style="color:#f92672">.</span><span style="color:#a6e22e">generate</span>(player)
-</span></span><span style="display:flex;"><span>	map<span style="color:#f92672">.</span><span style="color:#a6e22e">update_fov</span>(player<span style="color:#f92672">.</span>grid_position)
-</span></span><span style="display:flex;"><span>	MessageLog<span style="color:#f92672">.</span>send_message<span style="color:#f92672">.</span><span style="color:#a6e22e">bind</span>(
-</span></span><span style="display:flex;"><span>		<span style="color:#e6db74">&#34;Hello and welcome, adventurer, to yet another dungeon!&#34;</span>,
-</span></span><span style="display:flex;"><span>		GameColors<span style="color:#f92672">.</span>WELCOME_TEXT
-</span></span><span style="display:flex;"><span>	)<span style="color:#f92672">.</span><span style="color:#a6e22e">call_deferred</span>()
-</span></span><span style="display:flex;"><span>	camera<span style="color:#f92672">.</span>make_current<span style="color:#f92672">.</span><span style="color:#a6e22e">call_deferred</span>()
-</span></span></code></pre></div><p>Here the last line makes the player camera the one we use when the game starts, just as we had it before. Next we integrate the reticle in <code>main_game_input_handler.gd</code>. For that we first need a reference to the reticle. At a new exported variable at the top of the script:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">const</span> inventory_menu_scene <span style="color:#f92672">=</span> preload(<span style="color:#e6db74">&#34;res://src/GUI/InventorMenu/inventory_menu.tscn&#34;</span>)
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#a6e22e">@export</span> <span style="color:#66d9ef">var</span> reticle: Reticle
-</span></span></code></pre></div><p>This exports a reticle node. Now select <strong>MainGameInputHandler</strong> in the editor, and (after saving the script) you should see the exported <em>Reticle</em> field in the inspector. Click on <em>Assign&hellip;</em>, then select the <strong>Reticle</strong> node in the tree (thanks to proper typing it should be the only one selectable). With a proper reference to the reticle node, we can now create a function that uses it:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">get_grid_position</span>(player: Entity, radius: <span style="color:#66d9ef">int</span>) <span style="color:#f92672">-&gt;</span> <span style="color:#a6e22e">Vector2i</span>:
-</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">get_parent</span>()<span style="color:#f92672">.</span><span style="color:#a6e22e">transition_to</span>(InputHandler<span style="color:#f92672">.</span>InputHandlers<span style="color:#f92672">.</span>DUMMY)
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> selected_position: <span style="color:#a6e22e">Vector2i</span> <span style="color:#f92672">=</span> <span style="color:#66d9ef">await</span> reticle<span style="color:#f92672">.</span><span style="color:#a6e22e">select_position</span>(player, radius)
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">await</span> <span style="color:#a6e22e">get_tree</span>()<span style="color:#f92672">.</span>physics_frame
-</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">get_parent</span>()<span style="color:#f92672">.</span><span style="color:#a6e22e">call_deferred</span>(<span style="color:#e6db74">&#34;transition_to&#34;</span>, InputHandler<span style="color:#f92672">.</span>InputHandlers<span style="color:#f92672">.</span>MAIN_GAME)
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> selected_position
-</span></span></code></pre></div><p>This works very similar to how we got an item from the item selection menu. We move to the dummy input handler, then await the position from the reticle. We move back to the main game input handler, and finally return the selected position.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> _ready() <span style="color:#f92672">-&gt;</span> void:
+	player <span style="color:#f92672">=</span> Entity<span style="color:#f92672">.</span>new(null, Vector2i<span style="color:#f92672">.</span>ZERO, player_definition)
+	player_created<span style="color:#f92672">.</span>emit(player)
+	remove_child(camera)
+	player<span style="color:#f92672">.</span>add_child(camera)
+	map<span style="color:#f92672">.</span>generate(player)
+	map<span style="color:#f92672">.</span>update_fov(player<span style="color:#f92672">.</span>grid_position)
+	MessageLog<span style="color:#f92672">.</span>send_message<span style="color:#f92672">.</span>bind(
+		<span style="color:#e6db74">&#34;Hello and welcome, adventurer, to yet another dungeon!&#34;</span>,
+		GameColors<span style="color:#f92672">.</span>WELCOME_TEXT
+	)<span style="color:#f92672">.</span>call_deferred()
+	camera<span style="color:#f92672">.</span>make_current<span style="color:#f92672">.</span>call_deferred()
+</code></pre></div><p>Here the last line makes the player camera the one we use when the game starts, just as we had it before. Next we integrate the reticle in <code>main_game_input_handler.gd</code>. For that we first need a reference to the reticle. At a new exported variable at the top of the script:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">const</span> inventory_menu_scene <span style="color:#f92672">=</span> preload(<span style="color:#e6db74">&#34;res://src/GUI/InventorMenu/inventory_menu.tscn&#34;</span>)
+
+<span style="color:#960050;background-color:#1e0010">@</span><span style="color:#66d9ef">export</span> <span style="color:#66d9ef">var</span> reticle: Reticle
+</code></pre></div><p>This exports a reticle node. Now select <strong>MainGameInputHandler</strong> in the editor, and (after saving the script) you should see the exported <em>Reticle</em> field in the inspector. Click on <em>Assign&hellip;</em>, then select the <strong>Reticle</strong> node in the tree (thanks to proper typing it should be the only one selectable). With a proper reference to the reticle node, we can now create a function that uses it:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> get_grid_position(player: Entity, radius: <span style="color:#a6e22e">int</span>) <span style="color:#f92672">-&gt;</span> Vector2i:
+	get_parent()<span style="color:#f92672">.</span>transition_to(InputHandler<span style="color:#f92672">.</span>InputHandlers<span style="color:#f92672">.</span>DUMMY)
+	<span style="color:#66d9ef">var</span> selected_position: Vector2i <span style="color:#f92672">=</span> await reticle<span style="color:#f92672">.</span>select_position(player, radius)
+	await get_tree()<span style="color:#f92672">.</span>physics_frame
+	get_parent()<span style="color:#f92672">.</span>call_deferred(<span style="color:#e6db74">&#34;transition_to&#34;</span>, InputHandler<span style="color:#f92672">.</span>InputHandlers<span style="color:#f92672">.</span>MAIN_GAME)
+	<span style="color:#66d9ef">return</span> selected_position
+</code></pre></div><p>This works very similar to how we got an item from the item selection menu. We move to the dummy input handler, then await the position from the reticle. We move back to the main game input handler, and finally return the selected position.</p>
 <p>Integrating that with our items will still be a bit of work, so to have a nice milestone in between let&rsquo;s create a look around mode. For that we first need a new action, so go into <em>Project</em> &gt; <em>Project Settings</em> &gt; <em>Input Map</em>. Add a new action called <em>&ldquo;look&rdquo;</em>, and then bind the divide key (<em>/</em>) on the num pad to it, as well as the <em>v</em> key (for <em>visuals</em>, as <em>l</em> is already taken by the move keys). Then add the following section to <code>get_action()</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">Input</span><span style="color:#f92672">.</span><span style="color:#a6e22e">is_action_just_pressed</span>(<span style="color:#e6db74">&#34;look&#34;</span>):
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">await</span> <span style="color:#a6e22e">get_grid_position</span>(player, <span style="color:#ae81ff">0</span>)
-</span></span></code></pre></div><p>If we encounter the look action, we await a position. We simply want to allow the player to look around, but we don&rsquo;t need the returned position, so we do nothing with it. However, <code>get_grid_position()</code> will still take care of interrupting the game until we press either the accept or the back action. You should be able to try that out now. Jump into the game and press <em>v</em> to have a look around.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd">	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">Input</span><span style="color:#f92672">.</span>is_action_just_pressed(<span style="color:#e6db74">&#34;look&#34;</span>):
+		await get_grid_position(player, <span style="color:#ae81ff">0</span>)
+</code></pre></div><p>If we encounter the look action, we await a position. We simply want to allow the player to look around, but we don&rsquo;t need the returned position, so we do nothing with it. However, <code>get_grid_position()</code> will still take care of interrupting the game until we press either the accept or the back action. You should be able to try that out now. Jump into the game and press <em>v</em> to have a look around.</p>
 <p>Now, so far we have simply activated items that were selected from the inventory. We will now fit the position selection step in there as well. However, we already have two items, and they don&rsquo;t need to have a position selected. So we need a way to decide wheter or not we go into position selection mode or not. Later on we will also need to know the radius of areas for effects that require that. So we will simply introduce a function on consumables that can tell us the radius, with -1 indicating that we won&rsquo;t need targeting. Add the following function to <em>consumable_component.gd</em>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">get_targeting_radius</span>() <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">int</span>:
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>
-</span></span></code></pre></div><p>As this is the default inherited by all our existing consumable implementations, this will mark all the existing consumables as not requiring a target. No let&rsquo;s refactor <em>main_game_input_handler.gd</em> a bit. We already have <code>get_item()</code> and <code>get_grid_position()</code> as building blocks for our item handling. However, the way we use them would get a bit convoluted if just handled in the if clause within <code>get_action()</code>, so we modify that as follows:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">Input</span><span style="color:#f92672">.</span><span style="color:#a6e22e">is_action_just_pressed</span>(<span style="color:#e6db74">&#34;activate&#34;</span>):
-</span></span><span style="display:flex;"><span>		action <span style="color:#f92672">=</span> <span style="color:#66d9ef">await</span> <span style="color:#a6e22e">activate_item</span>(player)
-</span></span></code></pre></div><p>We will create a function <code>activate_item()</code> that returns an item action (or <code>null</code>), and handles all the details of how to get there. Let&rsquo;s look at that function:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">activate_item</span>(player: Entity) <span style="color:#f92672">-&gt;</span> Action:
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> selected_item: Entity <span style="color:#f92672">=</span> <span style="color:#66d9ef">await</span> <span style="color:#a6e22e">get_item</span>(<span style="color:#e6db74">&#34;Select an item to use&#34;</span>, player<span style="color:#f92672">.</span>inventory_component)
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> selected_item <span style="color:#f92672">==</span> <span style="color:#66d9ef">null</span>:
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">null</span>
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> target_radius: <span style="color:#66d9ef">int</span> <span style="color:#f92672">=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> selected_item<span style="color:#f92672">.</span>consumable_component <span style="color:#f92672">!=</span> <span style="color:#66d9ef">null</span>:
-</span></span><span style="display:flex;"><span>		target_radius <span style="color:#f92672">=</span> selected_item<span style="color:#f92672">.</span>consumable_component<span style="color:#f92672">.</span><span style="color:#a6e22e">get_targeting_radius</span>()
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> target_radius <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>:
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> ItemAction<span style="color:#f92672">.</span><span style="color:#a6e22e">new</span>(player, selected_item)
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> target_position: <span style="color:#a6e22e">Vector2i</span> <span style="color:#f92672">=</span> <span style="color:#66d9ef">await</span> <span style="color:#a6e22e">get_grid_position</span>(player, target_radius)
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> target_position <span style="color:#f92672">==</span> <span style="color:#a6e22e">Vector2i</span>(<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>):
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">null</span>
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> ItemAction<span style="color:#f92672">.</span><span style="color:#a6e22e">new</span>(player, selected_item, target_position)
-</span></span></code></pre></div><p>We pass the player, as we need access to it. First, we use <code>get_item()</code> to get the item, as we did before. If the item is <code>null</code>, we directly <code>return null</code>, because we don&rsquo;t have any item to handle further. Then we set a target radius to -1. We check if we actually have a proper consumable component (looking forward to when we implement equipment components that don&rsquo;t have such a component but still are items), and if so ask it for the targeting radius. If the radius is -1, we simply return a new <code>ItemAction</code> with that item, just as we did previously. However, if we a non-negative target radius, we use <code>get_grid_position()</code> to acquire a target position. At that point the player still can abort, so if we get the (-1, -1) vector back we <code>return null</code>. Otherwise we have both a proper item and a proper target position, and feed both that into a new <code>ItemAction</code>, which we return.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> get_targeting_radius() <span style="color:#f92672">-&gt;</span> <span style="color:#a6e22e">int</span>:
+	<span style="color:#66d9ef">return</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>
+</code></pre></div><p>As this is the default inherited by all our existing consumable implementations, this will mark all the existing consumables as not requiring a target. No let&rsquo;s refactor <em>main_game_input_handler.gd</em> a bit. We already have <code>get_item()</code> and <code>get_grid_position()</code> as building blocks for our item handling. However, the way we use them would get a bit convoluted if just handled in the if clause within <code>get_action()</code>, so we modify that as follows:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">Input</span><span style="color:#f92672">.</span>is_action_just_pressed(<span style="color:#e6db74">&#34;activate&#34;</span>):
+		action <span style="color:#f92672">=</span> await activate_item(player)
+</code></pre></div><p>We will create a function <code>activate_item()</code> that returns an item action (or <code>null</code>), and handles all the details of how to get there. Let&rsquo;s look at that function:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> activate_item(player: Entity) <span style="color:#f92672">-&gt;</span> Action:
+	<span style="color:#66d9ef">var</span> selected_item: Entity <span style="color:#f92672">=</span> await get_item(<span style="color:#e6db74">&#34;Select an item to use&#34;</span>, player<span style="color:#f92672">.</span>inventory_component)
+	<span style="color:#66d9ef">if</span> selected_item <span style="color:#f92672">==</span> null:
+		<span style="color:#66d9ef">return</span> null
+	<span style="color:#66d9ef">var</span> target_radius: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>
+	<span style="color:#66d9ef">if</span> selected_item<span style="color:#f92672">.</span>consumable_component <span style="color:#f92672">!=</span> null:
+		target_radius <span style="color:#f92672">=</span> selected_item<span style="color:#f92672">.</span>consumable_component<span style="color:#f92672">.</span>get_targeting_radius()
+	<span style="color:#66d9ef">if</span> target_radius <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>:
+		<span style="color:#66d9ef">return</span> ItemAction<span style="color:#f92672">.</span>new(player, selected_item)
+	<span style="color:#66d9ef">var</span> target_position: Vector2i <span style="color:#f92672">=</span> await get_grid_position(player, target_radius)
+	<span style="color:#66d9ef">if</span> target_position <span style="color:#f92672">==</span> Vector2i(<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>):
+		<span style="color:#66d9ef">return</span> null
+	<span style="color:#66d9ef">return</span> ItemAction<span style="color:#f92672">.</span>new(player, selected_item, target_position)
+</code></pre></div><p>We pass the player, as we need access to it. First, we use <code>get_item()</code> to get the item, as we did before. If the item is <code>null</code>, we directly <code>return null</code>, because we don&rsquo;t have any item to handle further. Then we set a target radius to -1. We check if we actually have a proper consumable component (looking forward to when we implement equipment components that don&rsquo;t have such a component but still are items), and if so ask it for the targeting radius. If the radius is -1, we simply return a new <code>ItemAction</code> with that item, just as we did previously. However, if we a non-negative target radius, we use <code>get_grid_position()</code> to acquire a target position. At that point the player still can abort, so if we get the (-1, -1) vector back we <code>return null</code>. Otherwise we have both a proper item and a proper target position, and feed both that into a new <code>ItemAction</code>, which we return.</p>
 <p>This works for the most part, but has one issue. The way <code>get_item()</code> and <code>get_grid_position()</code> change input handlers would result in us changing back to the main game input handler while we would be in targeting mode, resulting in us moving both the player and the reticle at the same time. The solution I present here is not very clean and more of a hack, but I do want to spare you from a bigger refactor. So what we will do is to modify <code>get_item()</code> so it only returns to the main game input handler when the selected item does not require a target. Here&rsquo;s the new code for <code>get_item()</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">get_item</span>(window_title: <span style="color:#a6e22e">String</span>, inventory: InventoryComponent) <span style="color:#f92672">-&gt;</span> Entity:
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> inventory_menu: InventoryMenu <span style="color:#f92672">=</span> inventory_menu_scene<span style="color:#f92672">.</span><span style="color:#a6e22e">instantiate</span>()
-</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">add_child</span>(inventory_menu)
-</span></span><span style="display:flex;"><span>	inventory_menu<span style="color:#f92672">.</span><span style="color:#a6e22e">build</span>(window_title, inventory)
-</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">get_parent</span>()<span style="color:#f92672">.</span><span style="color:#a6e22e">transition_to</span>(InputHandler<span style="color:#f92672">.</span>InputHandlers<span style="color:#f92672">.</span>DUMMY)
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> selected_item: Entity <span style="color:#f92672">=</span> <span style="color:#66d9ef">await</span> inventory_menu<span style="color:#f92672">.</span>item_selected
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> selected_item <span style="color:#f92672">and</span> selected_item<span style="color:#f92672">.</span>consumable_component <span style="color:#f92672">and</span> selected_item<span style="color:#f92672">.</span>consumable_component<span style="color:#f92672">.</span><span style="color:#a6e22e">get_targeting_radius</span>() <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>:
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">await</span> <span style="color:#a6e22e">get_tree</span>()<span style="color:#f92672">.</span>physics_frame
-</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">get_parent</span>()<span style="color:#f92672">.</span><span style="color:#a6e22e">call_deferred</span>(<span style="color:#e6db74">&#34;transition_to&#34;</span>, InputHandler<span style="color:#f92672">.</span>InputHandlers<span style="color:#f92672">.</span>MAIN_GAME)
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> selected_item
-</span></span></code></pre></div><p>With item handling out of the way we can look into how we get enemies confused. For the enemy to stumble around aimlessly, we can modify it&rsquo;s AI. We will create a new AI component which will temporarily replace the enemy AI. So Create a new script extending <code>BaseAIComponent</code> at <em>res://src/Entities/Actors/Components/confused_enemy_ai_component.gd</em>. Here is the script:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">class_name</span> <span style="color:#a6e22e">ConfusedEnemyAIComponent</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">extends</span> <span style="color:#a6e22e">BaseAIComponent</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> previous_ai: BaseAIComponent
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> turns_remaining: <span style="color:#66d9ef">int</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">_ready</span>() <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
-</span></span><span style="display:flex;"><span>	previous_ai <span style="color:#f92672">=</span> entity<span style="color:#f92672">.</span>ai_component
-</span></span><span style="display:flex;"><span>	entity<span style="color:#f92672">.</span>ai_component <span style="color:#f92672">=</span> self
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">_init</span>(turns_remaining: <span style="color:#66d9ef">int</span>) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
-</span></span><span style="display:flex;"><span>	self<span style="color:#f92672">.</span>turns_remaining <span style="color:#f92672">=</span> turns_remaining
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">perform</span>() <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> turns_remaining <span style="color:#f92672">&lt;=</span> <span style="color:#ae81ff">0</span>:
-</span></span><span style="display:flex;"><span>		MessageLog<span style="color:#f92672">.</span><span style="color:#a6e22e">send_message</span>(<span style="color:#e6db74">&#34;The </span><span style="color:#e6db74">%s</span><span style="color:#e6db74"> is no longer confused.&#34;</span> <span style="color:#f92672">%</span> entity<span style="color:#f92672">.</span><span style="color:#a6e22e">get_entity_name</span>(), <span style="color:#a6e22e">Color</span><span style="color:#f92672">.</span>WHITE)
-</span></span><span style="display:flex;"><span>		entity<span style="color:#f92672">.</span>ai_component <span style="color:#f92672">=</span> previous_ai
-</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">queue_free</span>()
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">else</span>:
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">var</span> direction: <span style="color:#a6e22e">Vector2i</span> <span style="color:#f92672">=</span> [
-</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">Vector2i</span>(<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>),
-</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">Vector2i</span>( <span style="color:#ae81ff">0</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>),
-</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">Vector2i</span>( <span style="color:#ae81ff">1</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>),
-</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">Vector2i</span>(<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>,  <span style="color:#ae81ff">0</span>),
-</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">Vector2i</span>( <span style="color:#ae81ff">1</span>,  <span style="color:#ae81ff">0</span>),
-</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">Vector2i</span>(<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>,  <span style="color:#ae81ff">1</span>),
-</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">Vector2i</span>( <span style="color:#ae81ff">0</span>,  <span style="color:#ae81ff">1</span>),
-</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">Vector2i</span>( <span style="color:#ae81ff">1</span>,  <span style="color:#ae81ff">1</span>),
-</span></span><span style="display:flex;"><span>		]<span style="color:#f92672">.</span><span style="color:#a6e22e">pick_random</span>()
-</span></span><span style="display:flex;"><span>		turns_remaining <span style="color:#f92672">-=</span> <span style="color:#ae81ff">1</span>
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> BumpAction<span style="color:#f92672">.</span><span style="color:#a6e22e">new</span>(entity, direction<span style="color:#f92672">.</span>x, direction<span style="color:#f92672">.</span>y)<span style="color:#f92672">.</span><span style="color:#a6e22e">perform</span>()
-</span></span></code></pre></div><p>We have two class variables, one for the number of turns the enemy will remain confused, and another for storing the previously used AI, so we can switch back to that once the confusion is over.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> get_item(window_title: <span style="color:#a6e22e">String</span>, inventory: InventoryComponent) <span style="color:#f92672">-&gt;</span> Entity:
+	<span style="color:#66d9ef">var</span> inventory_menu: InventoryMenu <span style="color:#f92672">=</span> inventory_menu_scene<span style="color:#f92672">.</span>instantiate()
+	add_child(inventory_menu)
+	inventory_menu<span style="color:#f92672">.</span>build(window_title, inventory)
+	get_parent()<span style="color:#f92672">.</span>transition_to(InputHandler<span style="color:#f92672">.</span>InputHandlers<span style="color:#f92672">.</span>DUMMY)
+	<span style="color:#66d9ef">var</span> selected_item: Entity <span style="color:#f92672">=</span> await inventory_menu<span style="color:#f92672">.</span>item_selected
+	<span style="color:#66d9ef">if</span> selected_item <span style="color:#f92672">and</span> selected_item<span style="color:#f92672">.</span>consumable_component <span style="color:#f92672">and</span> selected_item<span style="color:#f92672">.</span>consumable_component<span style="color:#f92672">.</span>get_targeting_radius() <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>:
+		await get_tree()<span style="color:#f92672">.</span>physics_frame
+		get_parent()<span style="color:#f92672">.</span>call_deferred(<span style="color:#e6db74">&#34;transition_to&#34;</span>, InputHandler<span style="color:#f92672">.</span>InputHandlers<span style="color:#f92672">.</span>MAIN_GAME)
+	<span style="color:#66d9ef">return</span> selected_item
+</code></pre></div><p>With item handling out of the way we can look into how we get enemies confused. For the enemy to stumble around aimlessly, we can modify it&rsquo;s AI. We will create a new AI component which will temporarily replace the enemy AI. So Create a new script extending <code>BaseAIComponent</code> at <em>res://src/Entities/Actors/Components/confused_enemy_ai_component.gd</em>. Here is the script:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd">class_name ConfusedEnemyAIComponent
+<span style="color:#66d9ef">extends</span> BaseAIComponent
+
+<span style="color:#66d9ef">var</span> previous_ai: BaseAIComponent
+<span style="color:#66d9ef">var</span> turns_remaining: <span style="color:#a6e22e">int</span>
+
+
+<span style="color:#66d9ef">func</span> _ready() <span style="color:#f92672">-&gt;</span> void:
+	previous_ai <span style="color:#f92672">=</span> entity<span style="color:#f92672">.</span>ai_component
+	entity<span style="color:#f92672">.</span>ai_component <span style="color:#f92672">=</span> self
+
+
+<span style="color:#66d9ef">func</span> _init(turns_remaining: <span style="color:#a6e22e">int</span>) <span style="color:#f92672">-&gt;</span> void:
+	self<span style="color:#f92672">.</span>turns_remaining <span style="color:#f92672">=</span> turns_remaining
+
+
+<span style="color:#66d9ef">func</span> perform() <span style="color:#f92672">-&gt;</span> void:
+	<span style="color:#66d9ef">if</span> turns_remaining <span style="color:#f92672">&lt;=</span> <span style="color:#ae81ff">0</span>:
+		MessageLog<span style="color:#f92672">.</span>send_message(<span style="color:#e6db74">&#34;The </span><span style="color:#e6db74">%s</span><span style="color:#e6db74"> is no longer confused.&#34;</span> <span style="color:#f92672">%</span> entity<span style="color:#f92672">.</span>get_entity_name(), <span style="color:#a6e22e">Color</span><span style="color:#f92672">.</span>WHITE)
+		entity<span style="color:#f92672">.</span>ai_component <span style="color:#f92672">=</span> previous_ai
+		queue_free()
+	<span style="color:#66d9ef">else</span>:
+		<span style="color:#66d9ef">var</span> direction: Vector2i <span style="color:#f92672">=</span> [
+			Vector2i(<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>),
+			Vector2i( <span style="color:#ae81ff">0</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>),
+			Vector2i( <span style="color:#ae81ff">1</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>),
+			Vector2i(<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>,  <span style="color:#ae81ff">0</span>),
+			Vector2i( <span style="color:#ae81ff">1</span>,  <span style="color:#ae81ff">0</span>),
+			Vector2i(<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>,  <span style="color:#ae81ff">1</span>),
+			Vector2i( <span style="color:#ae81ff">0</span>,  <span style="color:#ae81ff">1</span>),
+			Vector2i( <span style="color:#ae81ff">1</span>,  <span style="color:#ae81ff">1</span>),
+		]<span style="color:#f92672">.</span>pick_random()
+		turns_remaining <span style="color:#f92672">-=</span> <span style="color:#ae81ff">1</span>
+		<span style="color:#66d9ef">return</span> BumpAction<span style="color:#f92672">.</span>new(entity, direction<span style="color:#f92672">.</span>x, direction<span style="color:#f92672">.</span>y)<span style="color:#f92672">.</span>perform()
+</code></pre></div><p>We have two class variables, one for the number of turns the enemy will remain confused, and another for storing the previously used AI, so we can switch back to that once the confusion is over.</p>
 <p>In the <code>_ready()</code> function we first store the current <code>ai_component</code> of the parent entity in the <code>previous_ai</code> variable, then we set that component slot to this AI component (it would have been pretty clever to actually handle attatching components like this for all components, but I only realized that at this point).</p>
 <p>The <code>_init()</code> function simply sets the number of turns, allowing us to create a new instance of this AI with a specific number of turns the enemy will spend confused. The interesting stuff then happens in the <code>perform()</code> function. First, we check if we have run out of confusion turns. If so, we create an appropriate message, restore the parent entity&rsquo;s <code>ai_component</code> to the previos one that we have cached, and then we <code>queue_free()</code> this one.</p>
 <p>If we do have turns remaining, we pick a random direction from an array of vectors of all directions. Then decrement the number of remaining turns, and lastly we perform a <code>BumpAction</code> with that random direction. That&rsquo;s all the <em>intelligence</em> an enemy needs when they are confused.</p>
 <p>To create an item that can make enemies confused we need a corresponding consumable component. And you can bet that we will start with a definition for that. So create a new script extending <code>ConsumableComponentDefinition</code> at <em>res://src/Entities/Actors/Components/ComponentDefinitions/confusion_consumable_component_definition.gd</em>. This definition simply stores the number of turns:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">class_name</span> <span style="color:#a6e22e">ConfusionConsumableComponentDefinition</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">extends</span> <span style="color:#a6e22e">ConsumableComponentDefinition</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#a6e22e">@export</span> <span style="color:#66d9ef">var</span> number_of_turns: <span style="color:#66d9ef">int</span>
-</span></span></code></pre></div><p>To create the actual component create a new script extending <code>ConsumableComponent</code> at <em>res://src/Entities/Actors/Components/confusion_consumable_component.gd</em>. Here&rsquo;s the top of that script:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">class_name</span> <span style="color:#a6e22e">ConfusionConsumableComponent</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">extends</span> <span style="color:#a6e22e">ConsumableComponent</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> number_of_turns: <span style="color:#66d9ef">int</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">_init</span>(definition: ConfusionConsumableComponentDefinition) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
-</span></span><span style="display:flex;"><span>	number_of_turns <span style="color:#f92672">=</span> definition<span style="color:#f92672">.</span>number_of_turns
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">get_targeting_radius</span>() <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">int</span>:
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>
-</span></span></code></pre></div><p>We have a number of turns we set from the definition for that component. Also we will target a single enemy, so we will return a targeting radius of 0. Remember, -1 meant no targeting. And 1 would mean a center tile plus the tiles directly around it. A targeting range of 0 means exactly one target tile.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">activate</span>(action: ItemAction) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">bool</span>:
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> consumer: Entity <span style="color:#f92672">=</span> action<span style="color:#f92672">.</span>entity
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> target: Entity <span style="color:#f92672">=</span> action<span style="color:#f92672">.</span><span style="color:#a6e22e">get_target_actor</span>()
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> map_data: MapData <span style="color:#f92672">=</span> <span style="color:#a6e22e">get_map_data</span>()
-</span></span><span style="display:flex;"><span>	
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> map_data<span style="color:#f92672">.</span><span style="color:#a6e22e">get_tile</span>(action<span style="color:#f92672">.</span>target_position)<span style="color:#f92672">.</span>is_in_view:
-</span></span><span style="display:flex;"><span>		MessageLog<span style="color:#f92672">.</span><span style="color:#a6e22e">send_message</span>(<span style="color:#e6db74">&#34;You cannot target an area that you cannot see.&#34;</span>, GameColors<span style="color:#f92672">.</span>IMPOSSIBLE)
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">false</span>
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> target:
-</span></span><span style="display:flex;"><span>		MessageLog<span style="color:#f92672">.</span><span style="color:#a6e22e">send_message</span>(<span style="color:#e6db74">&#34;You must select an enemy to target.&#34;</span>, GameColors<span style="color:#f92672">.</span>IMPOSSIBLE)
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">false</span>
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> target <span style="color:#f92672">==</span> consumer:
-</span></span><span style="display:flex;"><span>		MessageLog<span style="color:#f92672">.</span><span style="color:#a6e22e">send_message</span>(<span style="color:#e6db74">&#34;You cannot confuse yourself!&#34;</span>, GameColors<span style="color:#f92672">.</span>IMPOSSIBLE)
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">false</span>
-</span></span><span style="display:flex;"><span>	
-</span></span><span style="display:flex;"><span>	MessageLog<span style="color:#f92672">.</span><span style="color:#a6e22e">send_message</span>(<span style="color:#e6db74">&#34;The eyes of the </span><span style="color:#e6db74">%s</span><span style="color:#e6db74"> look vacant, as it starts to stumble around!&#34;</span> <span style="color:#f92672">%</span> target<span style="color:#f92672">.</span><span style="color:#a6e22e">get_entity_name</span>(), GameColors<span style="color:#f92672">.</span>STATUS_EFFECT_APPLIED)
-</span></span><span style="display:flex;"><span>	target<span style="color:#f92672">.</span><span style="color:#a6e22e">add_child</span>(ConfusedEnemyAIComponent<span style="color:#f92672">.</span><span style="color:#a6e22e">new</span>(number_of_turns))
-</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">consume</span>(consumer)
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">true</span>
-</span></span></code></pre></div><p>Our <code>activate()</code> fuunction needs to check a few things before we can actually use it. First we need to make sure the target tile is visible to us. Otherwise a player could just cast into the dark until they hit an enemy hidden from them, finding out that there is an enemy, and what and where it is. Of course, we can only affect entities, so we need to check that there is a valid target (i.e., an alive actor). Lastly, we need to check that the player doesn&rsquo;t confuse themself. If we get throug all those checks we can send a message that the casting was successful, and attach a new confusion AI component to that target, preconfigured with the stored number of turns. Then we consume the scroll and <code>return true</code>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd">class_name ConfusionConsumableComponentDefinition
+<span style="color:#66d9ef">extends</span> ConsumableComponentDefinition
+
+<span style="color:#960050;background-color:#1e0010">@</span><span style="color:#66d9ef">export</span> <span style="color:#66d9ef">var</span> number_of_turns: <span style="color:#a6e22e">int</span>
+</code></pre></div><p>To create the actual component create a new script extending <code>ConsumableComponent</code> at <em>res://src/Entities/Actors/Components/confusion_consumable_component.gd</em>. Here&rsquo;s the top of that script:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd">class_name ConfusionConsumableComponent
+<span style="color:#66d9ef">extends</span> ConsumableComponent
+
+<span style="color:#66d9ef">var</span> number_of_turns: <span style="color:#a6e22e">int</span>
+
+
+<span style="color:#66d9ef">func</span> _init(definition: ConfusionConsumableComponentDefinition) <span style="color:#f92672">-&gt;</span> void:
+	number_of_turns <span style="color:#f92672">=</span> definition<span style="color:#f92672">.</span>number_of_turns
+
+
+<span style="color:#66d9ef">func</span> get_targeting_radius() <span style="color:#f92672">-&gt;</span> <span style="color:#a6e22e">int</span>:
+	<span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>
+</code></pre></div><p>We have a number of turns we set from the definition for that component. Also we will target a single enemy, so we will return a targeting radius of 0. Remember, -1 meant no targeting. And 1 would mean a center tile plus the tiles directly around it. A targeting range of 0 means exactly one target tile.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> activate(action: ItemAction) <span style="color:#f92672">-&gt;</span> <span style="color:#a6e22e">bool</span>:
+	<span style="color:#66d9ef">var</span> consumer: Entity <span style="color:#f92672">=</span> action<span style="color:#f92672">.</span>entity
+	<span style="color:#66d9ef">var</span> target: Entity <span style="color:#f92672">=</span> action<span style="color:#f92672">.</span>get_target_actor()
+	<span style="color:#66d9ef">var</span> map_data: MapData <span style="color:#f92672">=</span> get_map_data()
+	
+	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> map_data<span style="color:#f92672">.</span>get_tile(action<span style="color:#f92672">.</span>target_position)<span style="color:#f92672">.</span>is_in_view:
+		MessageLog<span style="color:#f92672">.</span>send_message(<span style="color:#e6db74">&#34;You cannot target an area that you cannot see.&#34;</span>, GameColors<span style="color:#f92672">.</span>IMPOSSIBLE)
+		<span style="color:#66d9ef">return</span> false
+	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> target:
+		MessageLog<span style="color:#f92672">.</span>send_message(<span style="color:#e6db74">&#34;You must select an enemy to target.&#34;</span>, GameColors<span style="color:#f92672">.</span>IMPOSSIBLE)
+		<span style="color:#66d9ef">return</span> false
+	<span style="color:#66d9ef">if</span> target <span style="color:#f92672">==</span> consumer:
+		MessageLog<span style="color:#f92672">.</span>send_message(<span style="color:#e6db74">&#34;You cannot confuse yourself!&#34;</span>, GameColors<span style="color:#f92672">.</span>IMPOSSIBLE)
+		<span style="color:#66d9ef">return</span> false
+	
+	MessageLog<span style="color:#f92672">.</span>send_message(<span style="color:#e6db74">&#34;The eyes of the </span><span style="color:#e6db74">%s</span><span style="color:#e6db74"> look vacant, as it starts to stumble around!&#34;</span> <span style="color:#f92672">%</span> target<span style="color:#f92672">.</span>get_entity_name(), GameColors<span style="color:#f92672">.</span>STATUS_EFFECT_APPLIED)
+	target<span style="color:#f92672">.</span>add_child(ConfusedEnemyAIComponent<span style="color:#f92672">.</span>new(number_of_turns))
+	consume(consumer)
+	<span style="color:#66d9ef">return</span> true
+</code></pre></div><p>Our <code>activate()</code> fuunction needs to check a few things before we can actually use it. First we need to make sure the target tile is visible to us. Otherwise a player could just cast into the dark until they hit an enemy hidden from them, finding out that there is an enemy, and what and where it is. Of course, we can only affect entities, so we need to check that there is a valid target (i.e., an alive actor). Lastly, we need to check that the player doesn&rsquo;t confuse themself. If we get throug all those checks we can send a message that the casting was successful, and attach a new confusion AI component to that target, preconfigured with the stored number of turns. Then we consume the scroll and <code>return true</code>.</p>
 <p>We need to make sure again that this component is properly created and attached to items using it. So in <em>entity.gd</em> change <code>_handle_consumable()</code> to:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">_handle_consumable</span>(consumable_definition: ConsumableComponentDefinition) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> consumable_definition <span style="color:#f92672">is</span> HealingConsumableComponentDefinition:
-</span></span><span style="display:flex;"><span>		consumable_component <span style="color:#f92672">=</span> HealingConsumableComponent<span style="color:#f92672">.</span><span style="color:#a6e22e">new</span>(consumable_definition)
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">elif</span> consumable_definition <span style="color:#f92672">is</span> LightningDamageConsumableComponentDefinition:
-</span></span><span style="display:flex;"><span>		consumable_component <span style="color:#f92672">=</span> LightningDamageConsumableComponent<span style="color:#f92672">.</span><span style="color:#a6e22e">new</span>(consumable_definition)
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">elif</span> consumable_definition <span style="color:#f92672">is</span> ConfusionConsumableComponentDefinition:
-</span></span><span style="display:flex;"><span>		consumable_component <span style="color:#f92672">=</span> ConfusionConsumableComponent<span style="color:#f92672">.</span><span style="color:#a6e22e">new</span>(consumable_definition)
-</span></span><span style="display:flex;"><span>	
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> consumable_component:
-</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">add_child</span>(consumable_component)
-</span></span></code></pre></div><p>It&rsquo;s time to create the new scroll. Create a new resource of type <code>EntityDefinition</code> at <em>res://assets/definitions/entities/items/confusion_scroll_definition.tres</em>. Set the <em>Name</em> to &ldquo;<em>Confusion Scroll</em>&rdquo;, and the <em>Texture</em> to the same scroll icon as for the lightning scroll. For the color I used <em>#cf3fff</em>, a bright purple. Disable <em>Is Blocking Movement</em> and set the <em>Type</em> to <em>Item</em>. Then, in the <em>Consumable Definition</em> slot create a new <code>ConfusionConsumableComponentDefinition</code>, and set the <em>Number of Turns</em> for it to 10.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> _handle_consumable(consumable_definition: ConsumableComponentDefinition) <span style="color:#f92672">-&gt;</span> void:
+	<span style="color:#66d9ef">if</span> consumable_definition is HealingConsumableComponentDefinition:
+		consumable_component <span style="color:#f92672">=</span> HealingConsumableComponent<span style="color:#f92672">.</span>new(consumable_definition)
+	<span style="color:#66d9ef">elif</span> consumable_definition is LightningDamageConsumableComponentDefinition:
+		consumable_component <span style="color:#f92672">=</span> LightningDamageConsumableComponent<span style="color:#f92672">.</span>new(consumable_definition)
+	<span style="color:#66d9ef">elif</span> consumable_definition is ConfusionConsumableComponentDefinition:
+		consumable_component <span style="color:#f92672">=</span> ConfusionConsumableComponent<span style="color:#f92672">.</span>new(consumable_definition)
+	
+	<span style="color:#66d9ef">if</span> consumable_component:
+		add_child(consumable_component)
+</code></pre></div><p>It&rsquo;s time to create the new scroll. Create a new resource of type <code>EntityDefinition</code> at <em>res://assets/definitions/entities/items/confusion_scroll_definition.tres</em>. Set the <em>Name</em> to &ldquo;<em>Confusion Scroll</em>&rdquo;, and the <em>Texture</em> to the same scroll icon as for the lightning scroll. For the color I used <em>#cf3fff</em>, a bright purple. Disable <em>Is Blocking Movement</em> and set the <em>Type</em> to <em>Item</em>. Then, in the <em>Consumable Definition</em> slot create a new <code>ConfusionConsumableComponentDefinition</code>, and set the <em>Number of Turns</em> for it to 10.</p>
 <p>The last step is to make this item appear in our dungeon generation. In <em>dungeon_generator.gd</em> first add it to our list of entity types:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">const</span> entity_types <span style="color:#f92672">=</span> {
-</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;orc&#34;</span>: preload(<span style="color:#e6db74">&#34;res://assets/definitions/entities/actors/entity_definition_orc.tres&#34;</span>),
-</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;troll&#34;</span>: preload(<span style="color:#e6db74">&#34;res://assets/definitions/entities/actors/entity_definition_troll.tres&#34;</span>),
-</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;health_potion&#34;</span>: preload(<span style="color:#e6db74">&#34;res://assets/definitions/entities/items/health_potion_definition.tres&#34;</span>),
-</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;lightning_scroll&#34;</span>: preload(<span style="color:#e6db74">&#34;res://assets/definitions/entities/items/lightning_scroll_definition.tres&#34;</span>),
-</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;confusion_scroll&#34;</span>: preload(<span style="color:#e6db74">&#34;res://assets/definitions/entities/items/confusion_scroll_definition.tres&#34;</span>),
-</span></span><span style="display:flex;"><span>}
-</span></span></code></pre></div><p>Then, in <code>_place_entities()</code> add a line for it:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">if</span> can_place:
-</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">var</span> item_chance: <span style="color:#66d9ef">float</span> <span style="color:#f92672">=</span> _rng<span style="color:#f92672">.</span>randf()
-</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">var</span> new_entity: Entity
-</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">if</span> item_chance <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">0.7</span>:
-</span></span><span style="display:flex;"><span>				new_entity <span style="color:#f92672">=</span> Entity<span style="color:#f92672">.</span><span style="color:#a6e22e">new</span>(dungeon, new_entity_position, entity_types<span style="color:#f92672">.</span>health_potion)
-</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">elif</span> item_chance <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">0.9</span>:
-</span></span><span style="display:flex;"><span>				new_entity <span style="color:#f92672">=</span> Entity<span style="color:#f92672">.</span><span style="color:#a6e22e">new</span>(dungeon, new_entity_position, entity_types<span style="color:#f92672">.</span>confusion_scroll)
-</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">else</span>:
-</span></span><span style="display:flex;"><span>				new_entity <span style="color:#f92672">=</span> Entity<span style="color:#f92672">.</span><span style="color:#a6e22e">new</span>(dungeon, new_entity_position, entity_types<span style="color:#f92672">.</span>lightning_scroll)
-</span></span><span style="display:flex;"><span>			dungeon<span style="color:#f92672">.</span>entities<span style="color:#f92672">.</span><span style="color:#a6e22e">append</span>(new_entity)
-</span></span></code></pre></div><p>Run the game, and if you are lucky you will find a confusion scroll which you can then use on an enemy.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">const</span> entity_types <span style="color:#f92672">=</span> {
+	<span style="color:#e6db74">&#34;orc&#34;</span>: preload(<span style="color:#e6db74">&#34;res://assets/definitions/entities/actors/entity_definition_orc.tres&#34;</span>),
+	<span style="color:#e6db74">&#34;troll&#34;</span>: preload(<span style="color:#e6db74">&#34;res://assets/definitions/entities/actors/entity_definition_troll.tres&#34;</span>),
+	<span style="color:#e6db74">&#34;health_potion&#34;</span>: preload(<span style="color:#e6db74">&#34;res://assets/definitions/entities/items/health_potion_definition.tres&#34;</span>),
+	<span style="color:#e6db74">&#34;lightning_scroll&#34;</span>: preload(<span style="color:#e6db74">&#34;res://assets/definitions/entities/items/lightning_scroll_definition.tres&#34;</span>),
+	<span style="color:#e6db74">&#34;confusion_scroll&#34;</span>: preload(<span style="color:#e6db74">&#34;res://assets/definitions/entities/items/confusion_scroll_definition.tres&#34;</span>),
+}
+</code></pre></div><p>Then, in <code>_place_entities()</code> add a line for it:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">if</span> can_place:
+			<span style="color:#66d9ef">var</span> item_chance: <span style="color:#a6e22e">float</span> <span style="color:#f92672">=</span> _rng<span style="color:#f92672">.</span>randf()
+			<span style="color:#66d9ef">var</span> new_entity: Entity
+			<span style="color:#66d9ef">if</span> item_chance <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">0.7</span>:
+				new_entity <span style="color:#f92672">=</span> Entity<span style="color:#f92672">.</span>new(dungeon, new_entity_position, entity_types<span style="color:#f92672">.</span>health_potion)
+			<span style="color:#66d9ef">elif</span> item_chance <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">0.9</span>:
+				new_entity <span style="color:#f92672">=</span> Entity<span style="color:#f92672">.</span>new(dungeon, new_entity_position, entity_types<span style="color:#f92672">.</span>confusion_scroll)
+			<span style="color:#66d9ef">else</span>:
+				new_entity <span style="color:#f92672">=</span> Entity<span style="color:#f92672">.</span>new(dungeon, new_entity_position, entity_types<span style="color:#f92672">.</span>lightning_scroll)
+			dungeon<span style="color:#f92672">.</span>entities<span style="color:#f92672">.</span>append(new_entity)
+</code></pre></div><p>Run the game, and if you are lucky you will find a confusion scroll which you can then use on an enemy.</p>
 <p>Now for our final spell scroll, the fireball. This is <em>just</em> damage, so it&rsquo;s far less involved than the previous scroll. Still, we need to update the visuals, so we can indicate how big the fireball will be. Let&rsquo;s modify the reticle a bit, so it can show an area.</p>
 <p>In <em>reticle.tscn</em> add a new <code>Line2D</code> node as a child of <strong>Reticle</strong>. Change its <em>Width</em> to 2 pixels, and its <em>Default Color</em> to full red (<em>#ff0000</em>). Also change the <em>End Cap Mode</em> to <em>Box</em>. Now we update <em>reticle.gd</em>. Add a new onready variable:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#a6e22e">@onready</span> <span style="color:#66d9ef">var</span> camera: <span style="color:#a6e22e">Camera2D</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">$Camera2D</span>
-</span></span><span style="display:flex;"><span><span style="color:#a6e22e">@onready</span> <span style="color:#66d9ef">var</span> border: <span style="color:#a6e22e">Line2D</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">$Line2D</span>
-</span></span></code></pre></div><p>Next we create a new function to set the border for a specific radius:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">_setup_border</span>(radius: <span style="color:#66d9ef">int</span>) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> radius <span style="color:#f92672">&lt;=</span> <span style="color:#ae81ff">0</span>:
-</span></span><span style="display:flex;"><span>		border<span style="color:#f92672">.</span><span style="color:#a6e22e">hide</span>()
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">else</span>:
-</span></span><span style="display:flex;"><span>		border<span style="color:#f92672">.</span>points <span style="color:#f92672">=</span> [
-</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">Vector2i</span>(<span style="color:#f92672">-</span>radius, <span style="color:#f92672">-</span>radius) <span style="color:#f92672">*</span> Grid<span style="color:#f92672">.</span>tile_size,
-</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">Vector2i</span>(<span style="color:#f92672">-</span>radius, radius <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>) <span style="color:#f92672">*</span> Grid<span style="color:#f92672">.</span>tile_size,
-</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">Vector2i</span>(radius <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>, radius <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>) <span style="color:#f92672">*</span> Grid<span style="color:#f92672">.</span>tile_size,
-</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">Vector2i</span>(radius <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>, <span style="color:#f92672">-</span>radius) <span style="color:#f92672">*</span> Grid<span style="color:#f92672">.</span>tile_size,
-</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">Vector2i</span>(<span style="color:#f92672">-</span>radius, <span style="color:#f92672">-</span>radius) <span style="color:#f92672">*</span> Grid<span style="color:#f92672">.</span>tile_size
-</span></span><span style="display:flex;"><span>		]
-</span></span><span style="display:flex;"><span>		border<span style="color:#f92672">.</span><span style="color:#a6e22e">show</span>()
-</span></span></code></pre></div><p>If the radius is 0 or less we simply hide the border, as we don&rsquo;t need it in that case. Otherwis we set the <code>points</code> array on <strong>Line2D</strong> so that it forms a sqare around the highlighted tile. The +1s in there are because we have to calculate the positions from the top left corner of the highlighted tile. So in case we have a radius of 1 then the top left corner of the border will be one to the left and one up from that corner, but the bottom right corner needs to include the highlighted tile itself, so it&rsquo;s two tiles down and two tiles right from that origin point. Also notice that we need four points. If we only used four we would have an open shape, so we have to have a last point that is identical with the first point.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#960050;background-color:#1e0010">@</span><span style="color:#66d9ef">onready</span> <span style="color:#66d9ef">var</span> camera: <span style="color:#a6e22e">Camera2D</span> <span style="color:#f92672">=</span> <span style="color:#f92672">$</span><span style="color:#a6e22e">Camera2D</span>
+<span style="color:#960050;background-color:#1e0010">@</span><span style="color:#66d9ef">onready</span> <span style="color:#66d9ef">var</span> border: Line2D <span style="color:#f92672">=</span> <span style="color:#f92672">$</span>Line2D
+</code></pre></div><p>Next we create a new function to set the border for a specific radius:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> _setup_border(radius: <span style="color:#a6e22e">int</span>) <span style="color:#f92672">-&gt;</span> void:
+	<span style="color:#66d9ef">if</span> radius <span style="color:#f92672">&lt;=</span> <span style="color:#ae81ff">0</span>:
+		border<span style="color:#f92672">.</span>hide()
+	<span style="color:#66d9ef">else</span>:
+		border<span style="color:#f92672">.</span>points <span style="color:#f92672">=</span> [
+			Vector2i(<span style="color:#f92672">-</span>radius, <span style="color:#f92672">-</span>radius) <span style="color:#f92672">*</span> Grid<span style="color:#f92672">.</span>tile_size,
+			Vector2i(<span style="color:#f92672">-</span>radius, radius <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>) <span style="color:#f92672">*</span> Grid<span style="color:#f92672">.</span>tile_size,
+			Vector2i(radius <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>, radius <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>) <span style="color:#f92672">*</span> Grid<span style="color:#f92672">.</span>tile_size,
+			Vector2i(radius <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>, <span style="color:#f92672">-</span>radius) <span style="color:#f92672">*</span> Grid<span style="color:#f92672">.</span>tile_size,
+			Vector2i(<span style="color:#f92672">-</span>radius, <span style="color:#f92672">-</span>radius) <span style="color:#f92672">*</span> Grid<span style="color:#f92672">.</span>tile_size
+		]
+		border<span style="color:#f92672">.</span>show()
+</code></pre></div><p>If the radius is 0 or less we simply hide the border, as we don&rsquo;t need it in that case. Otherwis we set the <code>points</code> array on <strong>Line2D</strong> so that it forms a sqare around the highlighted tile. The +1s in there are because we have to calculate the positions from the top left corner of the highlighted tile. So in case we have a radius of 1 then the top left corner of the border will be one to the left and one up from that corner, but the bottom right corner needs to include the highlighted tile itself, so it&rsquo;s two tiles down and two tiles right from that origin point. Also notice that we need four points. If we only used four we would have an open shape, so we have to have a last point that is identical with the first point.</p>
 <p>In order to use this function we need to call it in <code>select_position()</code>, when we set everything up. Here is that function again:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">select_position</span>(player: Entity, radius: <span style="color:#66d9ef">int</span>) <span style="color:#f92672">-&gt;</span> <span style="color:#a6e22e">Vector2i</span>:
-</span></span><span style="display:flex;"><span>	map_data <span style="color:#f92672">=</span> player<span style="color:#f92672">.</span>map_data
-</span></span><span style="display:flex;"><span>	grid_position <span style="color:#f92672">=</span> player<span style="color:#f92672">.</span>grid_position
-</span></span><span style="display:flex;"><span>	
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> player_camera: <span style="color:#a6e22e">Camera2D</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">get_viewport</span>()<span style="color:#f92672">.</span><span style="color:#a6e22e">get_camera_2d</span>()
-</span></span><span style="display:flex;"><span>	camera<span style="color:#f92672">.</span><span style="color:#a6e22e">make_current</span>()
-</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">_setup_border</span>(radius)
-</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">show</span>()
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">await</span> <span style="color:#a6e22e">get_tree</span>()<span style="color:#f92672">.</span>physics_frame
-</span></span><span style="display:flex;"><span>	set_physics_process<span style="color:#f92672">.</span><span style="color:#a6e22e">call_deferred</span>(<span style="color:#66d9ef">true</span>)
-</span></span><span style="display:flex;"><span>	
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> selected_position: <span style="color:#a6e22e">Vector2i</span> <span style="color:#f92672">=</span> <span style="color:#66d9ef">await</span> position_selected
-</span></span><span style="display:flex;"><span>	
-</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">set_physics_process</span>(<span style="color:#66d9ef">false</span>)
-</span></span><span style="display:flex;"><span>	player_camera<span style="color:#f92672">.</span><span style="color:#a6e22e">make_current</span>()
-</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">hide</span>()
-</span></span><span style="display:flex;"><span>	
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> selected_position
-</span></span></code></pre></div><p>That&rsquo;s it for the area version of the reticle. We can now create the fireball consumable. First, create a new script extending <code>ConsumableComponentDefinition</code> at <em>res://src/Entities/Actors/Components/ComponentDefinitions/fireball_damage_consumable_component_definition.gd</em>. It will define the radius as well as the damage that it does:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">class_name</span> <span style="color:#a6e22e">FireballDamageConsumableComponentDefinition</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">extends</span> <span style="color:#a6e22e">ConsumableComponentDefinition</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#a6e22e">@export</span> <span style="color:#66d9ef">var</span> damage: <span style="color:#66d9ef">int</span>
-</span></span><span style="display:flex;"><span><span style="color:#a6e22e">@export</span> <span style="color:#66d9ef">var</span> radius: <span style="color:#66d9ef">int</span>
-</span></span></code></pre></div><p>Now create a new script extending <code>ConsumableComponent</code> at <em>res://src/Entities/Actors/Components/fireball_damage_consumable_component.gd</em>. Here is the top of the scirpt:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">extends</span> <span style="color:#a6e22e">ConsumableComponent</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> damage: <span style="color:#66d9ef">int</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> radius: <span style="color:#66d9ef">int</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">_init</span>(definition: FireballDamageConsumableComponentDefinition):
-</span></span><span style="display:flex;"><span>	damage <span style="color:#f92672">=</span> definition<span style="color:#f92672">.</span>damage
-</span></span><span style="display:flex;"><span>	radius <span style="color:#f92672">=</span> definition<span style="color:#f92672">.</span>radius
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">get_targeting_radius</span>() <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">int</span>:
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> radius
-</span></span></code></pre></div><p>The interesting part here is the targeting radius. This is also the reason we are using a function rather than hard coding a value. A fixed value would work for our previous consumables, but for this we have a settable radius. Now for the <code>activate()</code> function:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">activate</span>(action: ItemAction) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">bool</span>:
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> target_position: <span style="color:#a6e22e">Vector2i</span> <span style="color:#f92672">=</span> action<span style="color:#f92672">.</span>target_position
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> map_data: MapData <span style="color:#f92672">=</span> <span style="color:#a6e22e">get_map_data</span>()
-</span></span><span style="display:flex;"><span>	
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> map_data<span style="color:#f92672">.</span><span style="color:#a6e22e">get_tile</span>(target_position)<span style="color:#f92672">.</span>is_in_view:
-</span></span><span style="display:flex;"><span>		MessageLog<span style="color:#f92672">.</span><span style="color:#a6e22e">send_message</span>(<span style="color:#e6db74">&#34;You cannot target an area that you cannot see.&#34;</span>, GameColors<span style="color:#f92672">.</span>IMPOSSIBLE)
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">false</span>
-</span></span><span style="display:flex;"><span>	
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> targets <span style="color:#f92672">:=</span> []
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">for</span> actor <span style="color:#f92672">in</span> map_data<span style="color:#f92672">.</span><span style="color:#a6e22e">get_actors</span>():
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> actor<span style="color:#f92672">.</span><span style="color:#a6e22e">distance</span>(target_position) <span style="color:#f92672">&lt;=</span> radius:
-</span></span><span style="display:flex;"><span>			targets<span style="color:#f92672">.</span><span style="color:#a6e22e">append</span>(actor)
-</span></span><span style="display:flex;"><span>	
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> targets<span style="color:#f92672">.</span><span style="color:#a6e22e">is_empty</span>():
-</span></span><span style="display:flex;"><span>		MessageLog<span style="color:#f92672">.</span><span style="color:#a6e22e">send_message</span>(<span style="color:#e6db74">&#34;There are no targets in the radius.&#34;</span>, GameColors<span style="color:#f92672">.</span>IMPOSSIBLE)
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">false</span>
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> targets<span style="color:#f92672">.</span><span style="color:#a6e22e">size</span>() <span style="color:#f92672">==</span> <span style="color:#ae81ff">1</span> <span style="color:#f92672">and</span> targets[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">==</span> map_data<span style="color:#f92672">.</span>player:
-</span></span><span style="display:flex;"><span>		MessageLog<span style="color:#f92672">.</span><span style="color:#a6e22e">send_message</span>(<span style="color:#e6db74">&#34;There are not enemy targets in the radius.&#34;</span>, GameColors<span style="color:#f92672">.</span>IMPOSSIBLE)
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">false</span>
-</span></span><span style="display:flex;"><span>	
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">for</span> target <span style="color:#f92672">in</span> targets:
-</span></span><span style="display:flex;"><span>		MessageLog<span style="color:#f92672">.</span><span style="color:#a6e22e">send_message</span>(<span style="color:#e6db74">&#34;The </span><span style="color:#e6db74">%s</span><span style="color:#e6db74"> is engulfed in a fiery explosion, taking </span><span style="color:#e6db74">%d</span><span style="color:#e6db74"> damage!&#34;</span> <span style="color:#f92672">%</span> [target<span style="color:#f92672">.</span><span style="color:#a6e22e">get_entity_name</span>(), damage], GameColors<span style="color:#f92672">.</span>PLAYER_ATTACK)
-</span></span><span style="display:flex;"><span>		target<span style="color:#f92672">.</span>fighter_component<span style="color:#f92672">.</span><span style="color:#a6e22e">take_damage</span>(damage)
-</span></span><span style="display:flex;"><span>	
-</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">consume</span>(action<span style="color:#f92672">.</span>entity)
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">true</span>
-</span></span></code></pre></div><p>This seems convoluted but it&rsquo;s mostly set up for some checks again. Again we ensure that the player can only place the center of the fireball at a spot they can see. Then we build a targets array. We go through all the actors on the map and if they are within the radius of the explosion we add them to that array. If that array is empty, we prevent the player from wasting their spell and their action. Also, while player can be damaged by the fireball (if they are surrounded by a swarm of enemies centering a fireball on themself might be the best option), we prevent the player from firing if they are the only target. If all that&rsquo;s ok, we go through all the targets and assign damage to them, then close with the familiar consuming and returning of <code>true</code>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> select_position(player: Entity, radius: <span style="color:#a6e22e">int</span>) <span style="color:#f92672">-&gt;</span> Vector2i:
+	map_data <span style="color:#f92672">=</span> player<span style="color:#f92672">.</span>map_data
+	grid_position <span style="color:#f92672">=</span> player<span style="color:#f92672">.</span>grid_position
+	
+	<span style="color:#66d9ef">var</span> player_camera: <span style="color:#a6e22e">Camera2D</span> <span style="color:#f92672">=</span> get_viewport()<span style="color:#f92672">.</span>get_camera_2d()
+	camera<span style="color:#f92672">.</span>make_current()
+	_setup_border(radius)
+	show()
+	await get_tree()<span style="color:#f92672">.</span>physics_frame
+	set_physics_process<span style="color:#f92672">.</span>call_deferred(true)
+	
+	<span style="color:#66d9ef">var</span> selected_position: Vector2i <span style="color:#f92672">=</span> await position_selected
+	
+	set_physics_process(false)
+	player_camera<span style="color:#f92672">.</span>make_current()
+	hide()
+	
+	<span style="color:#66d9ef">return</span> selected_position
+</code></pre></div><p>That&rsquo;s it for the area version of the reticle. We can now create the fireball consumable. First, create a new script extending <code>ConsumableComponentDefinition</code> at <em>res://src/Entities/Actors/Components/ComponentDefinitions/fireball_damage_consumable_component_definition.gd</em>. It will define the radius as well as the damage that it does:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd">class_name FireballDamageConsumableComponentDefinition
+<span style="color:#66d9ef">extends</span> ConsumableComponentDefinition
+
+<span style="color:#960050;background-color:#1e0010">@</span><span style="color:#66d9ef">export</span> <span style="color:#66d9ef">var</span> damage: <span style="color:#a6e22e">int</span>
+<span style="color:#960050;background-color:#1e0010">@</span><span style="color:#66d9ef">export</span> <span style="color:#66d9ef">var</span> radius: <span style="color:#a6e22e">int</span>
+</code></pre></div><p>Now create a new script extending <code>ConsumableComponent</code> at <em>res://src/Entities/Actors/Components/fireball_damage_consumable_component.gd</em>. Here is the top of the scirpt:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">extends</span> ConsumableComponent
+
+<span style="color:#66d9ef">var</span> damage: <span style="color:#a6e22e">int</span>
+<span style="color:#66d9ef">var</span> radius: <span style="color:#a6e22e">int</span>
+
+
+<span style="color:#66d9ef">func</span> _init(definition: FireballDamageConsumableComponentDefinition):
+	damage <span style="color:#f92672">=</span> definition<span style="color:#f92672">.</span>damage
+	radius <span style="color:#f92672">=</span> definition<span style="color:#f92672">.</span>radius
+
+
+<span style="color:#66d9ef">func</span> get_targeting_radius() <span style="color:#f92672">-&gt;</span> <span style="color:#a6e22e">int</span>:
+	<span style="color:#66d9ef">return</span> radius
+</code></pre></div><p>The interesting part here is the targeting radius. This is also the reason we are using a function rather than hard coding a value. A fixed value would work for our previous consumables, but for this we have a settable radius. Now for the <code>activate()</code> function:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> activate(action: ItemAction) <span style="color:#f92672">-&gt;</span> <span style="color:#a6e22e">bool</span>:
+	<span style="color:#66d9ef">var</span> target_position: Vector2i <span style="color:#f92672">=</span> action<span style="color:#f92672">.</span>target_position
+	<span style="color:#66d9ef">var</span> map_data: MapData <span style="color:#f92672">=</span> get_map_data()
+	
+	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> map_data<span style="color:#f92672">.</span>get_tile(target_position)<span style="color:#f92672">.</span>is_in_view:
+		MessageLog<span style="color:#f92672">.</span>send_message(<span style="color:#e6db74">&#34;You cannot target an area that you cannot see.&#34;</span>, GameColors<span style="color:#f92672">.</span>IMPOSSIBLE)
+		<span style="color:#66d9ef">return</span> false
+	
+	<span style="color:#66d9ef">var</span> targets :<span style="color:#f92672">=</span> []
+	<span style="color:#66d9ef">for</span> actor <span style="color:#f92672">in</span> map_data<span style="color:#f92672">.</span>get_actors():
+		<span style="color:#66d9ef">if</span> actor<span style="color:#f92672">.</span>distance(target_position) <span style="color:#f92672">&lt;=</span> radius:
+			targets<span style="color:#f92672">.</span>append(actor)
+	
+	<span style="color:#66d9ef">if</span> targets<span style="color:#f92672">.</span>is_empty():
+		MessageLog<span style="color:#f92672">.</span>send_message(<span style="color:#e6db74">&#34;There are no targets in the radius.&#34;</span>, GameColors<span style="color:#f92672">.</span>IMPOSSIBLE)
+		<span style="color:#66d9ef">return</span> false
+	<span style="color:#66d9ef">if</span> targets<span style="color:#f92672">.</span>size() <span style="color:#f92672">==</span> <span style="color:#ae81ff">1</span> <span style="color:#f92672">and</span> targets[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">==</span> map_data<span style="color:#f92672">.</span>player:
+		MessageLog<span style="color:#f92672">.</span>send_message(<span style="color:#e6db74">&#34;There are not enemy targets in the radius.&#34;</span>, GameColors<span style="color:#f92672">.</span>IMPOSSIBLE)
+		<span style="color:#66d9ef">return</span> false
+	
+	<span style="color:#66d9ef">for</span> target <span style="color:#f92672">in</span> targets:
+		MessageLog<span style="color:#f92672">.</span>send_message(<span style="color:#e6db74">&#34;The </span><span style="color:#e6db74">%s</span><span style="color:#e6db74"> is engulfed in a fiery explosion, taking </span><span style="color:#e6db74">%d</span><span style="color:#e6db74"> damage!&#34;</span> <span style="color:#f92672">%</span> [target<span style="color:#f92672">.</span>get_entity_name(), damage], GameColors<span style="color:#f92672">.</span>PLAYER_ATTACK)
+		target<span style="color:#f92672">.</span>fighter_component<span style="color:#f92672">.</span>take_damage(damage)
+	
+	consume(action<span style="color:#f92672">.</span>entity)
+	<span style="color:#66d9ef">return</span> true
+</code></pre></div><p>This seems convoluted but it&rsquo;s mostly set up for some checks again. Again we ensure that the player can only place the center of the fireball at a spot they can see. Then we build a targets array. We go through all the actors on the map and if they are within the radius of the explosion we add them to that array. If that array is empty, we prevent the player from wasting their spell and their action. Also, while player can be damaged by the fireball (if they are surrounded by a swarm of enemies centering a fireball on themself might be the best option), we prevent the player from firing if they are the only target. If all that&rsquo;s ok, we go through all the targets and assign damage to them, then close with the familiar consuming and returning of <code>true</code>.</p>
 <p>We need to handle that consumable component agian in <em>entity.gd</em>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">_handle_consumable</span>(consumable_definition: ConsumableComponentDefinition) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> consumable_definition <span style="color:#f92672">is</span> HealingConsumableComponentDefinition:
-</span></span><span style="display:flex;"><span>		consumable_component <span style="color:#f92672">=</span> HealingConsumableComponent<span style="color:#f92672">.</span><span style="color:#a6e22e">new</span>(consumable_definition)
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">elif</span> consumable_definition <span style="color:#f92672">is</span> LightningDamageConsumableComponentDefinition:
-</span></span><span style="display:flex;"><span>		consumable_component <span style="color:#f92672">=</span> LightningDamageConsumableComponent<span style="color:#f92672">.</span><span style="color:#a6e22e">new</span>(consumable_definition)
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">elif</span> consumable_definition <span style="color:#f92672">is</span> ConfusionConsumableComponentDefinition:
-</span></span><span style="display:flex;"><span>		consumable_component <span style="color:#f92672">=</span> ConfusionConsumableComponent<span style="color:#f92672">.</span><span style="color:#a6e22e">new</span>(consumable_definition)
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">elif</span> consumable_definition <span style="color:#f92672">is</span> FireballDamageConsumableComponentDefinition:
-</span></span><span style="display:flex;"><span>		consumable_component <span style="color:#f92672">=</span> FireballDamageConsumableComponent<span style="color:#f92672">.</span><span style="color:#a6e22e">new</span>(consumable_definition)
-</span></span><span style="display:flex;"><span>	
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> consumable_component:
-</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">add_child</span>(consumable_component)
-</span></span></code></pre></div><p>Now create a new <code>EntityDefinition</code> resource at <em>res://assets/definitions/entities/items/fireball_scroll_definition.tres</em>. Set the <em>Name</em> to &ldquo;<em>Fireball Scroll</em>&rdquo; and the <em>Texture</em> once again to a scroll icon. Set the color to a full red (<em>#ff0000</em>). Uncheck <em>Is Blocking Movement</em> and set <em>Type</em> to <em>Item</em>. Then add a new <code>FireballDamageConsumableComponentDefinition</code> to the <em>Consumable Definition</em> slot. Set the <em>Damage</em> to 12 and the <em>Radius</em> to 3.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> _handle_consumable(consumable_definition: ConsumableComponentDefinition) <span style="color:#f92672">-&gt;</span> void:
+	<span style="color:#66d9ef">if</span> consumable_definition is HealingConsumableComponentDefinition:
+		consumable_component <span style="color:#f92672">=</span> HealingConsumableComponent<span style="color:#f92672">.</span>new(consumable_definition)
+	<span style="color:#66d9ef">elif</span> consumable_definition is LightningDamageConsumableComponentDefinition:
+		consumable_component <span style="color:#f92672">=</span> LightningDamageConsumableComponent<span style="color:#f92672">.</span>new(consumable_definition)
+	<span style="color:#66d9ef">elif</span> consumable_definition is ConfusionConsumableComponentDefinition:
+		consumable_component <span style="color:#f92672">=</span> ConfusionConsumableComponent<span style="color:#f92672">.</span>new(consumable_definition)
+	<span style="color:#66d9ef">elif</span> consumable_definition is FireballDamageConsumableComponentDefinition:
+		consumable_component <span style="color:#f92672">=</span> FireballDamageConsumableComponent<span style="color:#f92672">.</span>new(consumable_definition)
+	
+	<span style="color:#66d9ef">if</span> consumable_component:
+		add_child(consumable_component)
+</code></pre></div><p>Now create a new <code>EntityDefinition</code> resource at <em>res://assets/definitions/entities/items/fireball_scroll_definition.tres</em>. Set the <em>Name</em> to &ldquo;<em>Fireball Scroll</em>&rdquo; and the <em>Texture</em> once again to a scroll icon. Set the color to a full red (<em>#ff0000</em>). Uncheck <em>Is Blocking Movement</em> and set <em>Type</em> to <em>Item</em>. Then add a new <code>FireballDamageConsumableComponentDefinition</code> to the <em>Consumable Definition</em> slot. Set the <em>Damage</em> to 12 and the <em>Radius</em> to 3.</p>
 <p>To spawn this items we once again add our new item to <em>dungeon_generator.gd</em>. Modify the <code>entity_types</code> as follows:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">const</span> entity_types <span style="color:#f92672">=</span> {
-</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;orc&#34;</span>: preload(<span style="color:#e6db74">&#34;res://assets/definitions/entities/actors/entity_definition_orc.tres&#34;</span>),
-</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;troll&#34;</span>: preload(<span style="color:#e6db74">&#34;res://assets/definitions/entities/actors/entity_definition_troll.tres&#34;</span>),
-</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;health_potion&#34;</span>: preload(<span style="color:#e6db74">&#34;res://assets/definitions/entities/items/health_potion_definition.tres&#34;</span>),
-</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;lightning_scroll&#34;</span>: preload(<span style="color:#e6db74">&#34;res://assets/definitions/entities/items/lightning_scroll_definition.tres&#34;</span>),
-</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;confusion_scroll&#34;</span>: preload(<span style="color:#e6db74">&#34;res://assets/definitions/entities/items/confusion_scroll_definition.tres&#34;</span>),
-</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;fireball_scroll&#34;</span>: preload(<span style="color:#e6db74">&#34;res://assets/definitions/entities/items/fireball_scroll_definition.tres&#34;</span>),
-</span></span><span style="display:flex;"><span>}
-</span></span></code></pre></div><p>Also add it in <code>_place_entities()</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">if</span> can_place:
-</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">var</span> item_chance: <span style="color:#66d9ef">float</span> <span style="color:#f92672">=</span> _rng<span style="color:#f92672">.</span>randf()
-</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">var</span> new_entity: Entity
-</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">if</span> item_chance <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">0.7</span>:
-</span></span><span style="display:flex;"><span>				new_entity <span style="color:#f92672">=</span> Entity<span style="color:#f92672">.</span><span style="color:#a6e22e">new</span>(dungeon, new_entity_position, entity_types<span style="color:#f92672">.</span>health_potion)
-</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">elif</span> item_chance <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">0.8</span>:
-</span></span><span style="display:flex;"><span>				new_entity <span style="color:#f92672">=</span> Entity<span style="color:#f92672">.</span><span style="color:#a6e22e">new</span>(dungeon, new_entity_position, entity_types<span style="color:#f92672">.</span>fireball_scroll)
-</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">elif</span> item_chance <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">0.9</span>:
-</span></span><span style="display:flex;"><span>				new_entity <span style="color:#f92672">=</span> Entity<span style="color:#f92672">.</span><span style="color:#a6e22e">new</span>(dungeon, new_entity_position, entity_types<span style="color:#f92672">.</span>confusion_scroll)
-</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">else</span>:
-</span></span><span style="display:flex;"><span>				new_entity <span style="color:#f92672">=</span> Entity<span style="color:#f92672">.</span><span style="color:#a6e22e">new</span>(dungeon, new_entity_position, entity_types<span style="color:#f92672">.</span>lightning_scroll)
-</span></span><span style="display:flex;"><span>			dungeon<span style="color:#f92672">.</span>entities<span style="color:#f92672">.</span><span style="color:#a6e22e">append</span>(new_entity)
-</span></span></code></pre></div><p>And with that we have a fireball scroll in the game. We now have quite a variety of scrolls, which might make it harder for you to actually find one to try its functionality in the game if you test it, but sooner or later you should come across one.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">const</span> entity_types <span style="color:#f92672">=</span> {
+	<span style="color:#e6db74">&#34;orc&#34;</span>: preload(<span style="color:#e6db74">&#34;res://assets/definitions/entities/actors/entity_definition_orc.tres&#34;</span>),
+	<span style="color:#e6db74">&#34;troll&#34;</span>: preload(<span style="color:#e6db74">&#34;res://assets/definitions/entities/actors/entity_definition_troll.tres&#34;</span>),
+	<span style="color:#e6db74">&#34;health_potion&#34;</span>: preload(<span style="color:#e6db74">&#34;res://assets/definitions/entities/items/health_potion_definition.tres&#34;</span>),
+	<span style="color:#e6db74">&#34;lightning_scroll&#34;</span>: preload(<span style="color:#e6db74">&#34;res://assets/definitions/entities/items/lightning_scroll_definition.tres&#34;</span>),
+	<span style="color:#e6db74">&#34;confusion_scroll&#34;</span>: preload(<span style="color:#e6db74">&#34;res://assets/definitions/entities/items/confusion_scroll_definition.tres&#34;</span>),
+	<span style="color:#e6db74">&#34;fireball_scroll&#34;</span>: preload(<span style="color:#e6db74">&#34;res://assets/definitions/entities/items/fireball_scroll_definition.tres&#34;</span>),
+}
+</code></pre></div><p>Also add it in <code>_place_entities()</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">if</span> can_place:
+			<span style="color:#66d9ef">var</span> item_chance: <span style="color:#a6e22e">float</span> <span style="color:#f92672">=</span> _rng<span style="color:#f92672">.</span>randf()
+			<span style="color:#66d9ef">var</span> new_entity: Entity
+			<span style="color:#66d9ef">if</span> item_chance <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">0.7</span>:
+				new_entity <span style="color:#f92672">=</span> Entity<span style="color:#f92672">.</span>new(dungeon, new_entity_position, entity_types<span style="color:#f92672">.</span>health_potion)
+			<span style="color:#66d9ef">elif</span> item_chance <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">0.8</span>:
+				new_entity <span style="color:#f92672">=</span> Entity<span style="color:#f92672">.</span>new(dungeon, new_entity_position, entity_types<span style="color:#f92672">.</span>fireball_scroll)
+			<span style="color:#66d9ef">elif</span> item_chance <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">0.9</span>:
+				new_entity <span style="color:#f92672">=</span> Entity<span style="color:#f92672">.</span>new(dungeon, new_entity_position, entity_types<span style="color:#f92672">.</span>confusion_scroll)
+			<span style="color:#66d9ef">else</span>:
+				new_entity <span style="color:#f92672">=</span> Entity<span style="color:#f92672">.</span>new(dungeon, new_entity_position, entity_types<span style="color:#f92672">.</span>lightning_scroll)
+			dungeon<span style="color:#f92672">.</span>entities<span style="color:#f92672">.</span>append(new_entity)
+</code></pre></div><p>And with that we have a fireball scroll in the game. We now have quite a variety of scrolls, which might make it harder for you to actually find one to try its functionality in the game if you test it, but sooner or later you should come across one.</p>
 <p>One last thing we need to handle is a weakness in our input handler state machine that the fireball exposes. The hacky timing of how states are switched when selecting items makes the following edge case possible: The player, at low health, goes into the inventory, causing a switch to the dummy input handler. They select the fireball and target both an enemy and the player character. This causes the player character to die, which immediately causes a transition to the game over input handler. After that execution returns to the cleanup code of the item selection, which now has the game transition &ldquo;back&rdquo; to the main game input handler. The effect is that the player entity is at 0 health points, is displayed as a pile of bones called &ldquo;Remains of Player&rdquo;, but can still take actions normally. Even worse, they cannot fall to 0 hp again, making them effectively an immortal skeleton.</p>
 <p>The further I get into this tutorial series the more I am displeased with the input handler state machine. If I were to redo the tutorial I would probably choose a different approach. However, while having to account for edge cases with special code is always a bit hacky, we should be able to handle this issue pretty easily. The game over input handler does kind of represent a terminal state. With the way it works now we don&rsquo;t want to be able to leave this state, so we can encode this into the state machine. To do that we add the following check at the start of the <code>transition_to()</code> function in <em>input_handler.gd</em>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">transition_to</span>(input_handler: InputHandlers) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> current_input_handler <span style="color:#f92672">==</span> input_handler_nodes[InputHandlers<span style="color:#f92672">.</span>GAME_OVER]:
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span>
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> current_input_handler <span style="color:#f92672">!=</span> <span style="color:#66d9ef">null</span>:
-</span></span><span style="display:flex;"><span>		current_input_handler<span style="color:#f92672">.</span><span style="color:#a6e22e">exit</span>()
-</span></span><span style="display:flex;"><span>	current_input_handler <span style="color:#f92672">=</span> input_handler_nodes[input_handler]
-</span></span><span style="display:flex;"><span>	current_input_handler<span style="color:#f92672">.</span><span style="color:#a6e22e">enter</span>()
-</span></span></code></pre></div><p>We check if we are currently in the game over input handler, and if so, we interrupt the transition, making it impossible to leave that input handler. This should prevent any bugs where we try to switch input handlers after the player entity has died.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> transition_to(input_handler: InputHandlers) <span style="color:#f92672">-&gt;</span> void:
+	<span style="color:#66d9ef">if</span> current_input_handler <span style="color:#f92672">==</span> input_handler_nodes[InputHandlers<span style="color:#f92672">.</span>GAME_OVER]:
+		<span style="color:#66d9ef">return</span>
+	<span style="color:#66d9ef">if</span> current_input_handler <span style="color:#f92672">!=</span> null:
+		current_input_handler<span style="color:#f92672">.</span>exit()
+	current_input_handler <span style="color:#f92672">=</span> input_handler_nodes[input_handler]
+	current_input_handler<span style="color:#f92672">.</span>enter()
+</code></pre></div><p>We check if we are currently in the game over input handler, and if so, we interrupt the transition, making it impossible to leave that input handler. This should prevent any bugs where we try to switch input handlers after the player entity has died.</p>
 <p>This concludes this part of the tutorial. Next time we will start handle saving and loading of games. You can find that part of the tutorial at <a href="https://selinadev.github.io/14-rogueliketutorial-10/">https://selinadev.github.io/14-rogueliketutorial-10/</a></p>
 
 
