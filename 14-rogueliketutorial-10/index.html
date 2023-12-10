@@ -424,7 +424,7 @@ It’s been a while since the last tutorial, but luckily we can jump right back 
 		fighter_component<span style="color:#f92672">.</span>restore(save_data[<span style="color:#e6db74">&#34;fighter_component&#34;</span>])
 	<span style="color:#66d9ef">if</span> ai_component <span style="color:#f92672">and</span> save_data<span style="color:#f92672">.</span>has(<span style="color:#e6db74">&#34;ai_component&#34;</span>):
 		<span style="color:#66d9ef">var</span> ai_data: <span style="color:#a6e22e">Dictionary</span> <span style="color:#f92672">=</span> save_data[<span style="color:#e6db74">&#34;ai_component&#34;</span>]
-		<span style="color:#66d9ef">if</span> ai_data[<span style="color:#e6db74">&#34;type&#34;</span>] <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;ConfusedEnemyAIComponent&#34;</span>:
+		<span style="color:#66d9ef">if</span> ai_data[<span style="color:#e6db74">&#34;type&#34;</span>] <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;ConfusedEnemyAI&#34;</span>:
 			<span style="color:#66d9ef">var</span> confused_enemy_ai :<span style="color:#f92672">=</span> ConfusedEnemyAIComponent<span style="color:#f92672">.</span>new(ai_data[<span style="color:#e6db74">&#34;turns_remaining&#34;</span>])
 			add_child(confused_enemy_ai)
 	<span style="color:#66d9ef">if</span> inventory_component <span style="color:#f92672">and</span> save_data<span style="color:#f92672">.</span>has(<span style="color:#e6db74">&#34;inventory_component&#34;</span>):

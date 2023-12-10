@@ -123,7 +123,7 @@ Last time we started handling items, and filled our dungeon with healing potions
 	<span style="color:#66d9ef">var</span> consumer: Entity <span style="color:#f92672">=</span> action<span style="color:#f92672">.</span>entity
 	<span style="color:#66d9ef">var</span> target: Entity <span style="color:#f92672">=</span> null
 	<span style="color:#66d9ef">var</span> closest_distance: <span style="color:#a6e22e">float</span> <span style="color:#f92672">=</span> maximum_range <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>
-	<span style="color:#66d9ef">var</span> map_data: MapData <span style="color:#f92672">=</span> consumer<span style="color:#f92672">.</span>get_map_data()
+	<span style="color:#66d9ef">var</span> map_data: MapData <span style="color:#f92672">=</span> consumer<span style="color:#f92672">.</span>map_data
 	
 	<span style="color:#66d9ef">for</span> actor <span style="color:#f92672">in</span> map_data<span style="color:#f92672">.</span>get_actors():
 		<span style="color:#66d9ef">if</span> actor <span style="color:#f92672">!=</span> consumer <span style="color:#f92672">and</span> map_data<span style="color:#f92672">.</span>get_tile(actor<span style="color:#f92672">.</span>grid_position)<span style="color:#f92672">.</span>is_in_view:
