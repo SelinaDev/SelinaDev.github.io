@@ -99,7 +99,7 @@ Last time we started handling items, and filled our dungeon with healing potions
 </code></pre></div><p>Both the lightning scroll and the fireball scroll will need to know how far an entity is from a given position, so let&rsquo;s create a function for that in <em>entity.gd</em>:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> distance(other_position: Vector2i) <span style="color:#f92672">-&gt;</span> <span style="color:#a6e22e">int</span>:
 	<span style="color:#66d9ef">var</span> relative: Vector2i <span style="color:#f92672">=</span> other_position <span style="color:#f92672">-</span> grid_position
-	<span style="color:#66d9ef">return</span> maxi(relative<span style="color:#f92672">.</span>x, relative<span style="color:#f92672">.</span>y)
+	<span style="color:#66d9ef">return</span> maxi(abs(relative<span style="color:#f92672">.</span>x), abs(relative<span style="color:#f92672">.</span>y))
 </code></pre></div><p>Here we first calculate the relative vector. Then we return the bigger of the two vector components. This will give us the Chebyshev distance, just like we used it for movement (meaning the lightning scroll has a square targeting range, rather than a circular one). We will use this in the lightning damage consumable we&rsquo;ll shortly write. But, as you probably expect by now, first we need a definition resource for that. So let&rsquo;s create a new script extending <code>ConsumableComponentDefinition</code> at <em>res://src/Entities/Actors/Components/ComponentDefinitions/lightning_damage_consumable_component_definition.gd</em>. The definition consists of the following two variables:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd">class_name LightningDamageConsumableComponentDefinition
 <span style="color:#66d9ef">extends</span> ConsumableComponentDefinition
@@ -123,7 +123,7 @@ Last time we started handling items, and filled our dungeon with healing potions
 	<span style="color:#66d9ef">var</span> consumer: Entity <span style="color:#f92672">=</span> action<span style="color:#f92672">.</span>entity
 	<span style="color:#66d9ef">var</span> target: Entity <span style="color:#f92672">=</span> null
 	<span style="color:#66d9ef">var</span> closest_distance: <span style="color:#a6e22e">float</span> <span style="color:#f92672">=</span> maximum_range <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>
-	<span style="color:#66d9ef">var</span> map_data: MapData <span style="color:#f92672">=</span> get_map_data()
+	<span style="color:#66d9ef">var</span> map_data: MapData <span style="color:#f92672">=</span> consumer<span style="color:#f92672">.</span>get_map_data()
 	
 	<span style="color:#66d9ef">for</span> actor <span style="color:#f92672">in</span> map_data<span style="color:#f92672">.</span>get_actors():
 		<span style="color:#66d9ef">if</span> actor <span style="color:#f92672">!=</span> consumer <span style="color:#f92672">and</span> map_data<span style="color:#f92672">.</span>get_tile(actor<span style="color:#f92672">.</span>grid_position)<span style="color:#f92672">.</span>is_in_view:
