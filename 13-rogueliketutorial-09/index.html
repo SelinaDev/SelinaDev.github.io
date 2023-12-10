@@ -368,7 +368,7 @@ Last time we started handling items, and filled our dungeon with healing potions
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> activate(action: ItemAction) <span style="color:#f92672">-&gt;</span> <span style="color:#a6e22e">bool</span>:
 	<span style="color:#66d9ef">var</span> consumer: Entity <span style="color:#f92672">=</span> action<span style="color:#f92672">.</span>entity
 	<span style="color:#66d9ef">var</span> target: Entity <span style="color:#f92672">=</span> action<span style="color:#f92672">.</span>get_target_actor()
-	<span style="color:#66d9ef">var</span> map_data: MapData <span style="color:#f92672">=</span> get_map_data()
+	<span style="color:#66d9ef">var</span> map_data: MapData <span style="color:#f92672">=</span> consumer<span style="color:#f92672">.</span>map_data
 	
 	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> map_data<span style="color:#f92672">.</span>get_tile(action<span style="color:#f92672">.</span>target_position)<span style="color:#f92672">.</span>is_in_view:
 		MessageLog<span style="color:#f92672">.</span>send_message(<span style="color:#e6db74">&#34;You cannot target an area that you cannot see.&#34;</span>, GameColors<span style="color:#f92672">.</span>IMPOSSIBLE)
@@ -476,8 +476,9 @@ Last time we started handling items, and filled our dungeon with healing potions
 	<span style="color:#66d9ef">return</span> radius
 </code></pre></div><p>The interesting part here is the targeting radius. This is also the reason we are using a function rather than hard coding a value. A fixed value would work for our previous consumables, but for this we have a settable radius. Now for the <code>activate()</code> function:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> activate(action: ItemAction) <span style="color:#f92672">-&gt;</span> <span style="color:#a6e22e">bool</span>:
+	<span style="color:#66d9ef">var</span> consumer: Entity <span style="color:#f92672">=</span> action<span style="color:#f92672">.</span>entity
 	<span style="color:#66d9ef">var</span> target_position: Vector2i <span style="color:#f92672">=</span> action<span style="color:#f92672">.</span>target_position
-	<span style="color:#66d9ef">var</span> map_data: MapData <span style="color:#f92672">=</span> get_map_data()
+	<span style="color:#66d9ef">var</span> map_data: MapData <span style="color:#f92672">=</span> consumer<span style="color:#f92672">.</span>map_data
 	
 	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> map_data<span style="color:#f92672">.</span>get_tile(target_position)<span style="color:#f92672">.</span>is_in_view:
 		MessageLog<span style="color:#f92672">.</span>send_message(<span style="color:#e6db74">&#34;You cannot target an area that you cannot see.&#34;</span>, GameColors<span style="color:#f92672">.</span>IMPOSSIBLE)
