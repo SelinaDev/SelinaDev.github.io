@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
-  <meta name="generator" content="Hugo 0.121.1">
+  <meta name="generator" content="Hugo 0.92.2" />
   <link rel="canonical" href="https://selinadev.github.io/16-rogueliketutorial-12/">
 
   
@@ -93,113 +93,113 @@ In the last part we implemented the ability to down into deeper levels of the du
 <p>Welcome back to the roguelike tutorial series. This tutorial will continue from where the last one left off. You can find the previous tutorial here: <a href="https://selinadev.github.io/15-rogueliketutorial-11/">https://selinadev.github.io/15-rogueliketutorial-11/</a></p>
 <p>In the last part we implemented the ability to down into deeper levels of the dungeon. However, currently the only thing that really does is create a new map and increase the displayed depth. Sure, it&rsquo;s a new dungeon in the same run, but that new floor is essentially the same as the last one. The random generation will create a new layout, a new arrangement of items and monsters, but the parameters behind that generation procedure are the same. The dungeon floor does not qualitatively change in its risk or reward. To remedy that, we will introduce some variety, so that the type and composition of spawned monsters and items will change depending on the depth of the floor.</p>
 <p>Such spawn tables are data, and as such I would prefer to implement them as Resources. However, the way we will implement this uses dictionaries, which at the moment don&rsquo;t allow typing of their contents. This means that if we use exported dictionaries, we have to manually set the type both the key and the value for each entry. Even if it&rsquo;s something as simple as having strings for both, this would mean first creating a new entry, then selecting the type of the key from a long list of options, then selecting the type of the value from the same long list of options. Only after that we could enter the values. That is not convenient, so I will use constant values in the code. In a bigger project you might want to separate out your data somehow, but for the small scope we&rsquo;re dealing with here this should be a good starting point. So how do these spawn tables look like? Open up <em>dungeon_generator.gd</em> and add the following constants to the top of the script:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">const</span> max_items_by_floor <span style="color:#f92672">=</span> [
-</span></span><span style="display:flex;"><span>	[<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>],
-</span></span><span style="display:flex;"><span>	[<span style="color:#ae81ff">4</span>, <span style="color:#ae81ff">2</span>]
-</span></span><span style="display:flex;"><span>]
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">const</span> max_monsters_by_floor <span style="color:#f92672">=</span> [
-</span></span><span style="display:flex;"><span>	[<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">2</span>],
-</span></span><span style="display:flex;"><span>	[<span style="color:#ae81ff">4</span>, <span style="color:#ae81ff">3</span>],
-</span></span><span style="display:flex;"><span>	[<span style="color:#ae81ff">6</span>, <span style="color:#ae81ff">5</span>]
-</span></span><span style="display:flex;"><span>]
-</span></span></code></pre></div><p>These will replace our previous <code>max_items_per_room</code> and <code>max_monsters_per_room</code> (so delete the two entries below <code>@export_category(&quot;Entities RNG&quot;)</code>). They consist of an array of arrays with two entries each. The first entry is the (minimum) floor for that configuration, and the second one is the maximum number of entities per room. So from floor 1 up to floor 3 we have up to 1 item in each room, and from floor 4 downwards we have up to 2 items. The monsters work the same way. Next we need to define which monsters and items can spawn on each floor:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">const</span> item_chances <span style="color:#f92672">=</span> {
-</span></span><span style="display:flex;"><span>	<span style="color:#ae81ff">0</span>: {<span style="color:#e6db74">&#34;health_potion&#34;</span>: <span style="color:#ae81ff">35</span>},
-</span></span><span style="display:flex;"><span>	<span style="color:#ae81ff">2</span>: {<span style="color:#e6db74">&#34;confusion_scroll&#34;</span>: <span style="color:#ae81ff">10</span>},
-</span></span><span style="display:flex;"><span>	<span style="color:#ae81ff">4</span>: {<span style="color:#e6db74">&#34;lightning_scroll&#34;</span>: <span style="color:#ae81ff">25</span>},
-</span></span><span style="display:flex;"><span>	<span style="color:#ae81ff">6</span>: {<span style="color:#e6db74">&#34;fireball_scroll&#34;</span>: <span style="color:#ae81ff">25</span>},
-</span></span><span style="display:flex;"><span>}
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">const</span> enemy_chances <span style="color:#f92672">=</span> {
-</span></span><span style="display:flex;"><span>	<span style="color:#ae81ff">0</span>: {<span style="color:#e6db74">&#34;orc&#34;</span>: <span style="color:#ae81ff">80</span>},
-</span></span><span style="display:flex;"><span>	<span style="color:#ae81ff">3</span>: {<span style="color:#e6db74">&#34;troll&#34;</span>: <span style="color:#ae81ff">15</span>},
-</span></span><span style="display:flex;"><span>	<span style="color:#ae81ff">5</span>: {<span style="color:#e6db74">&#34;troll&#34;</span>: <span style="color:#ae81ff">30</span>},
-</span></span><span style="display:flex;"><span>	<span style="color:#ae81ff">7</span>: {<span style="color:#e6db74">&#34;troll&#34;</span>: <span style="color:#ae81ff">60</span>}
-</span></span><span style="display:flex;"><span>}
-</span></span></code></pre></div><p>Here we have dictionaries with integer keys, each associated with a value that is itself a dictionary. Those dictionary could have any number of string keys (corresponding to the strings we use for spawning entities) with integer weights. These weights are arbitrary numbers, only the relationship between them matters. We will later code a function that will see what entities can spawn on each floor. This function will go through the keys, up to the number of the current floor, and add up all the keys and values that appear, with keys that appear again overriding older entries. Then we can use the associated weight to perform a weighted draw. For example, on floor 6 we see that <code>&quot;orc&quot;</code> has a weight of 80, and <code>troll</code> first gets a weight of 15, which then gets changed to 30. Each weighted draw is then as if we give the orcs 80 raffle tickets and the trolls 30. We see that trolls will become more common the deeper we go, but will be outnumbered by orcs even on the deeper levels.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">const</span> max_items_by_floor <span style="color:#f92672">=</span> [
+	[<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>],
+	[<span style="color:#ae81ff">4</span>, <span style="color:#ae81ff">2</span>]
+]
+
+<span style="color:#66d9ef">const</span> max_monsters_by_floor <span style="color:#f92672">=</span> [
+	[<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">2</span>],
+	[<span style="color:#ae81ff">4</span>, <span style="color:#ae81ff">3</span>],
+	[<span style="color:#ae81ff">6</span>, <span style="color:#ae81ff">5</span>]
+]
+</code></pre></div><p>These will replace our previous <code>max_items_per_room</code> and <code>max_monsters_per_room</code> (so delete the two entries below <code>@export_category(&quot;Entities RNG&quot;)</code>). They consist of an array of arrays with two entries each. The first entry is the (minimum) floor for that configuration, and the second one is the maximum number of entities per room. So from floor 1 up to floor 3 we have up to 1 item in each room, and from floor 4 downwards we have up to 2 items. The monsters work the same way. Next we need to define which monsters and items can spawn on each floor:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">const</span> item_chances <span style="color:#f92672">=</span> {
+	<span style="color:#ae81ff">0</span>: {<span style="color:#e6db74">&#34;health_potion&#34;</span>: <span style="color:#ae81ff">35</span>},
+	<span style="color:#ae81ff">2</span>: {<span style="color:#e6db74">&#34;confusion_scroll&#34;</span>: <span style="color:#ae81ff">10</span>},
+	<span style="color:#ae81ff">4</span>: {<span style="color:#e6db74">&#34;lightning_scroll&#34;</span>: <span style="color:#ae81ff">25</span>},
+	<span style="color:#ae81ff">6</span>: {<span style="color:#e6db74">&#34;fireball_scroll&#34;</span>: <span style="color:#ae81ff">25</span>},
+}
+
+<span style="color:#66d9ef">const</span> enemy_chances <span style="color:#f92672">=</span> {
+	<span style="color:#ae81ff">0</span>: {<span style="color:#e6db74">&#34;orc&#34;</span>: <span style="color:#ae81ff">80</span>},
+	<span style="color:#ae81ff">3</span>: {<span style="color:#e6db74">&#34;troll&#34;</span>: <span style="color:#ae81ff">15</span>},
+	<span style="color:#ae81ff">5</span>: {<span style="color:#e6db74">&#34;troll&#34;</span>: <span style="color:#ae81ff">30</span>},
+	<span style="color:#ae81ff">7</span>: {<span style="color:#e6db74">&#34;troll&#34;</span>: <span style="color:#ae81ff">60</span>}
+}
+</code></pre></div><p>Here we have dictionaries with integer keys, each associated with a value that is itself a dictionary. Those dictionary could have any number of string keys (corresponding to the strings we use for spawning entities) with integer weights. These weights are arbitrary numbers, only the relationship between them matters. We will later code a function that will see what entities can spawn on each floor. This function will go through the keys, up to the number of the current floor, and add up all the keys and values that appear, with keys that appear again overriding older entries. Then we can use the associated weight to perform a weighted draw. For example, on floor 6 we see that <code>&quot;orc&quot;</code> has a weight of 80, and <code>troll</code> first gets a weight of 15, which then gets changed to 30. Each weighted draw is then as if we give the orcs 80 raffle tickets and the trolls 30. We see that trolls will become more common the deeper we go, but will be outnumbered by orcs even on the deeper levels.</p>
 <p>Let&rsquo;s look at the code, first for the maximum amount of entities per room. Add the following new function:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">_get_max_value_for_floor</span>(weighted_chances_by_floor: <span style="color:#a6e22e">Array</span>, current_floor: <span style="color:#66d9ef">int</span>) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">int</span>:
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> current_value <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
-</span></span><span style="display:flex;"><span>	
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">for</span> chance <span style="color:#f92672">in</span> weighted_chances_by_floor:
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> chance[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">&gt;</span> current_floor:
-</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">break</span>
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">else</span>:
-</span></span><span style="display:flex;"><span>			current_value <span style="color:#f92672">=</span> chance[<span style="color:#ae81ff">1</span>]
-</span></span><span style="display:flex;"><span>	
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> current_value
-</span></span></code></pre></div><p>This function takes one of our const arrays (meaning it will work both for monsters and for items, depending on what we feed it) and the current floor. We then go through the array, and as long as the first entry of an array element is less than or equal to the current floor, we update the current value with the second entry of the array element. That way we get the larges applicable value and return it. Let&rsquo;s see how we cen use this function in <code>_place_entities()</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">_place_entities</span>(dungeon: MapData, room: Rect2i, current_floor: <span style="color:#66d9ef">int</span>) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> max_monsters_per_room: <span style="color:#66d9ef">int</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">_get_max_value_for_floor</span>(max_monsters_by_floor, current_floor)
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> max_items_per_room: <span style="color:#66d9ef">int</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">_get_max_value_for_floor</span>(max_items_by_floor, current_floor)
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> number_of_monsters: <span style="color:#66d9ef">int</span> <span style="color:#f92672">=</span> _rng<span style="color:#f92672">.</span>randi_range(<span style="color:#ae81ff">0</span>, max_monsters_per_room)
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> number_of_items: <span style="color:#66d9ef">int</span> <span style="color:#f92672">=</span> _rng<span style="color:#f92672">.</span>randi_range(<span style="color:#ae81ff">0</span>, max_items_per_room)
-</span></span><span style="display:flex;"><span>    <span style="color:#75715e">#...</span>
-</span></span></code></pre></div><p>The first thing to point out is that we get a new parameter for the current floor. Then we calculate <code>max_monsters_per_room</code> and <code>max_items_per_room</code>. These have the same name and work in the same way like the constants we had previously used, so the rest of the code works just fine. Of course, we also need to change the call to this function inside <code>generate_dungeon()</code> to <code>_place_entities(dungeon, new_room, current_floor)</code>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> _get_max_value_for_floor(weighted_chances_by_floor: <span style="color:#a6e22e">Array</span>, current_floor: <span style="color:#a6e22e">int</span>) <span style="color:#f92672">-&gt;</span> <span style="color:#a6e22e">int</span>:
+	<span style="color:#66d9ef">var</span> current_value <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+	
+	<span style="color:#66d9ef">for</span> chance <span style="color:#f92672">in</span> weighted_chances_by_floor:
+		<span style="color:#66d9ef">if</span> chance[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">&gt;</span> current_floor:
+			<span style="color:#66d9ef">break</span>
+		<span style="color:#66d9ef">else</span>:
+			current_value <span style="color:#f92672">=</span> chance[<span style="color:#ae81ff">1</span>]
+	
+	<span style="color:#66d9ef">return</span> current_value
+</code></pre></div><p>This function takes one of our const arrays (meaning it will work both for monsters and for items, depending on what we feed it) and the current floor. We then go through the array, and as long as the first entry of an array element is less than or equal to the current floor, we update the current value with the second entry of the array element. That way we get the larges applicable value and return it. Let&rsquo;s see how we cen use this function in <code>_place_entities()</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> _place_entities(dungeon: MapData, room: Rect2i, current_floor: <span style="color:#a6e22e">int</span>) <span style="color:#f92672">-&gt;</span> void:
+	<span style="color:#66d9ef">var</span> max_monsters_per_room: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> _get_max_value_for_floor(max_monsters_by_floor, current_floor)
+	<span style="color:#66d9ef">var</span> max_items_per_room: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> _get_max_value_for_floor(max_items_by_floor, current_floor)
+	<span style="color:#66d9ef">var</span> number_of_monsters: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> _rng<span style="color:#f92672">.</span>randi_range(<span style="color:#ae81ff">0</span>, max_monsters_per_room)
+	<span style="color:#66d9ef">var</span> number_of_items: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> _rng<span style="color:#f92672">.</span>randi_range(<span style="color:#ae81ff">0</span>, max_items_per_room)
+    <span style="color:#75715e">#...</span>
+</code></pre></div><p>The first thing to point out is that we get a new parameter for the current floor. Then we calculate <code>max_monsters_per_room</code> and <code>max_items_per_room</code>. These have the same name and work in the same way like the constants we had previously used, so the rest of the code works just fine. Of course, we also need to change the call to this function inside <code>generate_dungeon()</code> to <code>_place_entities(dungeon, new_room, current_floor)</code>.</p>
 <p>Let&rsquo;s now turn to the random selection of entities I mentioned above:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">_get_entities_at_random</span>(weighted_chances_by_floor: <span style="color:#a6e22e">Dictionary</span>, number_of_entities: <span style="color:#66d9ef">int</span>, current_floor: <span style="color:#66d9ef">int</span>) <span style="color:#f92672">-&gt;</span> <span style="color:#a6e22e">Array</span>[<span style="color:#a6e22e">String</span>]:
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> entity_weighted_chances <span style="color:#f92672">=</span> {}
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> chosen_entities: <span style="color:#a6e22e">Array</span>[<span style="color:#a6e22e">String</span>] <span style="color:#f92672">=</span> []
-</span></span><span style="display:flex;"><span>	
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">for</span> key <span style="color:#f92672">in</span> weighted_chances_by_floor:
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> key <span style="color:#f92672">&gt;</span> current_floor:
-</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">break</span>
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">else</span>:
-</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">for</span> entity_name <span style="color:#f92672">in</span> weighted_chances_by_floor[key]:
-</span></span><span style="display:flex;"><span>				entity_weighted_chances[entity_name] <span style="color:#f92672">=</span> weighted_chances_by_floor[key][entity_name]
-</span></span><span style="display:flex;"><span>	
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">for</span> _i <span style="color:#f92672">in</span> number_of_entities:
-</span></span><span style="display:flex;"><span>		chosen_entities<span style="color:#f92672">.</span><span style="color:#a6e22e">append</span>(<span style="color:#a6e22e">_pick_weighted</span>(entity_weighted_chances))
-</span></span><span style="display:flex;"><span>	
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> chosen_entities
-</span></span></code></pre></div><p>This function takes a dictionary in the form we specified above, the number of entities to generate, as well as the current floor. It will return an array of the keys we will use for spawning the entities. The first part of the function constructs the appropriate chances for the current floor. We go through all the floors up to the current floor and put all all the keys and associated weights in <code>entity_weighted_changes</code>, successively overwriting any keys and weights that are already entered. Once we have that, we fill <code>chosen_entities</code> with keys by calling <code>_pick_weighted()</code> a number of times equal to <code>number_of_entities</code>, before returning <code>chosen_entities</code>. Here&rsquo;s now that <code>_pick_weighted()</code> function:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">_pick_weighted</span>(weighted_chances: <span style="color:#a6e22e">Dictionary</span>) <span style="color:#f92672">-&gt;</span> <span style="color:#a6e22e">String</span>:
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> keys: <span style="color:#a6e22e">Array</span>[<span style="color:#a6e22e">String</span>] <span style="color:#f92672">=</span> []
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> cumulative_chances <span style="color:#f92672">:=</span> []
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> sum: <span style="color:#66d9ef">int</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">for</span> key <span style="color:#f92672">in</span> weighted_chances:
-</span></span><span style="display:flex;"><span>		keys<span style="color:#f92672">.</span><span style="color:#a6e22e">append</span>(key)
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">var</span> chance: <span style="color:#66d9ef">int</span> <span style="color:#f92672">=</span> weighted_chances[key]
-</span></span><span style="display:flex;"><span>		sum <span style="color:#f92672">+=</span> chance
-</span></span><span style="display:flex;"><span>		cumulative_chances<span style="color:#f92672">.</span><span style="color:#a6e22e">append</span>(sum)
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> random_chance: <span style="color:#66d9ef">int</span> <span style="color:#f92672">=</span> _rng<span style="color:#f92672">.</span>randi_range(<span style="color:#ae81ff">0</span>, sum <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>)
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> selection: <span style="color:#a6e22e">String</span>
-</span></span><span style="display:flex;"><span>	
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> cumulative_chances<span style="color:#f92672">.</span><span style="color:#a6e22e">size</span>():
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> cumulative_chances[i] <span style="color:#f92672">&gt;</span> random_chance:
-</span></span><span style="display:flex;"><span>			selection <span style="color:#f92672">=</span> keys[i]
-</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">break</span>
-</span></span><span style="display:flex;"><span>	
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> selection
-</span></span></code></pre></div><p>This takes the <code>weighted_chances</code> dictionary we have constructed for the current floor. This dictionary contains a number of string keys with associated weights. From these, we crate an array with <em>cumulative</em> weights. E.g., if the input dictionary was <code>{&quot;orc&quot;: 80, &quot;troll&quot;: 30}</code>, then we create an array <code>[80, 110]</code>. then we generate a <code>random_chance</code> that&rsquo;s inside that range (so in this example up to 109). Then we go through the array for as long as the random number is bigger than the current array entry. Once the random chance is lower than the current array entry we know that it is both bigger than the last one and lower than the current one, i.e., inside the slot associated with the current entry. We retrieve the associated key and return it.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> _get_entities_at_random(weighted_chances_by_floor: <span style="color:#a6e22e">Dictionary</span>, number_of_entities: <span style="color:#a6e22e">int</span>, current_floor: <span style="color:#a6e22e">int</span>) <span style="color:#f92672">-&gt;</span> <span style="color:#a6e22e">Array</span>[<span style="color:#a6e22e">String</span>]:
+	<span style="color:#66d9ef">var</span> entity_weighted_chances <span style="color:#f92672">=</span> {}
+	<span style="color:#66d9ef">var</span> chosen_entities: <span style="color:#a6e22e">Array</span>[<span style="color:#a6e22e">String</span>] <span style="color:#f92672">=</span> []
+	
+	<span style="color:#66d9ef">for</span> key <span style="color:#f92672">in</span> weighted_chances_by_floor:
+		<span style="color:#66d9ef">if</span> key <span style="color:#f92672">&gt;</span> current_floor:
+			<span style="color:#66d9ef">break</span>
+		<span style="color:#66d9ef">else</span>:
+			<span style="color:#66d9ef">for</span> entity_name <span style="color:#f92672">in</span> weighted_chances_by_floor[key]:
+				entity_weighted_chances[entity_name] <span style="color:#f92672">=</span> weighted_chances_by_floor[key][entity_name]
+	
+	<span style="color:#66d9ef">for</span> _i <span style="color:#f92672">in</span> number_of_entities:
+		chosen_entities<span style="color:#f92672">.</span>append(_pick_weighted(entity_weighted_chances))
+	
+	<span style="color:#66d9ef">return</span> chosen_entities
+</code></pre></div><p>This function takes a dictionary in the form we specified above, the number of entities to generate, as well as the current floor. It will return an array of the keys we will use for spawning the entities. The first part of the function constructs the appropriate chances for the current floor. We go through all the floors up to the current floor and put all all the keys and associated weights in <code>entity_weighted_changes</code>, successively overwriting any keys and weights that are already entered. Once we have that, we fill <code>chosen_entities</code> with keys by calling <code>_pick_weighted()</code> a number of times equal to <code>number_of_entities</code>, before returning <code>chosen_entities</code>. Here&rsquo;s now that <code>_pick_weighted()</code> function:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> _pick_weighted(weighted_chances: <span style="color:#a6e22e">Dictionary</span>) <span style="color:#f92672">-&gt;</span> <span style="color:#a6e22e">String</span>:
+	<span style="color:#66d9ef">var</span> keys: <span style="color:#a6e22e">Array</span>[<span style="color:#a6e22e">String</span>] <span style="color:#f92672">=</span> []
+	<span style="color:#66d9ef">var</span> cumulative_chances :<span style="color:#f92672">=</span> []
+	<span style="color:#66d9ef">var</span> sum: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+	<span style="color:#66d9ef">for</span> key <span style="color:#f92672">in</span> weighted_chances:
+		keys<span style="color:#f92672">.</span>append(key)
+		<span style="color:#66d9ef">var</span> chance: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> weighted_chances[key]
+		sum <span style="color:#f92672">+=</span> chance
+		cumulative_chances<span style="color:#f92672">.</span>append(sum)
+	<span style="color:#66d9ef">var</span> random_chance: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> _rng<span style="color:#f92672">.</span>randi_range(<span style="color:#ae81ff">0</span>, sum <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>)
+	<span style="color:#66d9ef">var</span> selection: <span style="color:#a6e22e">String</span>
+	
+	<span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> cumulative_chances<span style="color:#f92672">.</span>size():
+		<span style="color:#66d9ef">if</span> cumulative_chances[i] <span style="color:#f92672">&gt;</span> random_chance:
+			selection <span style="color:#f92672">=</span> keys[i]
+			<span style="color:#66d9ef">break</span>
+	
+	<span style="color:#66d9ef">return</span> selection
+</code></pre></div><p>This takes the <code>weighted_chances</code> dictionary we have constructed for the current floor. This dictionary contains a number of string keys with associated weights. From these, we crate an array with <em>cumulative</em> weights. E.g., if the input dictionary was <code>{&quot;orc&quot;: 80, &quot;troll&quot;: 30}</code>, then we create an array <code>[80, 110]</code>. then we generate a <code>random_chance</code> that&rsquo;s inside that range (so in this example up to 109). Then we go through the array for as long as the random number is bigger than the current array entry. Once the random chance is lower than the current array entry we know that it is both bigger than the last one and lower than the current one, i.e., inside the slot associated with the current entry. We retrieve the associated key and return it.</p>
 <p>The nice thing about this approach is that it abstracts getting entity keys for both monsters and items. This reduces the duplicated code we require in <code>_place_entities()</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gd" data-lang="gd"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">_place_entities</span>(dungeon: MapData, room: Rect2i, current_floor: <span style="color:#66d9ef">int</span>) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">void</span>:
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> max_monsters_per_room: <span style="color:#66d9ef">int</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">_get_max_value_for_floor</span>(max_monsters_by_floor, current_floor)
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> max_items_per_room: <span style="color:#66d9ef">int</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">_get_max_value_for_floor</span>(max_items_by_floor, current_floor)
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> number_of_monsters: <span style="color:#66d9ef">int</span> <span style="color:#f92672">=</span> _rng<span style="color:#f92672">.</span>randi_range(<span style="color:#ae81ff">0</span>, max_monsters_per_room)
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> number_of_items: <span style="color:#66d9ef">int</span> <span style="color:#f92672">=</span> _rng<span style="color:#f92672">.</span>randi_range(<span style="color:#ae81ff">0</span>, max_items_per_room)
-</span></span><span style="display:flex;"><span>	
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> monsters: <span style="color:#a6e22e">Array</span>[<span style="color:#a6e22e">String</span>] <span style="color:#f92672">=</span> <span style="color:#a6e22e">_get_entities_at_random</span>(enemy_chances, number_of_monsters, current_floor)
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> items: <span style="color:#a6e22e">Array</span>[<span style="color:#a6e22e">String</span>] <span style="color:#f92672">=</span> <span style="color:#a6e22e">_get_entities_at_random</span>(item_chances, number_of_items, current_floor)
-</span></span><span style="display:flex;"><span>	
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> entity_keys: <span style="color:#a6e22e">Array</span>[<span style="color:#a6e22e">String</span>] <span style="color:#f92672">=</span> monsters <span style="color:#f92672">+</span> items
-</span></span><span style="display:flex;"><span>	
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">for</span> entity_key <span style="color:#f92672">in</span> entity_keys:
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">var</span> x: <span style="color:#66d9ef">int</span> <span style="color:#f92672">=</span> _rng<span style="color:#f92672">.</span>randi_range(room<span style="color:#f92672">.</span>position<span style="color:#f92672">.</span>x <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>, room<span style="color:#f92672">.</span>end<span style="color:#f92672">.</span>x <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>)
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">var</span> y: <span style="color:#66d9ef">int</span> <span style="color:#f92672">=</span> _rng<span style="color:#f92672">.</span>randi_range(room<span style="color:#f92672">.</span>position<span style="color:#f92672">.</span>y <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>, room<span style="color:#f92672">.</span>end<span style="color:#f92672">.</span>y <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>)
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">var</span> new_entity_position <span style="color:#f92672">:=</span> <span style="color:#a6e22e">Vector2i</span>(x, y)
-</span></span><span style="display:flex;"><span>		
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">var</span> can_place <span style="color:#f92672">=</span> <span style="color:#66d9ef">true</span>
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">for</span> entity <span style="color:#f92672">in</span> dungeon<span style="color:#f92672">.</span>entities:
-</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">if</span> entity<span style="color:#f92672">.</span>grid_position <span style="color:#f92672">==</span> new_entity_position:
-</span></span><span style="display:flex;"><span>				can_place <span style="color:#f92672">=</span> <span style="color:#66d9ef">false</span>
-</span></span><span style="display:flex;"><span>				<span style="color:#66d9ef">break</span>
-</span></span><span style="display:flex;"><span>		
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> can_place:
-</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">var</span> new_entity <span style="color:#f92672">:=</span> Entity<span style="color:#f92672">.</span><span style="color:#a6e22e">new</span>(dungeon, new_entity_position, entity_key)
-</span></span><span style="display:flex;"><span>			dungeon<span style="color:#f92672">.</span>entities<span style="color:#f92672">.</span><span style="color:#a6e22e">append</span>(new_entity)
-</span></span></code></pre></div><p>After creating <code>number_of_monsters</code> and <code>number_of_items</code> we create a <code>monsters</code> and an <code>items</code> array, filled with keys. Then we combine these into an <code>entity_key</code> array. We can then go through all these keys and use them to spawn all of these entities one by one, combining the placement code for both monsters and items.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> _place_entities(dungeon: MapData, room: Rect2i, current_floor: <span style="color:#a6e22e">int</span>) <span style="color:#f92672">-&gt;</span> void:
+	<span style="color:#66d9ef">var</span> max_monsters_per_room: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> _get_max_value_for_floor(max_monsters_by_floor, current_floor)
+	<span style="color:#66d9ef">var</span> max_items_per_room: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> _get_max_value_for_floor(max_items_by_floor, current_floor)
+	<span style="color:#66d9ef">var</span> number_of_monsters: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> _rng<span style="color:#f92672">.</span>randi_range(<span style="color:#ae81ff">0</span>, max_monsters_per_room)
+	<span style="color:#66d9ef">var</span> number_of_items: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> _rng<span style="color:#f92672">.</span>randi_range(<span style="color:#ae81ff">0</span>, max_items_per_room)
+	
+	<span style="color:#66d9ef">var</span> monsters: <span style="color:#a6e22e">Array</span>[<span style="color:#a6e22e">String</span>] <span style="color:#f92672">=</span> _get_entities_at_random(enemy_chances, number_of_monsters, current_floor)
+	<span style="color:#66d9ef">var</span> items: <span style="color:#a6e22e">Array</span>[<span style="color:#a6e22e">String</span>] <span style="color:#f92672">=</span> _get_entities_at_random(item_chances, number_of_items, current_floor)
+	
+	<span style="color:#66d9ef">var</span> entity_keys: <span style="color:#a6e22e">Array</span>[<span style="color:#a6e22e">String</span>] <span style="color:#f92672">=</span> monsters <span style="color:#f92672">+</span> items
+	
+	<span style="color:#66d9ef">for</span> entity_key <span style="color:#f92672">in</span> entity_keys:
+		<span style="color:#66d9ef">var</span> x: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> _rng<span style="color:#f92672">.</span>randi_range(room<span style="color:#f92672">.</span>position<span style="color:#f92672">.</span>x <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>, room<span style="color:#f92672">.</span>end<span style="color:#f92672">.</span>x <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>)
+		<span style="color:#66d9ef">var</span> y: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> _rng<span style="color:#f92672">.</span>randi_range(room<span style="color:#f92672">.</span>position<span style="color:#f92672">.</span>y <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>, room<span style="color:#f92672">.</span>end<span style="color:#f92672">.</span>y <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>)
+		<span style="color:#66d9ef">var</span> new_entity_position :<span style="color:#f92672">=</span> Vector2i(x, y)
+		
+		<span style="color:#66d9ef">var</span> can_place <span style="color:#f92672">=</span> true
+		<span style="color:#66d9ef">for</span> entity <span style="color:#f92672">in</span> dungeon<span style="color:#f92672">.</span>entities:
+			<span style="color:#66d9ef">if</span> entity<span style="color:#f92672">.</span>grid_position <span style="color:#f92672">==</span> new_entity_position:
+				can_place <span style="color:#f92672">=</span> false
+				<span style="color:#66d9ef">break</span>
+		
+		<span style="color:#66d9ef">if</span> can_place:
+			<span style="color:#66d9ef">var</span> new_entity :<span style="color:#f92672">=</span> Entity<span style="color:#f92672">.</span>new(dungeon, new_entity_position, entity_key)
+			dungeon<span style="color:#f92672">.</span>entities<span style="color:#f92672">.</span>append(new_entity)
+</code></pre></div><p>After creating <code>number_of_monsters</code> and <code>number_of_items</code> we create a <code>monsters</code> and an <code>items</code> array, filled with keys. Then we combine these into an <code>entity_key</code> array. We can then go through all these keys and use them to spawn all of these entities one by one, combining the placement code for both monsters and items.</p>
 <p>And just like that the dungeon will be more interesting. If you start a new game now, then you won&rsquo;t encounter anything other than orcs and health potions until deeper in the dungeon. And the deeper you go, the more enemies you will encounter at once.</p>
 <p>This concludes the second-to-last tutorial of this tutorial series. Next time, we will conclude the tutorial with equipment.</p>
 
