@@ -542,7 +542,17 @@ It’s been a while since the last tutorial, but luckily we can jump right back 
 	entity<span style="color:#f92672">.</span>map_data<span style="color:#f92672">.</span>save()
 	SignalBus<span style="color:#f92672">.</span>escape_requested<span style="color:#f92672">.</span>emit()
 	<span style="color:#66d9ef">return</span> false
-</code></pre></div><p>Now we save the game right before we request a change back to the main menu. And that is the save system. If you run the game now and click on new game, then exit back to the menu, you should then be able to click on <em>Continue last game</em> and be taken back to the same map as before, with all your items still in your inventory, and so on.</p>
+</code></pre></div><p>Now we save the game right before we request a change back to the main menu.</p>
+<p>There is one last issue we have to tackle. So far, we created the game and everything as within the <strong>Game</strong> node&rsquo;s <code>_ready()</code> function. The way our tree was set up meant that at that point in time not all other nodes were ready themselves. We accounted for this in <em>hp_display.gd</em>, when we called <code>await ready</code> inside <code>initialize()</code>. However, now <code>initialize()</code> gets called after the HP display is already ready. So the function ends up waiting for the <code>ready</code> signal which it already missed, i.e., the function never gets executed. We can mitigate this by extending the function as follows:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> initialize(player: Entity) <span style="color:#f92672">-&gt;</span> void:
+	<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> is_inside_tree():
+		await ready
+	player<span style="color:#f92672">.</span>fighter_component<span style="color:#f92672">.</span>hp_changed<span style="color:#f92672">.</span>connect(player_hp_changed)
+	<span style="color:#66d9ef">var</span> player_hp: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> player<span style="color:#f92672">.</span>fighter_component<span style="color:#f92672">.</span>hp
+	<span style="color:#66d9ef">var</span> player_max_hp: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> player<span style="color:#f92672">.</span>fighter_component<span style="color:#f92672">.</span>max_hp
+	player_hp_changed(player_hp, player_max_hp)
+</code></pre></div><p>Now we only <code>await</code> if the node is not inside the tree, i.e., is not ready yet. (Thinking about this now, after I have already written the code, this clause may be superfluous altogether, and we maybe could have just deleted <code>await ready</code>).</p>
+<p>And that is the save system. If you run the game now and click on new game, then exit back to the menu, you should then be able to click on <em>Continue last game</em> and be taken back to the same map as before, with all your items still in your inventory, and so on.</p>
 <p>And that concludes the saving and loading part of the tutorial. The next tutorial will be all about levels. Exploring multiple dungeon levels and leveling up your character while you&rsquo;re at it. You can find that part here: <a href="https://selinadev.github.io/15-rogueliketutorial-11/">https://selinadev.github.io/15-rogueliketutorial-11/</a></p>
 
 
