@@ -405,7 +405,21 @@ In this final part of the series we will expand our players&#39; options once mo
 		<span style="color:#66d9ef">if</span> entity<span style="color:#f92672">.</span>consumable_component <span style="color:#f92672">!=</span> null <span style="color:#f92672">or</span> entity<span style="color:#f92672">.</span>equippable_component <span style="color:#f92672">!=</span> null:
 			items<span style="color:#f92672">.</span>append(entity)
 	<span style="color:#66d9ef">return</span> items
-</code></pre></div><p>So far it only checked for the presence of a consumable component, but now we also allow picking up entities with equippable components. You can now find and pick up equipment, but you can&rsquo;t equip it, so let&rsquo;s take care of that now. We will create a new equipment component for that. Create a new script extending <code>Component</code> at <em>res://src/Entities/Actors/Components/equipment_component.gd</em>. Here&rsquo;s the very top of it:</p>
+</code></pre></div><p>So far it only checked for the presence of a consumable component, but now we also allow picking up entities with equippable components. This change asks for an <code>equippable_component</code> on the entity, which we don&rsquo;t have yet. Let&rsquo;s add this to <em>entity.gd</em>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">var</span> fighter_component: FighterComponent
+<span style="color:#66d9ef">var</span> ai_component: BaseAIComponent
+<span style="color:#66d9ef">var</span> consumable_component: ConsumableComponent
+<span style="color:#66d9ef">var</span> equippable_component: EquippableComponent
+<span style="color:#66d9ef">var</span> inventory_component: InventoryComponent
+<span style="color:#66d9ef">var</span> level_component: LevelComponent
+</code></pre></div><p>We also need to to fill that property, so in <code>set_entity_type()</code> we add the following:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">var</span> item_definition: ItemComponentDefinition <span style="color:#f92672">=</span> entity_definition<span style="color:#f92672">.</span>item_definition
+	<span style="color:#66d9ef">if</span> item_definition:
+		<span style="color:#66d9ef">if</span> item_definition is ConsumableComponentDefinition:
+			_handle_consumable(item_definition)
+		<span style="color:#66d9ef">else</span>:
+			equippable_component <span style="color:#f92672">=</span> EquippableComponent<span style="color:#f92672">.</span>new(item_definition)
+</code></pre></div><p>You can now find and pick up equipment, but you can&rsquo;t equip it, so let&rsquo;s take care of that now. We will create a new equipment component for that. Create a new script extending <code>Component</code> at <em>res://src/Entities/Actors/Components/equipment_component.gd</em>. Here&rsquo;s the very top of it:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd">class_name EquipmentComponent
 <span style="color:#66d9ef">extends</span> Component
 
@@ -575,6 +589,21 @@ In this final part of the series we will expand our players&#39; options once mo
 	hp <span style="color:#f92672">=</span> save_data[<span style="color:#e6db74">&#34;hp&#34;</span>]
 	base_power <span style="color:#f92672">=</span> save_data[<span style="color:#e6db74">&#34;power&#34;</span>]
 	base_defense <span style="color:#f92672">=</span> save_data[<span style="color:#e6db74">&#34;defense&#34;</span>]
+</code></pre></div><p>Of course, leveling itself should affect the base stats, so we need change <em>level_component.gd</em> a bit as well:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> increase_power(amount: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>) <span style="color:#f92672">-&gt;</span> void:
+	<span style="color:#66d9ef">var</span> fighter: FighterComponent <span style="color:#f92672">=</span> entity<span style="color:#f92672">.</span>fighter_component
+	fighter<span style="color:#f92672">.</span>base_power <span style="color:#f92672">+=</span> amount
+	
+	MessageLog<span style="color:#f92672">.</span>send_message(<span style="color:#e6db74">&#34;You feel stronger!&#34;</span>, <span style="color:#a6e22e">Color</span><span style="color:#f92672">.</span>WHITE)
+	increase_level()
+
+
+<span style="color:#66d9ef">func</span> increase_defense(amount: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>) <span style="color:#f92672">-&gt;</span> void:
+	<span style="color:#66d9ef">var</span> fighter: FighterComponent <span style="color:#f92672">=</span> entity<span style="color:#f92672">.</span>fighter_component
+	fighter<span style="color:#f92672">.</span>base_defense <span style="color:#f92672">+=</span> amount
+	
+	MessageLog<span style="color:#f92672">.</span>send_message(<span style="color:#e6db74">&#34;Your movements are getting swifter!&#34;</span>, <span style="color:#a6e22e">Color</span><span style="color:#f92672">.</span>WHITE)
+	increase_level()
 </code></pre></div><p>Now the fighter component can properly coordinate with the equipment. The last (mechanical) piece of the puzzle is a way to actually interact with equipment in the inventory. Interacting with equipment is an action, so we create a new action. For that we create a new script extending <code>Action</code> at <em>res://src/Entities/Actors/Actions/equip_action.gd</em>. Here&rsquo;s the code for that:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd">class_name EquipAction
 <span style="color:#66d9ef">extends</span> Action
@@ -616,7 +645,7 @@ In this final part of the series we will expand our players&#39; options once mo
 	_add_player_start_equipment(<span style="color:#e6db74">&#34;dagger&#34;</span>)
 	_add_player_start_equipment(<span style="color:#e6db74">&#34;leather_armor&#34;</span>)
 	<span style="color:#75715e"># ...</span>
-</code></pre></div><p>Now the player starts with a dagger and leather armor. If you start the game now you should be able to go into the inventory and select these items. Doing so should create messages in the message log telling you that you equipped or unequipped an item. However, our user interface has two issues at the moment. The first is that we have now way of knowing if an item is currently equipped. And the other is that the nice stats display we have below the HP and XP bars does not properly update. We will tackle these issues in that order.</p>
+</code></pre></div><p>Now the player starts with a dagger and leather armor. However, our user interface has two issues at the moment. The first is that we have now way of knowing if an item is currently equipped. And the other is that the nice stats display we have below the HP and XP bars does not properly update. We will tackle these issues in that order.</p>
 <p>To keep things simple we will indicate equipped items in the inventory list by marking them with &ldquo;<em>(E)</em>&rdquo;. We do this in <em>inventory_meny.gd</em>:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> _register_item(index: <span style="color:#a6e22e">int</span>, item: Entity, is_equipped: <span style="color:#a6e22e">bool</span>) <span style="color:#f92672">-&gt;</span> void:
 	<span style="color:#66d9ef">var</span> item_button: <span style="color:#a6e22e">Button</span> <span style="color:#f92672">=</span> inventory_menu_item_scene<span style="color:#f92672">.</span>instantiate()
