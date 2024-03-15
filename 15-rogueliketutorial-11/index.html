@@ -312,6 +312,7 @@ func is_level_up_required() -&gt; bool:
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> increase_level() <span style="color:#f92672">-&gt;</span> void:
 	current_xp <span style="color:#f92672">-=</span> get_experience_to_next_level()
 	current_level <span style="color:#f92672">+=</span> <span style="color:#ae81ff">1</span>
+	leveled_up<span style="color:#f92672">.</span>emit()
 </code></pre></div><p>This function does the actual leveling up. It subtracts the xp necessary to get to the next level. We subtract from the current xp rather than set them to 0, because if the player just got xp and overshot the requirement for the next level we don&rsquo;t want to let those overshooting xp go to waste.</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-gd" data-lang="gd"><span style="color:#66d9ef">func</span> increase_max_hp(amount: <span style="color:#a6e22e">int</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">20</span>) <span style="color:#f92672">-&gt;</span> void:
 	<span style="color:#66d9ef">var</span> fighter: FighterComponent <span style="color:#f92672">=</span> entity<span style="color:#f92672">.</span>fighter_component
